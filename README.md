@@ -90,7 +90,7 @@ Browser version will be updated automatically by [Action](./.github/workflows/de
 + `git tag v<version>`
 + `git push origin v<version>`
 + Check [Action](./.github/workflows/release.yaml) for more detailed info.
-+ The release workflow creates a draft GitHub Release and uploads built Electron binaries for Windows, macOS, and Linux.
++ The release workflow creates a draft GitHub Release and uploads built Electron binaries for Windows and macOS.
 + Review the draft release assets, then publish the release manually.
 </details>
 

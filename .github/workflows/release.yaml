@@ -63,8 +63,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
-            platform: linux
           - os: windows-2022
             platform: windows
     steps:
@@ -78,10 +76,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Install libs on ubuntu
-        if: startsWith(matrix.os, 'ubuntu')
-        run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --ignore-scripts
@@ -100,10 +94,7 @@ jobs:
           name: sync2-electron-${{ matrix.platform }}
           if-no-files-found: error
           path: |
-            dist/electron/Packaged/*.AppImage
             dist/electron/Packaged/*.exe
-            dist/electron/Packaged/*.dmg
-            dist/electron/Packaged/*.zip
             dist/electron/Packaged/*.yml
             dist/electron/Packaged/*.blockmap
 
@@ -134,6 +125,7 @@ jobs:
           ELECTRON_BUILD_ARCHES: x64,arm64
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --openssl-legacy-provider
+          PYTHON_PATH: python3
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Electron workflow artifacts

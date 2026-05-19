@@ -21,6 +21,7 @@ const electronBuildArches = (process.env.ELECTRON_BUILD_ARCHES || 'x64,arm64')
   .split(',')
   .map(arch => arch.trim())
   .filter(Boolean)
+const electronMacTarget = process.env.ELECTRON_MAC_TARGET || 'default'
 
 module.exports = configure(function (ctx) {
   return {
@@ -355,7 +356,7 @@ module.exports = configure(function (ctx) {
           entitlementsInherit: "build/entitlements.mac.plist",
           target: {
             arch: electronBuildArches,
-            target: 'default'
+            target: electronMacTarget
           }
         }
       },
