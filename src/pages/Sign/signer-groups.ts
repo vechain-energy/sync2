@@ -9,18 +9,47 @@ export function buildSignerGroups(wallets: M.Wallet[], enforcedSigner?: string, 
         }]
     }
 
-    const allowedSigners = signers ? signers.map(item => item.toLowerCase()) : null
-    return wallets
-        .map(wallet => {
-            const addresses = allowedSigners
-                ? allowedSigners
-                    .map(signer => wallet.meta.addresses.find(addr => addr.toLowerCase() === signer) || '')
-                    .filter(addr => !!addr)
-                : wallet.meta.addresses
+    if (!signers) {
+        return wallets.map(wallet => {
             return {
                 name: wallet.meta.name,
-                addresses
+                addresses: wallet.meta.addresses
             }
         })
-        .filter(group => group.addresses.length > 0)
+    }
+
+    const seenSigners = new Set<string>()
+    const groups: SignerGroup[] = []
+    const groupsByWalletId = new Map<number, SignerGroup>()
+
+    for (const signer of signers) {
+        const normalizedSigner = signer.toLowerCase()
+        if (seenSigners.has(normalizedSigner)) {
+            continue
+        }
+
+        const wallet = wallets.find(item => item.meta.addresses.some(addr => addr.toLowerCase() === normalizedSigner))
+        if (!wallet) {
+            continue
+        }
+
+        const address = wallet.meta.addresses.find(addr => addr.toLowerCase() === normalizedSigner)
+        if (!address) {
+            continue
+        }
+
+        let group = groupsByWalletId.get(wallet.id)
+        if (!group) {
+            group = {
+                name: wallet.meta.name,
+                addresses: []
+            }
+            groupsByWalletId.set(wallet.id, group)
+            groups.push(group)
+        }
+        group.addresses.push(address)
+        seenSigners.add(normalizedSigner)
+    }
+
+    return groups
 }

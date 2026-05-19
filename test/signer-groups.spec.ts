@@ -31,14 +31,21 @@ const otherWallet: M.Wallet = {
 describe('signer groups', () => {
     it('limits selectable signers without enforcing one signer', () => {
         const groups = buildSignerGroups([wallet, otherWallet], undefined, [
+            otherWallet.meta.addresses[0],
             wallet.meta.addresses[1],
             wallet.meta.addresses[0]
         ])
 
-        assert.deepStrictEqual(groups, [{
-            name: 'Wallet',
-            addresses: [wallet.meta.addresses[1], wallet.meta.addresses[0]]
-        }])
+        assert.deepStrictEqual(groups, [
+            {
+                name: 'Other',
+                addresses: [otherWallet.meta.addresses[0]]
+            },
+            {
+                name: 'Wallet',
+                addresses: [wallet.meta.addresses[1], wallet.meta.addresses[0]]
+            }
+        ])
     })
 
     it('keeps existing enforced signer behavior', () => {

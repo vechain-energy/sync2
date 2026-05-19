@@ -452,9 +452,14 @@ export default Vue.extend({
             if (!this.selectedWallet || !this.selectedAddress) {
                 return []
             }
+            const networkAddresses = this.wallets.reduce<string[]>((items, wallet) => {
+                return wallet.gid === this.selectedWallet!.gid
+                    ? items.concat(wallet.meta.addresses)
+                    : items
+            }, [])
             return [
                 this.selectedAddress,
-                ...this.selectedWallet.meta.addresses.filter(addr => addr !== this.selectedAddress)
+                ...networkAddresses.filter(addr => addr.toLowerCase() !== this.selectedAddress.toLowerCase())
             ]
         },
         resetAfterConfirmation() {
