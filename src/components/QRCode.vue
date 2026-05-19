@@ -1,5 +1,10 @@
 <template>
-    <div v-html="svg"></div>
+    <img
+        class="qr-code"
+        :src="svgDataUri"
+        alt=""
+        draggable="false"
+    >
 </template>
 <script lang="ts">
 import Vue from 'vue'
@@ -22,6 +27,9 @@ export default Vue.extend({
                 container: 'svg-viewbox',
                 join: true
             }).svg()
+        },
+        svgDataUri(): string {
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(this.svg)}`
         }
     },
     created() {
@@ -32,3 +40,8 @@ export default Vue.extend({
     }
 })
 </script>
+<style scoped>
+.qr-code {
+    display: block;
+}
+</style>
