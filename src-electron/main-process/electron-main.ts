@@ -11,11 +11,11 @@ require('@electron/remote/main').initialize()
 
 app.allowRendererProcessReuse = false
 
-declare const QUASAR_NODE_INTEGRATION: boolean
-
 let mainWindow: BrowserWindow | null
 
 function createWindow() {
+    const quasarNodeIntegration = process.env.QUASAR_NODE_INTEGRATION as unknown as boolean
+
     /**
      * Initial window options
      */
@@ -28,9 +28,8 @@ function createWindow() {
         webPreferences: {
             // Change from /quasar.conf.js > electron > nodeIntegration;
             // More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
-            // eslint-disable-next-line no-undef
-            nodeIntegration: QUASAR_NODE_INTEGRATION,
-            nodeIntegrationInWorker: true,
+            nodeIntegration: quasarNodeIntegration,
+            nodeIntegrationInWorker: quasarNodeIntegration,
             enableRemoteModule: true,
             contextIsolation: false
 
