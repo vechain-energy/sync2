@@ -27,6 +27,7 @@ async function main() {
     await import('./fee-market.spec')
     await import('./config-nodes.spec')
     await import('./private-key.spec')
+    await import('./vault-worker.spec')
     await import('./vet-domain-registration.spec')
 
     for (const test of tests) {
