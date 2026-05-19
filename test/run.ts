@@ -28,6 +28,7 @@ async function main() {
     await import('./generic-delegator.spec')
     await import('./config-nodes.spec')
     await import('./signer-groups.spec')
+    await import('./sign-models.spec')
     await import('./private-key.spec')
     await import('./vault-worker.spec')
     await import('./directives.spec')
