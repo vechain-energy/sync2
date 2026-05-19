@@ -161,7 +161,8 @@ export default {
         title: 'Asset',
         label_history: 'History',
         msg_no_history: 'No transfer history',
-        msg_no_more: '- The End - '
+        msg_no_more: '- The End - ',
+        msg_history_load_error: 'you need to check the network and try again. History could not be loaded.'
     },
     send: {
         title: 'Send',

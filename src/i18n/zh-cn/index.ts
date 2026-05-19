@@ -160,7 +160,8 @@ export default {
         title: '资产',
         label_history: '转账记录',
         msg_no_history: '无记录',
-        msg_no_more: '- 完 - '
+        msg_no_more: '- 完 - ',
+        msg_history_load_error: 'you need to check the network and try again. 无法加载转账记录。'
     },
     send: {
         title: '发送',
