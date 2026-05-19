@@ -51,12 +51,16 @@ export default Vue.extend({
         show() { (this.$refs.dialog as QDialog).show() },
         // method is REQUIRED by $q.dialog
         hide() { (this.$refs.dialog as QDialog).hide() },
-        onCopy() {
-            copyText(this.req.content).then(
-                () => {
-                    this.$q.notify(this.$t('common.copied'))
-                }
-            ).catch(console.error)
+        async onCopy() {
+            try {
+                await copyText(this.req.content)
+                this.$q.notify(this.$t('common.copied').toString())
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('common.copy_failed').toString()
+                })
+            }
         }
     }
 })

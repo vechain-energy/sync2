@@ -130,10 +130,16 @@ export default Vue.extend({
         viewOnExplorer() {
             openURL(`${this.txDetailUrl}${this.log.meta.txID}`)
         },
-        copy(str: string) {
-            copyText(str).then(() => {
-                this.$q.notify(this.$t('common.copied'))
-            }).catch(console.error)
+        async copy(str: string) {
+            try {
+                await copyText(str)
+                this.$q.notify(this.$t('common.copied').toString())
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('common.copy_failed').toString()
+                })
+            }
         }
     }
 })

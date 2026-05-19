@@ -15,6 +15,7 @@ export default {
         decline: '拒绝',
         copy: '复制',
         copied: '已复制到剪贴板',
+        copy_failed: '请手动复制。无法访问剪贴板。',
         close: '关闭',
         back: '返回',
         more: '更多',

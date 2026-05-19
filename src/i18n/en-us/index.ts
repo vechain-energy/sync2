@@ -15,6 +15,7 @@ export default {
         decline: 'Decline',
         copy: 'Copy',
         copied: 'Copied to clipboard',
+        copy_failed: 'you need to copy manually. Clipboard access failed.',
         close: 'Close',
         back: 'Back',
         more: 'More',
