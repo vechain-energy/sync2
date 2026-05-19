@@ -223,6 +223,7 @@ import {
     resolveVetDomainAddress
 } from 'src/utils/vet-domain-wallet-selection'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
+import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
 const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
 
@@ -278,7 +279,7 @@ export default Vue.extend({
             inputName: '',
             years: 1,
             setAsPrimary: true,
-            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0', 10),
+            selectedWalletId: parseStoredNonNegativeInteger(localStorage.getItem(SELECTED_WALLET_ID_KEY)),
             selectedAddress: '',
             wallets: [] as M.Wallet[],
             info: null as null | VetDomainRegistrationInfo,
