@@ -87,7 +87,7 @@ export default Vue.extend({
             })
 
             this.$once('hook:beforeDestroy', () => {
-                scanner.stop()
+                scanner.destroy()
             })
         }
     }
