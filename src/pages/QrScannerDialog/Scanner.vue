@@ -73,11 +73,13 @@ export default Vue.extend({
             const scanner = new QrScanner(
                 video,
                 result => {
-                    this.$emit('input', result)
+                    this.$emit('input', result.data)
                 },
-                () => { },
-                undefined,
-                'environment'
+                {
+                    onDecodeError: () => { },
+                    preferredCamera: 'environment',
+                    returnDetailedScanResult: true
+                }
             )
 
             scanner.start().catch(err => {
