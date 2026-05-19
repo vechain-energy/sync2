@@ -37,6 +37,7 @@ declare namespace M {
         options: Connex.Signer.TxOptions
         origin?: string
         signers?: string[]
+        preferredSigner?: string
     }
 
     type TxResponse = Connex.Vendor.TxResponse
@@ -47,6 +48,7 @@ declare namespace M {
         domain: string,
         origin?: string,
         signers?: string[]
+        preferredSigner?: string
     }
 
     type CertResponse = Connex.Vendor.CertResponse

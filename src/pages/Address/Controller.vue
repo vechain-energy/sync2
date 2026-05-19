@@ -5,7 +5,7 @@
             :gid="wallet && wallet.gid"
         >
             <q-btn
-                v-if="optionSheets.length > 0"
+                v-if="visibleOptionSheets.length > 0"
                 flat
                 round
                 icon="more_horiz"
@@ -92,8 +92,10 @@ import PageContent from 'components/PageContent.vue'
 import PopSheets, { Sheet } from 'components/PopSheets.vue'
 import PromptDialog, { PromptOptions } from 'pages/Index/PromptDialog.vue'
 import PrivateKeyDialog from './PrivateKeyDialog.vue'
+import ProfileDialog from './ProfileDialog.vue'
 import { Vault } from 'src/core/vault'
 import { formatPrivateKey } from 'src/utils/private-key'
+import { supportsVetDomainProfile } from 'src/utils/vet-domain-profile'
 
 export default Vue.extend({
     components: {
@@ -125,6 +127,18 @@ export default Vue.extend({
                 return tokens.filter(token => token.gid === wallet.gid && (activeSymbols.includes(token.symbol) || token.permanent))
             },
             default: []
+        },
+        primaryName: {
+            async get(): Promise<string> {
+                const wallet = this.wallet
+                if (!wallet || !this.address) {
+                    return ''
+                }
+                this.$svc.bc(wallet.gid).vetDomainsRevision()
+                const [name] = await this.$svc.bc(wallet.gid).vetDomainsNamesOf([this.address])
+                return name
+            },
+            default: ''
         }
     },
     computed: {
@@ -139,13 +153,34 @@ export default Vue.extend({
         },
         optionSheets(): Sheet[] {
             return [{
+                label: this.$t('address.action_edit_vns_profile').toString(),
+                action: () => { void this.onEditVnsProfile() },
+                hidden: !this.wallet || !this.primaryName || !supportsVetDomainProfile(this.wallet.gid)
+            }, {
                 label: this.$t('address.action_export_private_key').toString(),
                 action: () => { void this.onExportPrivateKey() },
                 hidden: !this.canExportPrivateKey
             }]
+        },
+        visibleOptionSheets(): Sheet[] {
+            return this.optionSheets.filter(sheet => !sheet.hidden)
         }
     },
     methods: {
+        async onEditVnsProfile() {
+            const wallet = this.wallet
+            if (!wallet || !this.primaryName) {
+                return
+            }
+            try {
+                await this.$dialog<void>({
+                    component: ProfileDialog,
+                    wallet,
+                    address: this.address,
+                    name: this.primaryName
+                })
+            } catch { }
+        },
         async onExportPrivateKey() {
             const wallet = this.wallet
             if (!wallet || wallet.meta.type === 'ledger') {

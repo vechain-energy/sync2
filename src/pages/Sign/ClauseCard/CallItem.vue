@@ -15,6 +15,7 @@
             <q-item-section avatar>
                 <address-avatar
                     :addr="op.to"
+                    :gid="gid"
                     size="1em"
                 />
             </q-item-section>

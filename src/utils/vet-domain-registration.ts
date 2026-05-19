@@ -5,6 +5,7 @@ import { genesises } from '../consts'
 export const VET_DOMAIN_REGISTRATION_YEAR_SECONDS = 31536000
 
 export type VetDomainContracts = {
+    registry: string
     controller: string
     resolver: string
 }
@@ -35,10 +36,12 @@ export type VetDomainCommitmentParams = {
 
 export const VET_DOMAIN_CONTRACTS_BY_GID: Record<string, VetDomainContracts> = {
     [genesises.main.id]: {
+        registry: '0xa9231da8BF8D10e2df3f6E03Dd5449caD600129b',
         controller: '0x07479F2710d16a0bACbE6C25b9b32447364C0A33',
         resolver: '0xabac49445584C8b6c1472b030B1076Ac3901D7cf'
     },
     [genesises.test.id]: {
+        registry: '0xcBFB30c1F267914816668d53AcBA7bA7c9806D13',
         controller: '0xAA854565401724f7061E0C366cA132c87C1e5F60',
         resolver: '0xA6eFd130085a127D090ACb0b100294aD1079EA6f'
     }

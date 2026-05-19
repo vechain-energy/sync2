@@ -15,7 +15,7 @@
             v-if="isAddress(to)"
             v-slot:prepend
         >
-            <AddressAvatar :addr="to" />
+            <AddressAvatar :addr="to" :gid="gid" />
         </template>
         <template v-slot:append>
             <q-btn

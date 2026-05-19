@@ -9,6 +9,7 @@
                 <address-avatar
                     size="3.6rem"
                     :addr="address"
+                    :gid="gid"
                 />
             </q-item-section>
             <q-item-section

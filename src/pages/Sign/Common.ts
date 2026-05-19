@@ -3,7 +3,7 @@ import { SignerGroup } from './models'
 import { Transaction, Certificate, blake2b256 } from 'thor-devkit'
 import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
 import { isSoftwareWalletType, signHashWithSoftwareWallet } from './software-signer'
-import { buildSignerGroups } from './signer-groups'
+import { buildSignerGroups, selectSigner } from './signer-groups'
 
 type SignableTransaction = Transaction<Transaction.LegacyBody | Transaction.DynamicFeeBody>
 
@@ -33,8 +33,9 @@ export default Vue.extend({
     watch: {
         // select the first address if not selected
         signerGroups(groups: SignerGroup[]) {
-            if (groups.length > 0 && !groups.find(g => g.addresses.includes(this.signer))) {
-                this.signer = groups[0].addresses[0]
+            const selected = selectSigner(groups, this.signer, this.req.preferredSigner)
+            if (selected && selected !== this.signer) {
+                this.signer = selected
             }
         }
     },
