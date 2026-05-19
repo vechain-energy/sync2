@@ -6,6 +6,8 @@
                 v-if="!!faviconUrl"
                 v-show="false"
                 :src="faviconUrl"
+                alt=""
+                aria-hidden="true"
                 @load="iconLoaded=true"
             >
 
@@ -19,6 +21,7 @@
                         v-if="iconLoaded"
                         class="fit absolute-full"
                         :src="faviconUrl"
+                        :alt="host"
                     >
                     <div
                         v-else

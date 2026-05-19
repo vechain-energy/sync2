@@ -5,7 +5,10 @@
         <!-- drawer content header -->
         <q-toolbar>
             <q-avatar square>
-                <img src="~assets/sync-logo.svg">
+                <img
+                    src="~assets/sync-logo.svg"
+                    alt="Sync2"
+                >
             </q-avatar>
             <q-toolbar-title>
                 Sync2

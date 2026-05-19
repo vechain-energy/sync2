@@ -31,6 +31,7 @@
                         <q-avatar size="6rem">
                             <img
                                 :src="avatarSrc"
+                                :alt="profile.display || name"
                                 @error="onAvatarError"
                             />
                         </q-avatar>

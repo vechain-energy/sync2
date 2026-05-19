@@ -30,7 +30,10 @@
                             <q-item-label caption>
                                 {{$t('sign.label_estimate_fee')}}
                                 <q-avatar size="1rem">
-                                    <img src="~assets/vtho.svg">
+                                    <img
+                                        src="~assets/vtho.svg"
+                                        alt=""
+                                    >
                                 </q-avatar>
                             </q-item-label>
                         </q-item-section>

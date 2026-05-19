@@ -32,6 +32,7 @@
                 <img
                     class="new-wallet-brand"
                     src="~assets/vechain-logo-tint.svg"
+                    alt=""
                 >
             </div>
             <div

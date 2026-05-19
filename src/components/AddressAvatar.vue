@@ -2,6 +2,7 @@
     <q-avatar v-bind="$attrs">
         <img
             :src="src"
+            alt=""
             @error="onImageError"
         />
     </q-avatar>

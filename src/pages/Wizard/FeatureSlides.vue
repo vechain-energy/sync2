@@ -19,6 +19,7 @@
                 class="feature-slide-image q-my-auto"
                 draggable="false"
                 :src="item.img"
+                :alt="item.title"
             />
             <div class="text-h6">{{item.title}}</div>
             <div class="text-body2">{{item.content}}</div>

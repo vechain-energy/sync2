@@ -51,6 +51,7 @@
                 <img
                     src="~assets/vechain-logo.svg"
                     class="logo"
+                    alt=""
                 >
             </q-item-section>
         </q-item>
