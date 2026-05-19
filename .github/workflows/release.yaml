@@ -67,10 +67,12 @@ jobs:
             platform: windows
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-meta.outputs.tag }}
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - uses: actions/setup-python@v5
@@ -106,10 +108,12 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-meta.outputs.tag }}
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - uses: actions/setup-python@v5
@@ -125,12 +129,18 @@ jobs:
           from pathlib import Path
 
           core = Path("node_modules/dmg-builder/vendor/dmgbuild/core.py")
+          if not core.exists():
+              print(f"{core} not found; skipping patch")
+              raise SystemExit(0)
+
           text = core.read_text()
-          text = text.replace(
-              "reload(sys)  # Reload is a hack\nsys.setdefaultencoding('UTF8')\n",
-              "try:\n  from importlib import reload\n  reload(sys)\n  getattr(sys, 'setdefaultencoding', lambda _encoding: None)('UTF8')\nexcept Exception:\n  pass\n"
-          )
-          core.write_text(text)
+          old = "reload(sys)  # Reload is a hack\nsys.setdefaultencoding('UTF8')\n"
+          new = "try:\n  from importlib import reload\n  reload(sys)\n  getattr(sys, 'setdefaultencoding', lambda _encoding: None)('UTF8')\nexcept Exception:\n  pass\n"
+          if old not in text:
+              print("Python 2 reload stanza not found; skipping patch")
+              raise SystemExit(0)
+
+          core.write_text(text.replace(old, new))
           PY
 
       - name: Build Electron binaries
