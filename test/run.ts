@@ -26,6 +26,7 @@ async function main() {
     await import('./vet-domains.spec')
     await import('./fee-market.spec')
     await import('./generic-delegator.spec')
+    await import('./config-json.spec')
     await import('./config-nodes.spec')
     await import('./open-url.spec')
     await import('./signer-groups.spec')
