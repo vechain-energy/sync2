@@ -37,6 +37,7 @@ declare namespace M {
         options: Connex.Signer.TxOptions
         origin?: string
         signers?: string[]
+        actionLabel?: string
     }
 
     type TxResponse = Connex.Vendor.TxResponse

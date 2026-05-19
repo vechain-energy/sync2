@@ -1,5 +1,5 @@
 <template>
-    <div class="column fit no-wrap swap-page">
+    <div class="column fit no-wrap">
         <page-toolbar
             :title="$t('swap.title')"
             :gid="selectedWallet && selectedWallet.gid"
@@ -16,26 +16,19 @@
                 {{$t('common.no_wallet')}}
             </q-banner>
             <q-banner
-                v-else-if="selectedWallet && !supported"
+                v-else-if="wallets.length && mainWallets.length === 0"
                 class="bg-orange-1 text-deep-orange"
             >
                 {{$t('swap.msg_mainnet_only')}}
             </q-banner>
 
-            <section class="swap-panel">
-                <div class="row items-center justify-between q-mb-sm">
-                    <div class="text-subtitle2 text-uppercase text-grey-7">{{$t('swap.label_from')}}</div>
-                    <q-btn
-                        v-if="fromToken"
-                        dense
-                        flat
-                        color="primary"
-                        :label="$t('swap.action_max')"
-                        @click="setMaxAmount"
-                    />
-                </div>
-                <div class="row q-col-gutter-sm items-start">
-                    <div class="col">
+            <q-list
+                bordered
+                separator
+            >
+                <q-item-label header>{{$t('swap.label_from')}}</q-item-label>
+                <q-item>
+                    <q-item-section>
                         <q-input
                             dense
                             outlined
@@ -50,8 +43,8 @@
                             :error-message="amountError"
                             @input="onAmountChanged"
                         />
-                    </div>
-                    <div class="col-5">
+                    </q-item-section>
+                    <q-item-section side>
                         <q-select
                             dense
                             outlined
@@ -70,21 +63,32 @@
                                 />
                             </template>
                         </q-select>
-                    </div>
-                </div>
-                <div
-                    v-if="fromToken"
-                    class="swap-balance text-caption text-grey-7"
-                >
-                    {{$t('swap.label_balance')}}:
-                    <amount-label
-                        :value="fromBalance"
-                        :decimals="fromToken.decimals"
-                        :fixed="4"
-                    >--</amount-label>
-                    {{fromToken.symbol}}
-                </div>
-            </section>
+                    </q-item-section>
+                </q-item>
+                <q-item>
+                    <q-item-section class="text-grey-7">
+                        <span v-if="fromToken">
+                            {{$t('swap.label_balance')}}:
+                            <amount-label
+                                :value="fromBalance"
+                                :decimals="fromToken.decimals"
+                                :fixed="4"
+                            >--</amount-label>
+                            {{fromToken.symbol}}
+                        </span>
+                    </q-item-section>
+                    <q-item-section side>
+                        <q-btn
+                            v-if="fromToken"
+                            dense
+                            flat
+                            color="primary"
+                            :label="$t('swap.action_max')"
+                            @click="setMaxAmount"
+                        />
+                    </q-item-section>
+                </q-item>
+            </q-list>
 
             <div class="text-center">
                 <q-btn
@@ -97,11 +101,14 @@
                 />
             </div>
 
-            <section class="swap-panel">
-                <div class="text-subtitle2 text-uppercase text-grey-7 q-mb-sm">{{$t('swap.label_to')}}</div>
-                <div class="row q-col-gutter-sm items-start">
-                    <div class="col">
-                        <div class="swap-output text-h5 ellipsis">
+            <q-list
+                bordered
+                separator
+            >
+                <q-item-label header>{{$t('swap.label_to')}}</q-item-label>
+                <q-item>
+                    <q-item-section>
+                        <q-item-label class="text-h5 ellipsis">
                             <amount-label
                                 v-if="toToken"
                                 :value="outputAmount"
@@ -109,9 +116,9 @@
                                 :fixed="6"
                             >0</amount-label>
                             <span v-else>0</span>
-                        </div>
-                    </div>
-                    <div class="col-5">
+                        </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
                         <q-select
                             dense
                             outlined
@@ -130,44 +137,46 @@
                                 />
                             </template>
                         </q-select>
-                    </div>
-                </div>
-                <div
-                    v-if="toToken"
-                    class="swap-balance text-caption text-grey-7"
-                >
-                    {{$t('swap.label_balance')}}:
-                    <amount-label
-                        :value="toBalance"
-                        :decimals="toToken.decimals"
-                        :fixed="4"
-                    >--</amount-label>
-                    {{toToken.symbol}}
-                </div>
-            </section>
+                    </q-item-section>
+                </q-item>
+                <q-item v-if="toToken">
+                    <q-item-section class="text-grey-7">
+                        {{$t('swap.label_balance')}}:
+                        <amount-label
+                            :value="toBalance"
+                            :decimals="toToken.decimals"
+                            :fixed="4"
+                        >--</amount-label>
+                        {{toToken.symbol}}
+                    </q-item-section>
+                </q-item>
+            </q-list>
 
-            <section class="swap-panel">
-                <div class="row items-center justify-between q-mb-sm">
-                    <div class="text-subtitle2 text-uppercase text-grey-7">{{$t('swap.label_source')}}</div>
-                    <q-spinner
-                        v-if="quoteLoading"
-                        color="primary"
-                    />
-                </div>
-                <q-select
-                    dense
-                    outlined
-                    emit-value
-                    map-options
-                    :disable="quoteLoading || quoteOptions.length === 0"
-                    v-model="selectedAggregatorName"
-                    :options="quoteOptions"
-                />
-                <q-list
-                    v-if="selectedQuote"
-                    dense
-                    class="swap-details q-mt-sm"
-                >
+            <q-list
+                bordered
+                separator
+            >
+                <q-item-label header>{{$t('swap.label_source')}}</q-item-label>
+                <q-item>
+                    <q-item-section>
+                        <q-select
+                            dense
+                            outlined
+                            emit-value
+                            map-options
+                            :disable="quoteLoading || quoteOptions.length === 0"
+                            v-model="selectedAggregatorName"
+                            :options="quoteOptions"
+                        />
+                    </q-item-section>
+                    <q-item-section side>
+                        <q-spinner
+                            v-if="quoteLoading"
+                            color="primary"
+                        />
+                    </q-item-section>
+                </q-item>
+                <template v-if="selectedQuote">
                     <q-item>
                         <q-item-section>{{$t('swap.label_min_received')}}</q-item-section>
                         <q-item-section side>
@@ -184,43 +193,50 @@
                         <q-item-section>{{$t('swap.label_fee')}}</q-item-section>
                         <q-item-section side>{{feeText}}</q-item-section>
                     </q-item>
-                </q-list>
-            </section>
+                </template>
+            </q-list>
 
-            <section class="swap-panel">
-                <div class="row items-center justify-between q-mb-sm">
-                    <div class="text-subtitle2 text-uppercase text-grey-7">{{$t('swap.label_slippage')}}</div>
-                    <div class="text-caption text-grey-7">{{slippageTolerance}}%</div>
-                </div>
-                <div class="row q-col-gutter-sm">
-                    <div class="col-4">
-                        <q-btn
-                            class="full-width"
-                            :outline="slippageTolerance !== 1"
-                            color="primary"
-                            label="Auto"
-                            @click="setSlippage(1)"
-                        />
-                    </div>
-                    <div class="col-4">
-                        <q-btn
-                            class="full-width"
-                            :outline="slippageTolerance !== 0.5"
-                            color="primary"
-                            label="0.5%"
-                            @click="setSlippage(0.5)"
-                        />
-                    </div>
-                    <div class="col-4">
-                        <q-btn
-                            class="full-width"
-                            :outline="slippageTolerance !== 3"
-                            color="primary"
-                            label="3%"
-                            @click="setSlippage(3)"
-                        />
-                    </div>
-                    <div class="col-12">
+            <q-list
+                bordered
+                separator
+            >
+                <q-item-label header>{{$t('swap.label_slippage')}}</q-item-label>
+                <q-item>
+                    <q-item-section>
+                        <div class="row q-col-gutter-sm">
+                            <div class="col-4">
+                                <q-btn
+                                    class="full-width"
+                                    :outline="slippageTolerance !== 1"
+                                    color="primary"
+                                    label="Auto"
+                                    @click="setSlippage(1)"
+                                />
+                            </div>
+                            <div class="col-4">
+                                <q-btn
+                                    class="full-width"
+                                    :outline="slippageTolerance !== 0.5"
+                                    color="primary"
+                                    label="0.5%"
+                                    @click="setSlippage(0.5)"
+                                />
+                            </div>
+                            <div class="col-4">
+                                <q-btn
+                                    class="full-width"
+                                    :outline="slippageTolerance !== 3"
+                                    color="primary"
+                                    label="3%"
+                                    @click="setSlippage(3)"
+                                />
+                            </div>
+                        </div>
+                    </q-item-section>
+                    <q-item-section side>{{slippageTolerance}}%</q-item-section>
+                </q-item>
+                <q-item>
+                    <q-item-section>
                         <q-input
                             dense
                             outlined
@@ -230,9 +246,9 @@
                             v-model="customSlippage"
                             @input="onCustomSlippageChanged"
                         />
-                    </div>
-                </div>
-            </section>
+                    </q-item-section>
+                </q-item>
+            </q-list>
 
             <q-banner
                 v-if="statusText"
@@ -242,34 +258,14 @@
             </q-banner>
         </page-content>
 
-        <div class="swap-wallet-panel q-pa-sm">
-            <div class="narrow-page q-mx-auto q-gutter-sm">
-                <q-select
-                    dense
-                    outlined
-                    emit-value
-                    map-options
-                    v-model="selectedWalletId"
-                    :options="walletOptions"
-                    :label="$t('swap.label_wallet')"
-                    @input="onWalletChanged"
-                />
-                <q-select
-                    dense
-                    outlined
-                    emit-value
-                    map-options
-                    :disable="!selectedWallet"
-                    v-model="selectedAddress"
-                    :options="addressOptions"
-                    :label="$t('swap.label_address')"
-                    @input="onAddressChanged"
-                />
-                <address-label
-                    v-if="selectedAddress && selectedWallet"
-                    :addr="selectedAddress"
-                    :gid="selectedWallet.gid"
-                    full
+        <div class="q-pa-sm">
+            <div class="narrow-page q-mx-auto">
+                <signer-selector
+                    v-if="selectedAddress"
+                    :signer="selectedAddress"
+                    :groups="signerGroups"
+                    :gid="mainGid"
+                    @select="onSignerChanged"
                 />
             </div>
         </div>
@@ -289,12 +285,15 @@
 <script lang="ts">
 import Vue from 'vue'
 import { BigNumber } from 'bignumber.js'
-import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import PageAction from 'src/components/PageAction.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageToolbar from 'src/components/PageToolbar.vue'
 import TokenAvatar from 'src/components/TokenAvatar.vue'
+import SignerSelector from 'src/pages/Sign/SignerSelector.vue'
+import { SignerGroup } from 'src/pages/Sign/models'
+import { buildSignerGroups } from 'src/pages/Sign/signer-groups'
+import { genesises } from 'src/consts'
 import { toWei } from 'src/utils/format'
 import {
     BuiltSwapQuote,
@@ -306,16 +305,9 @@ import {
     selectBestQuote,
     swapNetworkOf
 } from 'src/utils/swap'
-import {
-    VetDomainAddressOption,
-    VetDomainWalletOption,
-    buildVetDomainAddressOptions,
-    buildVetDomainWalletOptions,
-    findVetDomainWallet,
-    resolveVetDomainAddress
-} from 'src/utils/vet-domain-wallet-selection'
 
-const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
+const MAIN_GID = genesises.main.id
+const LAST_SIGNER_KEY = `last-signer-${MAIN_GID}`
 const QUOTE_DELAY = 650
 
 type SelectOption<T> = {
@@ -331,7 +323,6 @@ type SwapData = {
     amount: string
     fromSymbol: string
     toSymbol: string
-    selectedWalletId: number
     selectedAddress: string
     slippageTolerance: number
     customSlippage: string
@@ -363,11 +354,11 @@ function amountHasValidShape(amount: string, decimals: number): boolean {
 
 export default Vue.extend({
     components: {
-        AddressLabel,
         AmountLabel,
         PageAction,
         PageContent,
         PageToolbar,
+        SignerSelector,
         TokenAvatar
     },
     data(): SwapData {
@@ -378,8 +369,7 @@ export default Vue.extend({
             amount: '',
             fromSymbol: 'VET',
             toSymbol: '',
-            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0', 10),
-            selectedAddress: '',
+            selectedAddress: localStorage.getItem(LAST_SIGNER_KEY) || '',
             slippageTolerance: 1,
             customSlippage: '1',
             quoteLoading: false,
@@ -393,17 +383,23 @@ export default Vue.extend({
         }
     },
     computed: {
-        walletOptions(): VetDomainWalletOption[] {
-            return buildVetDomainWalletOptions(this.wallets)
+        mainGid(): string {
+            return MAIN_GID
         },
-        addressOptions(): VetDomainAddressOption[] {
-            return buildVetDomainAddressOptions(this.selectedWallet)
+        mainWallets(): M.Wallet[] {
+            return this.wallets.filter(wallet => swapNetworkOf(wallet.gid) === 'main')
+        },
+        signerGroups(): SignerGroup[] {
+            return buildSignerGroups(this.mainWallets)
         },
         selectedWallet(): M.Wallet | null {
-            return findVetDomainWallet(this.wallets, this.selectedWalletId)
+            const selected = this.selectedAddress.toLowerCase()
+            return this.mainWallets.find(wallet => {
+                return wallet.meta.addresses.some(address => address.toLowerCase() === selected)
+            }) || null
         },
         supported(): boolean {
-            return !!this.selectedWallet && swapNetworkOf(this.selectedWallet.gid) === 'main'
+            return !!this.selectedWallet
         },
         tokenOptions(): SelectOption<string>[] {
             return this.tokens.map(token => {
@@ -483,8 +479,7 @@ export default Vue.extend({
     },
     async mounted() {
         this.wallets = await this.$svc.wallet.all()
-        this.ensureSelectedWallet()
-        this.ensureSelectedAddress()
+        this.ensureSelectedSigner()
         await this.loadTokens()
         await this.loadBalances()
         this.scheduleQuote()
@@ -493,14 +488,21 @@ export default Vue.extend({
         window.clearTimeout(this.quoteTimer)
     },
     methods: {
-        ensureSelectedWallet() {
-            if (this.walletOptions.length > 0 && !this.walletOptions.find(option => option.value === this.selectedWalletId)) {
-                this.selectedWalletId = this.walletOptions[0].value
-                localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
-            }
+        signerExists(address: string): boolean {
+            const normalized = address.toLowerCase()
+            return this.mainWallets.some(wallet => {
+                return wallet.meta.addresses.some(item => item.toLowerCase() === normalized)
+            })
         },
-        ensureSelectedAddress() {
-            this.selectedAddress = resolveVetDomainAddress(this.selectedWallet, this.selectedAddress)
+        ensureSelectedSigner() {
+            if (this.selectedAddress && this.signerExists(this.selectedAddress)) {
+                return
+            }
+            const group = this.signerGroups.find(item => item.addresses.length > 0)
+            this.selectedAddress = group ? group.addresses[0] : ''
+            if (this.selectedAddress) {
+                localStorage.setItem(LAST_SIGNER_KEY, this.selectedAddress)
+            }
         },
         ensureSelectedTokens() {
             if (this.tokens.length === 0) {
@@ -557,16 +559,10 @@ export default Vue.extend({
             })
             this.balances = balances
         },
-        async onWalletChanged() {
-            localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
-            this.selectedAddress = ''
-            this.ensureSelectedAddress()
+        async onSignerChanged(address: string) {
+            this.selectedAddress = address
+            localStorage.setItem(LAST_SIGNER_KEY, address)
             await this.loadTokens()
-            await this.loadBalances()
-            this.scheduleQuote()
-        },
-        async onAddressChanged() {
-            this.ensureSelectedAddress()
             await this.loadBalances()
             this.scheduleQuote()
         },
@@ -696,6 +692,7 @@ export default Vue.extend({
                 const clauses = await quote.aggregator.buildSwapTransaction(params, quote)
                 await this.$signTx(wallet.gid, {
                     message: clauses,
+                    actionLabel: this.$t('swap.action_swap').toString(),
                     options: {
                         comment: this.$t('swap.comment_swap', {
                             fromAmount: this.amount,
@@ -716,28 +713,3 @@ export default Vue.extend({
     }
 })
 </script>
-<style scoped lang="sass">
-.swap-page
-  background: #f6f6f3
-
-.swap-panel
-  border: 1px solid rgba(0, 0, 0, 0.22)
-  border-radius: 0
-  background: white
-  padding: 14px
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6) inset
-
-.swap-output
-  min-height: 40px
-  line-height: 40px
-
-.swap-balance
-  margin-top: 8px
-
-.swap-details
-  border-top: 1px solid rgba(0, 0, 0, 0.12)
-
-.swap-wallet-panel
-  border-top: 1px solid rgba(0, 0, 0, 0.16)
-  background: #ffffff
-</style>

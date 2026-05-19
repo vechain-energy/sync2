@@ -166,8 +166,6 @@ export default {
         label_slippage: '滑点',
         label_custom_slippage: '自定义滑点',
         label_balance: '余额',
-        label_wallet: '钱包',
-        label_address: '地址',
         label_fee: '手续费',
         label_min_received: '最少获得',
         label_unavailable: '不可用',

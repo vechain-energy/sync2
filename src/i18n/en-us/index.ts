@@ -167,8 +167,6 @@ export default {
         label_slippage: 'Slippage',
         label_custom_slippage: 'Custom slippage',
         label_balance: 'Balance',
-        label_wallet: 'Wallet',
-        label_address: 'Address',
         label_fee: 'Fee',
         label_min_received: 'Min received',
         label_unavailable: 'Unavailable',
