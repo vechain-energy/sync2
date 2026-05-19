@@ -6,8 +6,7 @@
     >
         <q-img
             :src="spec.iconSrc"
-            class="fit"
-            style="border-radius:inherit"
+            class="fit token-avatar-image"
             spinner-size="100%"
         />
     </q-avatar>
@@ -24,5 +23,9 @@ export default Vue.extend({
 .bordered {
     box-sizing: content-box;
     border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.token-avatar-image {
+    border-radius: inherit;
 }
 </style>

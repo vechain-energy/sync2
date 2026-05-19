@@ -1,7 +1,6 @@
 <template>
     <div
         class="fit column no-wrap drawer-panel"
-        style="width: 300px !important;max-width:80vw"
     >
         <!-- drawer content header -->
         <q-toolbar>
@@ -116,3 +115,9 @@ export default Vue.extend({
     }
 })
 </script>
+<style scoped>
+.drawer-panel {
+    width: 300px !important;
+    max-width: 80vw;
+}
+</style>

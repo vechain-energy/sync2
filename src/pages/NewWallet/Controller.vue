@@ -30,8 +30,8 @@
             />
             <div class="col column no-wrap flex-center">
                 <img
+                    class="new-wallet-brand"
                     src="~assets/vechain-logo-tint.svg"
-                    style="min-height:0px;max-height:300px;max-width:100%"
                 >
             </div>
             <div
@@ -278,3 +278,10 @@ export default Vue.extend({
     }
 })
 </script>
+<style scoped>
+.new-wallet-brand {
+    min-height: 0;
+    max-height: 300px;
+    max-width: 100%;
+}
+</style>

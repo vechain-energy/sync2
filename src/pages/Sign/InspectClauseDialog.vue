@@ -21,7 +21,7 @@
                 <q-item>
                     <q-item-section>
                         <q-item-label caption>To</q-item-label>
-                        <q-item-label style="word-break:break-all">
+                        <q-item-label class="break-all">
                             <address-label
                                 :addr="clause.to"
                                 :gid="gid"
@@ -55,8 +55,8 @@
                                     v-if="clause.data && clause.data.length > 2"
                                     dense
                                     class="monospace"
+                                    input-class="clause-data-textarea"
                                     type="textarea"
-                                    :input-style="{height: '146px'}"
                                     standout
                                     readonly
                                     :value="clause.data"
@@ -189,5 +189,13 @@ export default Vue.extend({
     overflow: auto;
     background-color: #0000000d;
     border: 1px dashed #b8b8b8;
+}
+
+.break-all {
+    word-break: break-all;
+}
+
+.clause-data-textarea {
+    height: 146px;
 }
 </style>

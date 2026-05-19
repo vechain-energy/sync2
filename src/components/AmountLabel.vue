@@ -2,7 +2,7 @@
     <span>
         <template v-if="formatted">
             {{formatted.int}}<span
-                style="font-size:80%"
+                class="amount-label-decimal"
                 v-if="formatted.dec"
             >{{`${formatted.sep}${formatted.dec}`}}</span>
         </template>
@@ -37,3 +37,8 @@ export default Vue.extend({
     }
 })
 </script>
+<style scoped>
+.amount-label-decimal {
+    font-size: 80%;
+}
+</style>

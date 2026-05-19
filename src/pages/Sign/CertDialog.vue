@@ -21,8 +21,7 @@
                 >
                     <div class="text-caption text-grey text-right q-px-xs">{{req.domain}}</div>
                     <q-card-section
-                        class="serif"
-                        style="min-height:300px;"
+                        class="certificate-content serif"
                     >
                         {{req.message.payload.content}}
                     </q-card-section>
@@ -141,3 +140,8 @@ export default Common.extend({
     }
 })
 </script>
+<style scoped>
+.certificate-content {
+    min-height: 300px;
+}
+</style>
