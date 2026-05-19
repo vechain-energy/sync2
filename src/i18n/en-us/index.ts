@@ -29,6 +29,7 @@ export default {
         something_wrong: 'Something is wrong',
         no_wallet: 'No wallet created yet',
         invalid_input: 'Invalid input',
+        camera_scan_failed: 'you need to allow camera access or enter the code manually',
 
         // notify
         wallet_updated: 'Wallet updated',

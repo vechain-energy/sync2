@@ -29,6 +29,7 @@ export default {
         something_wrong: '出错了',
         no_wallet: '还未创建钱包',
         invalid_input: '无效输入',
+        camera_scan_failed: '请允许相机访问，或手动输入代码',
 
         // notify
         wallet_updated: '钱包已更新',
