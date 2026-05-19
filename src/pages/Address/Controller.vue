@@ -9,6 +9,8 @@
                 flat
                 round
                 icon="more_horiz"
+                :aria-label="$t('common.more').toString()"
+                :title="$t('common.more').toString()"
             >
                 <pop-sheets :sheets="optionSheets" />
             </q-btn>
@@ -32,6 +34,8 @@
                             flat
                             round
                             icon="control_point_duplicate"
+                            :aria-label="$t('settings.action_token_list').toString()"
+                            :title="$t('settings.action_token_list').toString()"
                         />
                     </q-item-section>
                 </q-item>
@@ -57,6 +61,8 @@
                                 icon="preview"
                                 dense
                                 flat
+                                :aria-label="$t('common.view').toString()"
+                                :title="$t('common.view').toString()"
                                 :to="{
                                     name: 'asset',
                                     params: {
@@ -70,6 +76,8 @@
                                 icon="send"
                                 dense
                                 flat
+                                :aria-label="$t('send.action_send').toString()"
+                                :title="$t('send.action_send').toString()"
                                 :to="{
                                     name: 'send',
                                     query: { wid: walletId, i: addressIndex, symbol: token.symbol }

@@ -16,6 +16,11 @@ export default {
         copy: '复制',
         copied: '已复制到剪贴板',
         close: '关闭',
+        back: '返回',
+        more: '更多',
+        open_link: '打开链接',
+        view_on_explorer: '在浏览器中查看',
+        scan_qr_code: '扫描二维码',
         continue: '继续',
         view: '查看',
 

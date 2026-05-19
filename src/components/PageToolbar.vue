@@ -4,6 +4,8 @@
             flat
             round
             :icon="icon || 'chevron_left'"
+            :aria-label="navButtonLabel"
+            :title="navButtonLabel"
             @click="onClickNavButton()"
         />
         <q-toolbar-title class="text-center">
@@ -36,6 +38,7 @@ export default Vue.extend({
     props: {
         title: String,
         icon: String,
+        navLabel: String,
         gid: String // to check if in dev mode
     },
     data: () => {
@@ -58,6 +61,18 @@ export default Vue.extend({
                 marginLeft: `${this.titleMargin.left}px`,
                 marginRight: `${this.titleMargin.right}px`
             }
+        },
+        navButtonLabel(): string {
+            if (this.navLabel) {
+                return this.navLabel
+            }
+            if (this.icon === 'close') {
+                return this.$t('common.close').toString()
+            }
+            if (this.icon === 'menu') {
+                return this.$t('common.more').toString()
+            }
+            return this.$t('common.back').toString()
         }
     },
     methods: {

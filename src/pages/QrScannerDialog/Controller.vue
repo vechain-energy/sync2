@@ -15,7 +15,11 @@
                 dense
                 round
                 icon="close"
-                text-color="white" @click="hide()" />
+                text-color="white"
+                :aria-label="$t('common.close').toString()"
+                :title="$t('common.close').toString()"
+                @click="hide()"
+            />
             <Scanner
                 class="fit"
                 @input="onScanned"

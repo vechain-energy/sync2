@@ -88,6 +88,8 @@
                             v-if="entry.link"
                             @click="openLink(entry.link)"
                             icon="link"
+                            :aria-label="$t('common.open_link').toString()"
+                            :title="$t('common.open_link').toString()"
                         />
                         <template v-if="entry.type === 'tx' && entry.id">
                             <q-btn
@@ -96,6 +98,8 @@
                                 flat
                                 dense
                                 icon="content_copy"
+                                :aria-label="$t('common.copy').toString()"
+                                :title="$t('common.copy').toString()"
                             />
                             <q-btn
                                 rounded
@@ -103,6 +107,8 @@
                                 dense
                                 flat
                                 icon="search"
+                                :aria-label="$t('common.view_on_explorer').toString()"
+                                :title="$t('common.view_on_explorer').toString()"
                             />
                         </template>
                         <q-btn
@@ -112,6 +118,8 @@
                             rounded
                             dense
                             icon="message"
+                            :aria-label="$t('common.view').toString()"
+                            :title="$t('common.view').toString()"
                         />
                     </div>
                 </q-item-section>

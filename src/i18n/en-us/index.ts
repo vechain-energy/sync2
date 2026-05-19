@@ -16,6 +16,11 @@ export default {
         copy: 'Copy',
         copied: 'Copied to clipboard',
         close: 'Close',
+        back: 'Back',
+        more: 'More',
+        open_link: 'Open link',
+        view_on_explorer: 'View on explorer',
+        scan_qr_code: 'Scan QR code',
         continue: 'Continue',
         view: 'View',
 

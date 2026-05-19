@@ -8,6 +8,7 @@
             <page-toolbar
                 :title="title"
                 icon="menu"
+                :nav-label="$t('index.label_wallets').toString()"
                 :gid="wallet && wallet.gid"
                 @action="drawerOpen=true"
             >
@@ -17,6 +18,8 @@
                     flat
                     round
                     icon="more_horiz"
+                    :aria-label="$t('common.more').toString()"
+                    :title="$t('common.more').toString()"
                 >
                     <option-menu :wallet="wallet" />
                 </q-btn>

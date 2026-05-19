@@ -49,6 +49,8 @@
                             flat
                             dense
                             icon="content_copy"
+                            :aria-label="$t('common.copy').toString()"
+                            :title="$t('common.copy').toString()"
                         />
                         <q-btn
                             rounded
@@ -56,6 +58,8 @@
                             dense
                             flat
                             icon="search"
+                            :aria-label="$t('common.view_on_explorer').toString()"
+                            :title="$t('common.view_on_explorer').toString()"
                         />
                     </div>
                 </q-item-section>
