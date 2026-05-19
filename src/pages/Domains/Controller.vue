@@ -43,13 +43,26 @@
                 emit-value
                 map-options
                 :disable="!!commitment"
+                v-model="selectedWalletId"
+                :options="walletOptions"
+                :label="$t('domains.label_wallet')"
+                :error="!!errors.wallet"
+                :error-message="errors.wallet"
+                no-error-icon
+                @input="onWalletChanged"
+            />
+            <q-select
+                outlined
+                emit-value
+                map-options
+                :disable="!!commitment || !selectedWallet"
                 v-model="selectedAddress"
                 :options="addressOptions"
                 :label="$t('domains.label_owner')"
                 :error="!!errors.owner"
                 :error-message="errors.owner"
                 no-error-icon
-                @input="onInputChanged"
+                @input="onOwnerChanged"
             />
             <q-checkbox
                 v-model="setAsPrimary"
@@ -166,12 +179,16 @@ import {
     vetDomainValidABI,
     yearsToDuration
 } from 'src/utils/vet-domain-registration'
+import {
+    VetDomainAddressOption,
+    VetDomainWalletOption,
+    buildVetDomainAddressOptions,
+    buildVetDomainWalletOptions,
+    findVetDomainWallet,
+    resolveVetDomainAddress
+} from 'src/utils/vet-domain-wallet-selection'
 
-type AddressOption = {
-    label: string
-    value: string
-    walletId: number
-}
+const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
 
 type CommitState = {
     commitment: string
@@ -185,6 +202,7 @@ type CommitState = {
 type DomainErrors = {
     name: string
     years: string
+    wallet: string
     owner: string
 }
 
@@ -192,6 +210,7 @@ type DomainData = {
     inputName: string
     years: number
     setAsPrimary: boolean
+    selectedWalletId: number
     selectedAddress: string
     wallets: M.Wallet[]
     info: VetDomainRegistrationInfo | null
@@ -214,12 +233,14 @@ export default Vue.extend({
             inputName: '',
             years: 1,
             setAsPrimary: true,
+            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0', 10),
             selectedAddress: '',
             wallets: [] as M.Wallet[],
             info: null as null | VetDomainRegistrationInfo,
             errors: {
                 name: '',
                 years: '',
+                wallet: '',
                 owner: ''
             },
             checking: false,
@@ -234,26 +255,20 @@ export default Vue.extend({
         }
     },
     computed: {
-        addressOptions(): AddressOption[] {
-            return this.wallets.reduce<AddressOption[]>((items, wallet) => {
-                return items.concat(wallet.meta.addresses.map((addr, index) => {
-                    return {
-                        label: `${wallet.meta.name} #${index + 1} - ${addr.slice(0, 10)}...${addr.slice(-8)}`,
-                        value: addr,
-                        walletId: wallet.id
-                    }
-                }))
-            }, [])
+        walletOptions(): VetDomainWalletOption[] {
+            return buildVetDomainWalletOptions(this.wallets)
+        },
+        addressOptions(): VetDomainAddressOption[] {
+            return buildVetDomainAddressOptions(this.selectedWallet)
         },
         selectedWallet(): M.Wallet | null {
-            return this.wallets.find(wallet => wallet.meta.addresses.includes(this.selectedAddress)) || this.wallets[0] || null
+            return findVetDomainWallet(this.wallets, this.selectedWalletId)
         },
         normalizedName(): string {
             return normalizeRegistrationName(this.inputName)
         },
         contracts(): VetDomainContracts | null {
-            const wallet = this.wallets.find(item => item.meta.addresses.includes(this.selectedAddress)) || this.wallets[0] || null
-            return wallet ? getVetDomainContracts(wallet.gid) : null
+            return this.selectedWallet ? getVetDomainContracts(this.selectedWallet.gid) : null
         },
         price(): string {
             return this.info ? sumVetDomainPrice(this.info.price) : '0'
@@ -291,9 +306,11 @@ export default Vue.extend({
         }
     },
     watch: {
-        addressOptions(options: AddressOption[]) {
-            if (!this.selectedAddress && options.length > 0) {
-                this.selectedAddress = options[0].value
+        walletOptions(options: VetDomainWalletOption[]) {
+            if (options.length > 0 && !options.find(option => option.value === this.selectedWalletId)) {
+                this.selectedWalletId = options[0].value
+                localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
+                this.ensureSelectedAddress()
                 this.scheduleCheck()
             }
         }
@@ -303,6 +320,7 @@ export default Vue.extend({
             this.now = Date.now()
         }, 1000)
         this.wallets = await this.$svc.wallet.all()
+        this.ensureSelectedWallet()
         this.ensureSelectedAddress()
         this.scheduleCheck()
     },
@@ -311,10 +329,26 @@ export default Vue.extend({
         window.clearTimeout(this.lookupTimer)
     },
     methods: {
-        ensureSelectedAddress() {
-            if (!this.selectedAddress && this.addressOptions.length > 0) {
-                this.selectedAddress = this.addressOptions[0].value
+        ensureSelectedWallet() {
+            if (this.walletOptions.length > 0 && !this.walletOptions.find(option => option.value === this.selectedWalletId)) {
+                this.selectedWalletId = this.walletOptions[0].value
+                localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
             }
+        },
+        ensureSelectedAddress() {
+            this.selectedAddress = resolveVetDomainAddress(this.selectedWallet, this.selectedAddress)
+        },
+        onWalletChanged() {
+            localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
+            this.selectedAddress = ''
+            this.ensureSelectedAddress()
+            this.onInputChanged()
+        },
+        onOwnerChanged() {
+            if (this.selectedWallet) {
+                this.selectedAddress = resolveVetDomainAddress(this.selectedWallet, this.selectedAddress)
+            }
+            this.onInputChanged()
         },
         scheduleCheck() {
             window.clearTimeout(this.lookupTimer)
@@ -332,6 +366,7 @@ export default Vue.extend({
             this.statusClass = ''
             this.errors.name = ''
             this.errors.years = ''
+            this.errors.wallet = ''
             this.errors.owner = ''
             this.scheduleCheck()
         },
@@ -341,6 +376,7 @@ export default Vue.extend({
         validateInputs(): boolean {
             this.errors.name = ''
             this.errors.years = ''
+            this.errors.wallet = ''
             this.errors.owner = ''
 
             if (!isBasicRegistrationName(this.inputName)) {
@@ -349,12 +385,14 @@ export default Vue.extend({
             if (!Number.isInteger(Number(this.years)) || Number(this.years) < 1) {
                 this.errors.years = this.$t('domains.msg_invalid_years').toString()
             }
-            if (!this.selectedWallet || !this.selectedAddress) {
+            if (!this.selectedWallet) {
+                this.errors.wallet = this.$t('domains.msg_select_wallet').toString()
+            } else if (!this.selectedAddress) {
                 this.errors.owner = this.$t('domains.msg_select_owner').toString()
             } else if (!this.contracts) {
                 this.errors.owner = this.$t('domains.msg_network_unsupported').toString()
             }
-            return !this.errors.name && !this.errors.years && !this.errors.owner
+            return !this.errors.name && !this.errors.years && !this.errors.wallet && !this.errors.owner
         },
         async onCheck() {
             window.clearTimeout(this.lookupTimer)
