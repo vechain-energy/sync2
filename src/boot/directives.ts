@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { boot } from 'quasar/wrappers'
+import { VueConstructor } from 'vue'
+
+type BootParams = {
+    Vue: VueConstructor
+}
 import { debounce } from 'quasar'
 
 const directives: Record<string, Vue.DirectiveOptions> = {
@@ -76,7 +81,7 @@ const directives: Record<string, Vue.DirectiveOptions> = {
     }
 }
 
-export default boot(({ Vue }) => {
+export default boot(({ Vue }: BootParams) => {
     Object.entries(directives).forEach(([name, definition]) => {
         Vue.directive(name, definition)
     })

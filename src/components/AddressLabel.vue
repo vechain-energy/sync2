@@ -10,6 +10,10 @@
 import Vue from 'vue'
 import { address } from 'thor-devkit'
 
+type AsyncComputedState = Vue & {
+    resolvedName: string
+}
+
 export default Vue.extend({
     props: {
         addr: String,
@@ -34,14 +38,17 @@ export default Vue.extend({
                 return ''
             }
             const checksumed = address.toChecksumed(this.addr)
-            if (this.resolvedName) {
-                return this.full ? `${this.resolvedName} (${checksumed})` : this.resolvedName
+            const { resolvedName } = this as unknown as AsyncComputedState
+            if (resolvedName) {
+                return this.full ? `${resolvedName} (${checksumed})` : resolvedName
             }
             return this.full ? checksumed : checksumed.slice(0, 6) + '⋯' + checksumed.slice(-6)
         }
     },
     methods: {
-        test: address.test
+        test(value: string): boolean {
+            return address.test(value)
+        }
     }
 })
 </script>

@@ -147,6 +147,20 @@ module.exports = configure(function (ctx) {
       // preloadChunks: false,
       // extractCSS: false,
 
+      sassLoaderOptions: {
+        implementation: require('sass'),
+        sassOptions: {
+          indentedSyntax: true,
+          outputStyle: 'expanded'
+        }
+      },
+      scssLoaderOptions: {
+        implementation: require('sass'),
+        sassOptions: {
+          outputStyle: 'expanded'
+        }
+      },
+
       modern: true,
 
       // https://quasar.dev/quasar-cli/cli-documentation/handling-webpack
@@ -154,7 +168,24 @@ module.exports = configure(function (ctx) {
         cfg.resolve.alias = {
           ...cfg.resolve.alias,
           core: path.resolve(__dirname, './src/core'),
+          'thor-devkit$': path.resolve(__dirname, './node_modules/thor-devkit/dist/index.js'),
+          '@noble/curves/secp256k1$': path.resolve(__dirname, './node_modules/@noble/curves/esm/secp256k1.js')
         }
+
+        cfg.module.rules.push({
+          test: /\.js$/,
+          include: [
+            path.resolve(__dirname, './node_modules/ethers'),
+            path.resolve(__dirname, './node_modules/@noble/curves/esm')
+          ],
+          use: {
+            loader: 'babel-loader',
+            options: {
+              compact: false,
+              extends: path.resolve(__dirname, './babel.config.js')
+            }
+          }
+        })
 
         if(cfg.target === 'electron-renderer') {
           cfg.externals = cfg.externals || {}

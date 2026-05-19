@@ -2,12 +2,12 @@ import * as V from 'validator-ts'
 
 type TxPayload = {
     message: Connex.Vendor.TxMessage
-    options: Connex.Driver.TxOptions
+    options: Connex.Signer.TxOptions
 }
 
 type CertPayload = {
     message: Connex.Vendor.CertMessage
-    options: Connex.Driver.CertOptions
+    options: Connex.Signer.CertOptions
 }
 
 /** request relayed by TOS */
@@ -31,12 +31,12 @@ export namespace RelayedRequest {
     }
     // TODO strict scheme
     const txPayloadScheme: V.Scheme<TxPayload> = {
-        message: v => v instanceof Object ? '' : 'message requires object type',
-        options: v => v instanceof Object ? '' : 'options requires object type'
+        message: (v: unknown) => v instanceof Object ? '' : 'message requires object type',
+        options: (v: unknown) => v instanceof Object ? '' : 'options requires object type'
     }
     const certPayloadScheme: V.Scheme<CertPayload> = {
-        message: v => v instanceof Object ? '' : 'message requires object type',
-        options: v => v instanceof Object ? '' : 'options requires object type'
+        message: (v: unknown) => v instanceof Object ? '' : 'message requires object type',
+        options: (v: unknown) => v instanceof Object ? '' : 'options requires object type'
     }
 
     export function validate(obj: RelayedRequest) {

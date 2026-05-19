@@ -9,6 +9,7 @@ Compared to Sync v1, the most significant change is that the built-in dApp brows
 ## Wallet Features
 
 - `.vet` and `.vet.domains` names can be entered as recipients and displayed for known addresses.
+- Transactions use VeChain dynamic fee fields on Galactica-compatible nodes.
 
 ## Supported Platforms
 
@@ -56,6 +57,11 @@ npm install
 ### Lint the files
 ```bash
 npm run lint
+```
+
+### Run tests
+```bash
+npm test
 ```
 
 ### Build the app for production

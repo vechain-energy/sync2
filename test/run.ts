@@ -24,6 +24,8 @@ globalScope.it = (name: string, run: () => void | Promise<void>) => {
 
 async function main() {
     await import('./vet-domains.spec')
+    await import('./fee-market.spec')
+    await import('./config-nodes.spec')
 
     for (const test of tests) {
         try {

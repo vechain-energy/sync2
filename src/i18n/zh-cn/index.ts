@@ -198,6 +198,7 @@ export default {
         // sign tx/cert
         label_select_priority: '优先级',
         label_estimate_fee: '预估手续费',
+        label_max_fee: '最大手续费',
         label_priority_regular: '普通',
         label_priority_medium: '中',
         label_priority_high: '高',

@@ -1,10 +1,15 @@
 import { boot } from 'quasar/wrappers'
+import { VueConstructor } from 'vue'
 import { Storage } from 'core/storage'
 import * as Blockchain from './blockchain'
 import * as Config from './config'
 import * as Wallet from './wallet'
 import * as Activity from './activity'
 import { groupBy } from 'src/utils/array'
+
+type BootParams = {
+    Vue: VueConstructor
+}
 
 type Service = {
     bc: ReturnType<typeof Blockchain.build>
@@ -19,7 +24,7 @@ declare module 'vue/types/vue' {
     }
 }
 
-export default boot(async ({ Vue }) => {
+export default boot(async ({ Vue }: BootParams) => {
     const storage = await Storage.init()
 
     const config = Config.build(storage)
