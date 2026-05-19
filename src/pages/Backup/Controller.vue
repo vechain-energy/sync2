@@ -49,7 +49,7 @@ export default Vue.extend({
             }
         },
         async onStart() {
-            const wallet = await this.$svc.wallet.get(parseInt(this.walletId))
+            const wallet = await this.$svc.wallet.get(parseInt(this.walletId, 10))
             if (!wallet) {
                 this.$q.notify(this.$t('backup.msg_wallet_not_found'))
                 this.$backOrHome()

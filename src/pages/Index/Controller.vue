@@ -89,7 +89,7 @@ export default Vue.extend({
     data: () => {
         return {
             drawerOpen: false,
-            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0')
+            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0', 10)
         }
     },
     computed: {

@@ -90,7 +90,7 @@ export default Vue.extend({
     },
     asyncComputed: {
         wallet(): Promise<M.Wallet | null> {
-            return this.$svc.wallet.get(parseInt(this.walletId))
+            return this.$svc.wallet.get(parseInt(this.walletId, 10))
         },
         token: {
             async get(): Promise<M.TokenSpec | null> {
@@ -112,7 +112,7 @@ export default Vue.extend({
     },
     computed: {
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
+            return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex, 10)] : ''
         }
     }
 })

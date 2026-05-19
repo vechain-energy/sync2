@@ -147,7 +147,7 @@ export default Vue.extend({
 
             const headNum = this.thor.status.head.number
             const savedRange = localStorage.getItem(key)
-            const rangeStart = Math.max(parseInt(savedRange!) || headNum, headNum - 8640) // span no longer than a day
+            const rangeStart = Math.max(parseInt(savedRange!, 10) || headNum, headNum - 8640) // span no longer than a day
             if (rangeStart === 0) {
                 return []
             }
