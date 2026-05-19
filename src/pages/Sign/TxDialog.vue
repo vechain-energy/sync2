@@ -18,7 +18,7 @@
                 innerClass="q-gutter-y-sm"
             >
                 <clause-card
-                    v-for="(c, i) in req.message"
+                    v-for="(c, i) in displayMessage"
                     :key="i"
                     :index="i"
                     :clause="c"
@@ -41,11 +41,123 @@
                         @click="showWarnings()"
                     />
 
-                    <gas-fee-bar :fee="fee" :maxFee="maxFee" :isDelegation="isDelegation">
-                        <priority-selector
-                            v-model="feePriority"
-                            :calcFee="calcFee"
-                        />
+                    <gas-fee-bar
+                        :fee="displayFee"
+                        :maxFee="displayMaxFee"
+                        :isDelegation="isDappDelegation"
+                        :feeToken="feeToken"
+                        :caption="feeCaption"
+                    >
+                        <div class="row no-wrap items-center q-gutter-x-sm">
+                            <q-btn
+                                v-if="showGenericFeeOptions"
+                                class="fee-token-btn"
+                                size="sm"
+                                color="secondary"
+                                outline
+                                rounded
+                                :loading="$asyncComputed.genericDelegatorEstimates.updating && isGenericFeeMode"
+                            >
+                                <div class="fee-token-btn-content">
+                                    <token-avatar
+                                        v-if="feeToken"
+                                        :spec="feeToken"
+                                        size="20px"
+                                    />
+                                    <q-icon
+                                        v-else
+                                        name="local_gas_station"
+                                        size="20px"
+                                    />
+                                    <span>{{feeModeLabel}}</span>
+                                </div>
+                                <q-popup-proxy position="bottom">
+                                    <q-card>
+                                        <q-list
+                                            padding
+                                            dense
+                                        >
+                                            <q-item-label header>
+                                                {{$t('sign.label_fee_token')}}
+                                            </q-item-label>
+                                            <q-item
+                                                clickable
+                                                v-close-popup
+                                                :active="feeMode === standardFeeMode"
+                                                @click="selectFeeMode(standardFeeMode)"
+                                            >
+                                                <q-item-section avatar>
+                                                    <token-avatar
+                                                        v-if="vthoToken"
+                                                        :spec="vthoToken"
+                                                        size="sm"
+                                                    />
+                                                </q-item-section>
+                                                <q-item-section>
+                                                    <q-item-label>{{$t('sign.label_fee_token_standard')}}</q-item-label>
+                                                    <q-item-label caption>VTHO</q-item-label>
+                                                </q-item-section>
+                                                <q-item-section side>
+                                                    <q-item-label>
+                                                        <amount-label
+                                                            v-if="fee"
+                                                            :value="fee"
+                                                            :decimals="18"
+                                                        />
+                                                        <q-spinner-dots
+                                                            v-else
+                                                            color="primary"
+                                                        />
+                                                    </q-item-label>
+                                                </q-item-section>
+                                            </q-item>
+                                            <q-separator />
+                                            <q-item
+                                                v-for="option in genericFeeOptions"
+                                                :key="option.token"
+                                                clickable
+                                                v-close-popup
+                                                :active="feeMode === option.mode"
+                                                @click="selectFeeMode(option.mode)"
+                                            >
+                                                <q-item-section avatar>
+                                                    <token-avatar
+                                                        :spec="option.tokenSpec"
+                                                        size="sm"
+                                                    />
+                                                </q-item-section>
+                                                <q-item-section>
+                                                    <q-item-label>{{option.token}}</q-item-label>
+                                                    <q-item-label caption>{{option.status}}</q-item-label>
+                                                </q-item-section>
+                                                <q-item-section side>
+                                                    <q-item-label>
+                                                        <amount-label
+                                                            v-if="option.estimate"
+                                                            :value="option.estimate.amountWei"
+                                                            :decimals="option.tokenSpec.decimals"
+                                                        />
+                                                        <q-spinner-dots
+                                                            v-else-if="$asyncComputed.genericDelegatorEstimates.updating"
+                                                            color="primary"
+                                                        />
+                                                        <q-icon
+                                                            v-else
+                                                            name="error_outline"
+                                                            color="negative"
+                                                        />
+                                                    </q-item-label>
+                                                </q-item-section>
+                                            </q-item>
+                                        </q-list>
+                                    </q-card>
+                                </q-popup-proxy>
+                            </q-btn>
+                            <priority-selector
+                                v-model="feePriority"
+                                :calcFee="calcFee"
+                            />
+                        </div>
                     </gas-fee-bar>
                     <signer-selector
                         :signer="signer"
@@ -70,6 +182,7 @@
                     :label="signActionLabel"
                     @click="onClickSign()"
                     :loading="thor.status.head.number === 0"
+                    :disable="signActionDisabled"
                 />
             </page-action>
         </q-card>
@@ -86,6 +199,8 @@ import { estimateGas, EstimateGasResult, decodeAsTokenTransferClause } from './h
 import PrioritySelector from './PrioritySelector.vue'
 import GasFeeBar from './GasFeeBar.vue'
 import ClauseCard from './ClauseCard'
+import TokenAvatar from 'src/components/TokenAvatar.vue'
+import AmountLabel from 'src/components/AmountLabel.vue'
 import { Transaction } from 'thor-devkit'
 import { BigNumber } from 'bignumber.js'
 import { randomBytes } from 'crypto'
@@ -100,23 +215,68 @@ import {
     calcMaxFeePerGas,
     calcPriorityFeePerGas
 } from './fee-market'
+import {
+    GENERIC_GAS_TOKENS,
+    GenericDelegatorEstimate,
+    GenericDelegatorEstimateMap,
+    GenericFeeMode,
+    GenericGasToken,
+    GenericGasTokenBalanceMap,
+    STANDARD_FEE_MODE,
+    buildGenericDelegatorPaymentClause,
+    calcGenericGasTokenRequiredBalance,
+    genericDelegatorDepositUrl,
+    genericDelegatorEstimateUrl,
+    genericDelegatorSignUrl,
+    genericFeeModeFor,
+    genericGasTokenFromFeeMode,
+    getGenericDelegatorUrl,
+    getGenericGasTokenSpec,
+    parseGenericDelegatorDepositAccount,
+    parseGenericDelegatorEstimate,
+    parseGenericDelegatorSignature,
+    shouldShowGenericFeeOptions,
+    speedFromFeePriority
+} from './generic-delegator'
+
+type GenericFeeOption = {
+    token: GenericGasToken
+    mode: GenericFeeMode
+    tokenSpec: M.TokenSpec
+    estimate: GenericDelegatorEstimate | null
+    status: string
+}
 
 type AsyncComputedState = {
     $asyncComputed: {
         delayedEstimation: {
             exception?: Error
+        },
+        genericDelegatorEstimates: {
+            updating: boolean
+            exception?: Error
+        },
+        genericDelegatorDepositAccount: {
+            updating: boolean
+            exception?: Error
         }
     }
 }
 
+type TxDialogState = Vue & {
+    feePriority: number
+    feeMode: GenericFeeMode
+}
+
 export default Common.extend({
-    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip },
+    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, TokenAvatar, AmountLabel },
     props: {
         req: Object as () => M.TxRequest
     },
-    data() {
+    data(): { feePriority: number; feeMode: GenericFeeMode } {
         return {
-            feePriority: FeePriority.Regular
+            feePriority: FeePriority.Regular,
+            feeMode: STANDARD_FEE_MODE
         }
     },
     computed: {
@@ -132,7 +292,8 @@ export default Common.extend({
         },
         priorityFeePerGas(): BigNumber | null {
             const est = this.estimation
-            return est ? calcPriorityFeePerGas(est.feeMarket.priorityFee, this.feePriority) : null
+            const vm = this as unknown as TxDialogState
+            return est ? calcPriorityFeePerGas(est.feeMarket.priorityFee, vm.feePriority) : null
         },
         maxFeePerGas(): BigNumber | null {
             const est = this.estimation
@@ -140,12 +301,126 @@ export default Common.extend({
             return est && priorityFeePerGas ? calcMaxFeePerGas(est.feeMarket.baseFeePerGas, priorityFeePerGas) : null
         },
         fee(): string | null {
-            return this.calcFee ? this.calcFee(this.feePriority) : null
+            const vm = this as unknown as TxDialogState
+            return this.calcFee ? this.calcFee(vm.feePriority) : null
         },
         maxFee(): string | null {
             const est = this.estimation
             const maxFeePerGas = this.maxFeePerGas
             return est && maxFeePerGas ? calcMaxFee(est.gas, maxFeePerGas).toString() : null
+        },
+        standardFeeMode(): GenericFeeMode {
+            return STANDARD_FEE_MODE
+        },
+        genericDelegatorUrl(): string | null {
+            return getGenericDelegatorUrl(this.gid)
+        },
+        showGenericFeeOptions(): boolean {
+            return shouldShowGenericFeeOptions(this.gid, this.isDappDelegation)
+        },
+        selectedGenericGasToken(): GenericGasToken | null {
+            const vm = this as unknown as TxDialogState
+            return genericGasTokenFromFeeMode(vm.feeMode)
+        },
+        isGenericFeeMode(): boolean {
+            return !!this.selectedGenericGasToken
+        },
+        genericFeeSpeed() {
+            const vm = this as unknown as TxDialogState
+            return speedFromFeePriority(vm.feePriority)
+        },
+        genericDelegatorEstimate(): GenericDelegatorEstimate | null {
+            const token = this.selectedGenericGasToken
+            return token ? (this.genericDelegatorEstimates[token] || null) : null
+        },
+        selectedGenericTokenSpec(): M.TokenSpec | null {
+            const token = this.selectedGenericGasToken
+            return token ? getGenericGasTokenSpec(this.gid, this.tokens, token) : null
+        },
+        genericDelegatorPaymentClause(): Connex.Vendor.TxMessage[0] | null {
+            const token = this.selectedGenericGasToken
+            const tokenSpec = this.selectedGenericTokenSpec
+            const estimate = this.genericDelegatorEstimate
+            const depositAccount = this.genericDelegatorDepositAccount
+            if (!token || !tokenSpec || !estimate || !depositAccount) {
+                return null
+            }
+            return buildGenericDelegatorPaymentClause(token, tokenSpec, depositAccount, estimate.amountWei)
+        },
+        displayMessage(): Connex.Vendor.TxMessage {
+            const paymentClause = this.genericDelegatorPaymentClause
+            return paymentClause ? [...this.req.message, paymentClause] : this.req.message
+        },
+        vthoToken(): M.TokenSpec | null {
+            return getGenericGasTokenSpec(this.gid, this.tokens, 'VTHO')
+        },
+        feeToken(): M.TokenSpec | null {
+            return this.selectedGenericTokenSpec || this.vthoToken
+        },
+        displayFee(): string | null {
+            if (this.isGenericFeeMode) {
+                return this.genericDelegatorEstimate ? this.genericDelegatorEstimate.amountWei : null
+            }
+            return this.fee
+        },
+        displayMaxFee(): string | null {
+            return this.isGenericFeeMode ? null : this.maxFee
+        },
+        feeCaption(): string {
+            return this.isGenericFeeMode ? this.$t('sign.msg_generic_delegation').toString() : ''
+        },
+        feeModeLabel(): string {
+            return this.selectedGenericGasToken || 'VTHO'
+        },
+        genericFeeWarning(): Error | null {
+            const token = this.selectedGenericGasToken
+            const tokenSpec = this.selectedGenericTokenSpec
+            const estimate = this.genericDelegatorEstimate
+            if (!token || !tokenSpec || !estimate) {
+                return null
+            }
+            const balance = this.genericGasTokenBalances[token]
+            if (!balance) {
+                return null
+            }
+            const required = calcGenericGasTokenRequiredBalance(this.req.message, token, tokenSpec, estimate.amountWei)
+            if (new BigNumber(balance).isLessThan(required)) {
+                return {
+                    name: this.$t('sign.label_insufficient_fee_token').toString(),
+                    message: this.$t('sign.msg_insufficient_fee_token', { token }).toString()
+                }
+            }
+            return null
+        },
+        genericFeeOptions(): GenericFeeOption[] {
+            return GENERIC_GAS_TOKENS.reduce((items: GenericFeeOption[], token) => {
+                const tokenSpec = getGenericGasTokenSpec(this.gid, this.tokens, token)
+                if (!tokenSpec) {
+                    return items
+                }
+                const estimate = this.genericDelegatorEstimates[token] || null
+                const balance = this.genericGasTokenBalances[token]
+                let status = this.$t('sign.msg_generic_fee_unavailable').toString()
+                if (estimate && balance) {
+                    const required = calcGenericGasTokenRequiredBalance(this.req.message, token, tokenSpec, estimate.amountWei)
+                    status = new BigNumber(balance).isLessThan(required)
+                        ? this.$t('sign.msg_generic_fee_balance_low').toString()
+                        : this.$t('sign.msg_generic_fee_balance_ok').toString()
+                } else if (estimate) {
+                    status = this.$t('sign.msg_generic_delegation').toString()
+                }
+                items.push({
+                    token,
+                    mode: genericFeeModeFor(token),
+                    tokenSpec,
+                    estimate,
+                    status
+                })
+                return items
+            }, [])
+        },
+        signActionDisabled(): boolean {
+            return this.isGenericFeeMode && (!this.genericDelegatorEstimate || !this.genericDelegatorDepositAccount || !this.selectedGenericTokenSpec)
         },
         criticalError(): Error | null {
             if (!this.wallet) {
@@ -153,13 +428,20 @@ export default Common.extend({
             }
             // test vip191 feature bit when delegator set
             const head = this.thor.status.head
-            if (head.number > 0 && this.req.options.delegator && !((head.txsFeatures || 0) & 1)) {
+            if (head.number > 0 && this.isDelegation && !((head.txsFeatures || 0) & 1)) {
                 return { name: this.$t('sign.label_critical_error').toString(), message: this.$t('sign.msg_vip191_not_supported').toString() }
             }
             const vm = this as unknown as AsyncComputedState
             const estimationException = vm.$asyncComputed.delayedEstimation.exception
             if (head.number > 0 && estimationException) {
                 return { name: this.$t('sign.label_critical_error').toString(), message: estimationException.message }
+            }
+            if (this.isGenericFeeMode && !vm.$asyncComputed.genericDelegatorEstimates.updating && !this.genericDelegatorEstimate) {
+                return { name: this.$t('sign.label_critical_error').toString(), message: this.$t('sign.msg_generic_fee_unavailable').toString() }
+            }
+            const depositException = vm.$asyncComputed.genericDelegatorDepositAccount.exception
+            if (this.isGenericFeeMode && head.number > 0 && depositException) {
+                return { name: this.$t('sign.label_critical_error').toString(), message: depositException.message }
             }
             return null
         },
@@ -175,9 +457,13 @@ export default Common.extend({
                 }
             }
             this.energyWarning && ret.push(this.energyWarning)
+            this.genericFeeWarning && ret.push(this.genericFeeWarning)
             return ret
         },
         isDelegation(): boolean {
+            return this.isDappDelegation || this.isGenericFeeMode
+        },
+        isDappDelegation(): boolean {
             return !!this.req.options.delegator
         },
         signActionLabel(): string {
@@ -199,8 +485,8 @@ export default Common.extend({
             }
             return estimateGas(
                 this.thor,
-                this.req.message,
-                this.req.options.gas || 0,
+                this.displayMessage,
+                this.isGenericFeeMode ? (this.genericDelegatorEstimate ? this.genericDelegatorEstimate.gas : 0) : (this.req.options.gas || 0),
                 this.signer,
                 this.req.options.delegator && this.req.options.delegator.signer)
         },
@@ -211,10 +497,76 @@ export default Common.extend({
             },
             default: []
         },
+        genericDelegatorDepositAccount: {
+            async get(): Promise<string> {
+                const url = this.genericDelegatorUrl
+                if (!this.showGenericFeeOptions || !url) {
+                    return ''
+                }
+                const resp = await this.$axios.get(genericDelegatorDepositUrl(url))
+                return parseGenericDelegatorDepositAccount(resp.data)
+            },
+            default: ''
+        },
+        genericDelegatorEstimates: {
+            async get(): Promise<GenericDelegatorEstimateMap> {
+                const url = this.genericDelegatorUrl
+                if (!this.showGenericFeeOptions || !url || !this.signer) {
+                    return {}
+                }
+                const entries = await Promise.all(GENERIC_GAS_TOKENS.map(async token => {
+                    try {
+                        const resp = await this.$axios.post(
+                            genericDelegatorEstimateUrl(url, token, this.genericFeeSpeed),
+                            {
+                                clauses: this.req.message,
+                                signer: this.signer
+                            },
+                            { headers: { 'content-type': 'application/json' } }
+                        )
+                        return parseGenericDelegatorEstimate(resp.data, token, this.genericFeeSpeed)
+                    } catch (err) {
+                        console.warn(`Generic Delegator ${token} estimate failed`, err)
+                        return null
+                    }
+                }))
+                return entries.reduce((result: GenericDelegatorEstimateMap, entry) => {
+                    if (entry) {
+                        result[entry.token] = entry
+                    }
+                    return result
+                }, {})
+            },
+            default: {}
+        },
+        genericGasTokenBalances: {
+            async get(): Promise<GenericGasTokenBalanceMap> {
+                if (!this.showGenericFeeOptions || !this.signer) {
+                    return {}
+                }
+                const entries = await Promise.all(GENERIC_GAS_TOKENS.map(async token => {
+                    const tokenSpec = getGenericGasTokenSpec(this.gid, this.tokens, token)
+                    if (!tokenSpec) {
+                        return null
+                    }
+                    return {
+                        token,
+                        balance: await this.$svc.bc(this.gid).balanceOf(this.signer, tokenSpec)
+                    }
+                }))
+                return entries.reduce((result: GenericGasTokenBalanceMap, entry) => {
+                    if (entry) {
+                        result[entry.token] = entry.balance
+                    }
+                    return result
+                }, {})
+            },
+            default: {}
+        },
         async energyWarning(): Promise<Error | null> {
             const est = this.estimation
             const fee = this.maxFee
-            if (!est || !fee || (this.req.options.delegator && !this.req.options.delegator.signer)) {
+            if (this.isGenericFeeMode || !est || !fee || (this.req.options.delegator && !this.req.options.delegator.signer)) {
                 return null
             }
             const signer = this.signer
@@ -241,6 +593,14 @@ export default Common.extend({
             return null
         }
     },
+    watch: {
+        showGenericFeeOptions(show: boolean) {
+            if (!show) {
+                const vm = this as unknown as TxDialogState
+                vm.feeMode = STANDARD_FEE_MODE
+            }
+        }
+    },
     methods: {
         // method is REQUIRED by $q.dialog
         show() { (this.$refs.dialog as QDialog).show() },
@@ -259,14 +619,28 @@ export default Common.extend({
                 noAction: true
             })
         },
+        selectFeeMode(mode: GenericFeeMode) {
+            const vm = this as unknown as TxDialogState
+            vm.feeMode = mode
+        },
         async onClickSign() {
             const est = this.estimation
             const wallet = this.wallet
             const signer = this.signer
             const priorityFeePerGas = this.priorityFeePerGas
             const maxFeePerGas = this.maxFeePerGas
+            const genericToken = this.selectedGenericGasToken
+            const genericEstimate = this.genericDelegatorEstimate
+            const genericUrl = this.genericDelegatorUrl
 
             if (!est || !wallet || !priorityFeePerGas || !maxFeePerGas) {
+                return
+            }
+            if (genericToken && (!genericEstimate || !genericUrl || !this.genericDelegatorPaymentClause)) {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('sign.msg_generic_fee_unavailable').toString()
+                })
                 return
             }
 
@@ -286,7 +660,7 @@ export default Common.extend({
                 const txBody = buildDynamicFeeTxBody(
                     this.thor.genesis.id,
                     this.thor.status.head.id,
-                    this.req.message,
+                    this.displayMessage,
                     est.gas,
                     priorityFeePerGas,
                     maxFeePerGas,
@@ -312,12 +686,38 @@ export default Common.extend({
                             // rethrow to end the process
                             throw err
                         }
+                    } else if (genericToken) {
+                        tx = new Transaction({ ...txBody, reserved: { features: Transaction.DELEGATED_MASK } })
                     } else {
                         tx = new Transaction(txBody)
                     }
                     return tx
                 })
             })
+
+            if (genericToken && genericUrl) {
+                tx.signature = originSig
+                try {
+                    delegatorSig = await this.$loading(async () => {
+                        const resp = await this.$axios.post(
+                            genericDelegatorSignUrl(genericUrl, genericToken),
+                            {
+                                raw: '0x' + tx.encode().toString('hex'),
+                                origin: signer,
+                                token: genericToken.toLowerCase()
+                            },
+                            { headers: { 'content-type': 'application/json' } }
+                        )
+                        return parseGenericDelegatorSignature(resp.data)
+                    })
+                } catch (err) {
+                    this.$q.notify({
+                        type: 'negative',
+                        message: this.$t('sign.msg_generic_delegation_failed').toString()
+                    })
+                    throw err
+                }
+            }
 
             tx.signature = delegatorSig ? Buffer.concat([originSig, delegatorSig]) : originSig
 
@@ -358,3 +758,15 @@ export default Common.extend({
     }
 })
 </script>
+<style scoped>
+.fee-token-btn {
+    min-width: 104px;
+}
+
+.fee-token-btn-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+</style>
