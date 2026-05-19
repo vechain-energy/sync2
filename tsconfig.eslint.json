@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "*.js",
+    "build/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src-electron/**/*.d.ts",
+    "src-electron/**/*.ts",
+    "src-pwa/**/*.d.ts",
+    "src-pwa/**/*.js",
+    "test/**/*.d.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    ".quasar",
+    "node_modules",
+    "src-cordova/www",
+    "src-cordova/platforms"
+  ]
+}
