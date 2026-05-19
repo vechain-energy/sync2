@@ -13,7 +13,7 @@ Compared to Sync v1, the most significant change is that the built-in dApp brows
 - Swap: the Swap menu quotes active mainnet tokens through VeTrade.vet and BetterSwap.io, shows route, slippage, minimum received, and fee, then uses the normal signing dialog for the selected wallet.
 - Primary name: registration can also set the new name as the owner's primary name. Wallet lists refresh the primary name immediately after the transaction is signed.
 - VNS profile: addresses with a primary `.vet` name can edit avatar, display name, description, email, website, and X handle from the address menu. Avatar files are uploaded to VeChain IPFS before profile records are written on-chain.
-- Fees: transactions use VeChain dynamic fee fields on Galactica-compatible nodes. Sync2 shows the current estimated fee and max fee cap, and blocks signing when the connected node does not expose fee market data.
+- Fees: transactions use VeChain dynamic fee fields on Galactica-compatible nodes. Sync2 shows the current estimated fee and max fee cap, blocks signing when fee market data is unavailable, and can optionally pay through VeChain's Generic Delegator with VET, B3TR, or VTHO.
 - Private keys: wallets can import a single private key and export one address key at a time. Export is hidden for Ledger wallets, password-gated, and requires an explicit reveal and copy action.
 - Networks: built-in public nodes are limited to `mainnet.vechain.org` and `testnet.vechain.org`.
 - Explorer: mainnet links use VeChainStats, including `/transactions/` transaction URLs.

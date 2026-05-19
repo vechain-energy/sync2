@@ -81,7 +81,7 @@ export function decodeAsTokenTransferClause(clause: Connex.VM.Clause, spec: M.To
     data = data || ''
     to = to && to.toLowerCase()
 
-    if (to === spec.address && data.startsWith(TRANSFER_SIG)) {
+    if (to === spec.address.toLowerCase() && data.startsWith(TRANSFER_SIG)) {
         try {
             const decoded = abi.decodeParameters(abis.transfer.inputs, '0x' + data.slice(TRANSFER_SIG.length))
             return {

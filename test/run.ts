@@ -25,6 +25,7 @@ globalScope.it = (name: string, run: () => void | Promise<void>) => {
 async function main() {
     await import('./vet-domains.spec')
     await import('./fee-market.spec')
+    await import('./generic-delegator.spec')
     await import('./config-nodes.spec')
     await import('./signer-groups.spec')
     await import('./private-key.spec')
