@@ -102,6 +102,7 @@
                                 :title="$t('common.copy').toString()"
                             />
                             <q-btn
+                                v-if="entryTxExplorerUrl"
                                 rounded
                                 @click="viewOnExplorer"
                                 dense
@@ -130,10 +131,11 @@
 <script lang="ts">
 import Vue from 'vue'
 import { openURL } from 'src/utils/open-url'
-import { urls, genesises } from 'src/consts'
+import { genesises } from 'src/consts'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import { formatDate } from 'src/utils/format'
 import { copyText } from 'src/utils/clipboard'
+import { txExplorerUrl } from 'src/utils/explorer'
 
 export type Entry = {
     gid: string
@@ -184,15 +186,8 @@ export default Vue.extend({
             }
             return result
         },
-        txDetailUrl(): string {
-            switch (genesises.which(this.entry.gid)) {
-                case 'main':
-                    return `${urls.explorerMain}transactions/`
-                case 'test':
-                    return `${urls.explorerTest}transactions/`
-                default:
-                    return ''
-            }
+        entryTxExplorerUrl(): string {
+            return txExplorerUrl(this.entry.gid, this.entry.id)
         },
         networkBadgeText(): string {
             if (this.entry.gid === genesises.main.id) {
@@ -218,7 +213,7 @@ export default Vue.extend({
             openURL(link.replace(regexp, this.entry.id))
         },
         viewOnExplorer() {
-            openURL(`${this.txDetailUrl}${this.entry.id}`)
+            this.entryTxExplorerUrl && openURL(this.entryTxExplorerUrl)
         },
         viewContent() {
             this.$q.dialog({
