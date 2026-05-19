@@ -27,6 +27,7 @@ async function main() {
     await import('./fee-market.spec')
     await import('./generic-delegator.spec')
     await import('./config-nodes.spec')
+    await import('./open-url.spec')
     await import('./signer-groups.spec')
     await import('./sign-models.spec')
     await import('./private-key.spec')
