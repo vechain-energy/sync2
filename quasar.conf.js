@@ -17,6 +17,10 @@ const appBuild = execSync('git --no-pager log -n 1 --date=short --pretty="%ad.%h
   .toString('utf8')
   .replace(/-/g, '.')
   .trim()
+const electronBuildArches = (process.env.ELECTRON_BUILD_ARCHES || 'x64,arm64')
+  .split(',')
+  .map(arch => arch.trim())
+  .filter(Boolean)
 
 module.exports = configure(function (ctx) {
   return {
@@ -334,13 +338,13 @@ module.exports = configure(function (ctx) {
         },
         win: {
           target: {
-            arch: ['x64', 'arm64'],
+            arch: electronBuildArches,
             target: 'nsis'
           }
         },
         linux: {
           target: {
-            arch: ['x64', 'arm64'],
+            arch: electronBuildArches,
             target: 'AppImage'
           }
         },
@@ -350,7 +354,7 @@ module.exports = configure(function (ctx) {
           entitlements: "build/entitlements.mac.plist",
           entitlementsInherit: "build/entitlements.mac.plist",
           target: {
-            arch: ['x64', 'arm64'],
+            arch: electronBuildArches,
             target: 'default'
           }
         }

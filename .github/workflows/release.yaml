@@ -87,26 +87,12 @@ jobs:
         run: npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Build Electron binaries
-        run: npx quasar build -m electron -- --publish never
+        run: npx quasar build -m electron
         env:
+          ELECTRON_BUILD_ARCHES: x64
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --openssl-legacy-provider
           CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      - name: Upload Electron binaries to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.release-meta.outputs.tag }}
-          draft: true
-          fail_on_unmatched_files: false
-          files: |
-            dist/electron/Packaged/*.AppImage
-            dist/electron/Packaged/*.exe
-            dist/electron/Packaged/*.dmg
-            dist/electron/Packaged/*.zip
-            dist/electron/Packaged/*.yml
-            dist/electron/Packaged/*.blockmap
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Electron workflow artifacts
         uses: actions/upload-artifact@v4
@@ -143,24 +129,12 @@ jobs:
         run: npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Build Electron binaries
-        run: npx quasar build -m electron -- --publish never
+        run: npx quasar build -m electron
         env:
+          ELECTRON_BUILD_ARCHES: x64,arm64
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --openssl-legacy-provider
           CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      - name: Upload Electron binaries to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.release-meta.outputs.tag }}
-          draft: true
-          fail_on_unmatched_files: false
-          files: |
-            dist/electron/Packaged/*.dmg
-            dist/electron/Packaged/*.zip
-            dist/electron/Packaged/*.yml
-            dist/electron/Packaged/*.blockmap
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Electron workflow artifacts
         uses: actions/upload-artifact@v4
