@@ -1,23 +1,31 @@
 // ---- worker methods ----
-import Worker from 'worker-loader!./worker'
-import { Deferred } from 'src/utils/deferred'
+import { Deferred } from '../../utils/deferred'
 import type { CommandName } from './worker'
 // import { blake2b256 } from 'thor-devkit'
 
-const worker = new Worker()
-
 const queue = new Map<number, Deferred<unknown>>()
 
-worker.onmessage = ev => {
-    const [seq, result, err] = ev.data
-    const r = queue.get(seq)!
-    queue.delete(seq)
+type WorkerConstructor = new () => Worker
 
-    if (err) {
-        r.reject(new Error(err.message))
-    } else {
-        r.resolve(result)
+let worker: Worker | null = null
+
+function getWorker(): Worker {
+    if (!worker) {
+        const WorkerClass = require('worker-loader!./worker').default as WorkerConstructor
+        worker = new WorkerClass()
+        worker.onmessage = ev => {
+            const [seq, result, err] = ev.data
+            const r = queue.get(seq)!
+            queue.delete(seq)
+
+            if (err) {
+                r.reject(new Error(err.message))
+            } else {
+                r.resolve(result)
+            }
+        }
     }
+    return worker
 }
 
 let nextSeq = 0
@@ -30,7 +38,7 @@ let nextSeq = 0
 function call<R>(cmd: CommandName, ...args: unknown[]): Promise<R> {
     const seq = ++nextSeq
     // args are passed in tuple
-    worker.postMessage([seq, cmd, args])
+    getWorker().postMessage([seq, cmd, args])
     const r = new Deferred<unknown>()
     queue.set(seq, r)
     return r as Promise<R>

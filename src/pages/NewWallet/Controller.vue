@@ -72,7 +72,8 @@ import PageToolbar from 'components/PageToolbar.vue'
 import { genesises } from 'src/consts'
 import { unique } from 'src/utils/array'
 import { Vault } from 'src/core/vault'
-import MnemonicInputDialog from './MnemonicInputDialog.vue'
+import ImportDialog from './ImportDialog.vue'
+import { ImportResult, ImportState } from './import-types'
 import LedgerLinkDialog from 'pages/Ledger/LinkDialog.vue'
 import PopSheets, { Sheet } from 'components/PopSheets.vue'
 import PageContent from 'components/PageContent.vue'
@@ -94,7 +95,12 @@ export default Vue.extend({
             name: '',
             gid: this.defaultGid || defaultGid,
             error: '',
-            importState: { words: '', path: '' }
+            importState: {
+                tab: 'mnemonic',
+                words: '',
+                path: '',
+                privateKey: ''
+            } as ImportState
         }
     },
     computed: {
@@ -198,13 +204,12 @@ export default Vue.extend({
                 return
             }
 
-            let words: string[] | undefined
-            let path: string
+            let importResult: ImportResult | null = null
             if (type === 'import') {
-                // get user input words and path
+                // get user input mnemonic words or private key
                 try {
-                    [words, path] = await this.$dialog<[string[], string]>({
-                        component: MnemonicInputDialog,
+                    importResult = await this.$dialog<ImportResult>({
+                        component: ImportDialog,
                         state: this.importState
                     })
                 } catch {
@@ -217,16 +222,28 @@ export default Vue.extend({
                     // main process
                     let walletID = -1
                     let meta: M.Wallet.Meta | null = null
+                    let words: string[] | undefined
                     await this.$loading(async () => {
-                        words = words || await Vault.generateMnemonic(wordsCount / 3 * 4)
-                        const vault = Vault.createHD(
-                            words,
-                            umk,
-                            path)
+                        let vault: Vault
+                        if (importResult && importResult.type === 'private-key') {
+                            try {
+                                vault = Vault.createStatic(importResult.privateKey, umk)
+                            } finally {
+                                importResult.privateKey.fill(0)
+                            }
+                        } else {
+                            words = importResult && importResult.type === 'mnemonic'
+                                ? importResult.words
+                                : await Vault.generateMnemonic(wordsCount / 3 * 4)
+                            vault = Vault.createHD(
+                                words,
+                                umk,
+                                importResult && importResult.type === 'mnemonic' ? importResult.path : undefined)
+                        }
                         const node0 = vault.derive(0)
                         meta = {
                             name: this.name,
-                            type: 'hd',
+                            type: importResult && importResult.type === 'private-key' ? 'private-key' : 'hd',
                             addresses: [node0.address],
                             backedUp: type === 'import'
                         }

@@ -10,6 +10,7 @@ Compared to Sync v1, the most significant change is that the built-in dApp brows
 
 - `.vet` and `.vet.domains` names can be entered as recipients and displayed for known addresses.
 - Transactions use VeChain dynamic fee fields on Galactica-compatible nodes.
+- Wallets can import and export private keys with password-gated reveal.
 
 ## Supported Platforms
 

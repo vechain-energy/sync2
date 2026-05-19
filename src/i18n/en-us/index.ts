@@ -90,8 +90,11 @@ export default {
         mnemonic_words_count: 'Mnemonic words count',
         action_generate: 'Generate',
         action_import: 'Import',
+        action_import_mnemonic: 'Mnemonic',
+        action_import_private_key: 'Private Key',
         label_wallet_name: 'Wallet Name',
         label_mnemonic: 'Please enter your mnemonic words',
+        label_private_key: 'Private Key',
         label_advance: 'Advance',
         action_custom_path: 'Custom',
         action_vet_path: 'Vechain',
@@ -99,6 +102,8 @@ export default {
         label_path: 'Path',
         msg_example: 'Example',
         msg_invalid_path: 'Invalid Path',
+        msg_private_key_error: 'you need to enter a valid private key',
+        msg_private_key_warning: 'Only import keys you own. Anyone with this private key can move assets from this address.',
         label_ledger_user: 'Ledger user?',
         action_ledger_link: 'Link Now'
     },
@@ -127,7 +132,12 @@ export default {
     address: {
         title: 'Address',
         label_assets: 'Assets',
-        action_receive: 'Receive'
+        action_receive: 'Receive',
+        action_export_private_key: 'Export Private Key',
+        title_export_private_key: 'Private Key',
+        label_private_key: 'Private Key',
+        msg_export_private_key_warning: 'Anyone with this private key can move assets from this address. Sync2 will never ask you to share it. Type EXPORT to continue.',
+        msg_private_key_reveal_warning: 'Keep this private key offline. Do not share it.'
     },
     asset: {
         title: 'Asset',
@@ -173,6 +183,7 @@ export default {
         msg_backup_tips_2: 'Keep it in a secure place',
         msg_backup_tips_3: 'No screenshot or screen recording',
         label_your_mnemonic: 'Write Down Your Mnemonic Words',
+        msg_mnemonic_backup_only: 'you need to export the private key for this wallet',
 
         // notify
         msg_wallet_not_found: 'Wallet not found'
