@@ -9,7 +9,7 @@ Compared to Sync v1, the most significant change is that the built-in dApp brows
 ## Wallet Features
 
 - Name support: `.vet` and `.vet.domains` names can be entered on the send screen and displayed for known addresses. Reverse names are network-aware and fall back to the raw address when no name is set.
-- Domains: the Domains menu lets users check `.vet` availability, see the VET cost, select the paying wallet/address, register the name, and view a confirmation screen after success.
+- Domains: the Domains menu lets users check `.vet` availability, see the VET cost, pick the signer in the transaction screen, register the name, and view a confirmation screen after success.
 - Swap: the Swap menu quotes active mainnet tokens through VeTrade.vet and BetterSwap.io, shows route, slippage, minimum received, and fee, then uses the normal signing dialog for the selected wallet.
 - Primary name: registration can also set the new name as the owner's primary name. Wallet lists refresh the primary name immediately after the transaction is signed.
 - Fees: transactions use VeChain dynamic fee fields on Galactica-compatible nodes. Sync2 shows the current estimated fee and max fee cap, and blocks signing when the connected node does not expose fee market data.

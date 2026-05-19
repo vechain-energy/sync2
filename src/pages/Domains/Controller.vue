@@ -100,32 +100,6 @@
                     no-error-icon
                     @input="onInputChanged"
                 />
-                <q-select
-                    outlined
-                    emit-value
-                    map-options
-                    :disable="!!commitment"
-                    v-model="selectedWalletId"
-                    :options="walletOptions"
-                    :label="$t('domains.label_wallet')"
-                    :error="!!errors.wallet"
-                    :error-message="errors.wallet"
-                    no-error-icon
-                    @input="onWalletChanged"
-                />
-                <q-select
-                    outlined
-                    emit-value
-                    map-options
-                    :disable="!!commitment || !selectedWallet"
-                    v-model="selectedAddress"
-                    :options="addressOptions"
-                    :label="$t('domains.label_owner')"
-                    :error="!!errors.owner"
-                    :error-message="errors.owner"
-                    no-error-icon
-                    @input="onOwnerChanged"
-                />
                 <q-checkbox
                     v-model="setAsPrimary"
                     :disable="!!commitment"
@@ -245,10 +219,6 @@ import {
     yearsToDuration
 } from 'src/utils/vet-domain-registration'
 import {
-    VetDomainAddressOption,
-    VetDomainWalletOption,
-    buildVetDomainAddressOptions,
-    buildVetDomainWalletOptions,
     findVetDomainWallet,
     resolveVetDomainAddress
 } from 'src/utils/vet-domain-wallet-selection'
@@ -330,12 +300,6 @@ export default Vue.extend({
         }
     },
     computed: {
-        walletOptions(): VetDomainWalletOption[] {
-            return buildVetDomainWalletOptions(this.wallets)
-        },
-        addressOptions(): VetDomainAddressOption[] {
-            return buildVetDomainAddressOptions(this.selectedWallet)
-        },
         selectedWallet(): M.Wallet | null {
             return findVetDomainWallet(this.wallets, this.selectedWalletId)
         },
@@ -380,16 +344,6 @@ export default Vue.extend({
             return !!this.commitState && this.waitSeconds === 0 && !this.expired
         }
     },
-    watch: {
-        walletOptions(options: VetDomainWalletOption[]) {
-            if (options.length > 0 && !options.find(option => option.value === this.selectedWalletId)) {
-                this.selectedWalletId = options[0].value
-                localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
-                this.ensureSelectedAddress()
-                this.scheduleCheck()
-            }
-        }
-    },
     async mounted() {
         this.timer = window.setInterval(() => {
             this.now = Date.now()
@@ -405,25 +359,14 @@ export default Vue.extend({
     },
     methods: {
         ensureSelectedWallet() {
-            if (this.walletOptions.length > 0 && !this.walletOptions.find(option => option.value === this.selectedWalletId)) {
-                this.selectedWalletId = this.walletOptions[0].value
+            const wallet = this.wallets.find(item => item.id === this.selectedWalletId) || this.wallets[0] || null
+            if (wallet && wallet.id !== this.selectedWalletId) {
+                this.selectedWalletId = wallet.id
                 localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
             }
         },
         ensureSelectedAddress() {
             this.selectedAddress = resolveVetDomainAddress(this.selectedWallet, this.selectedAddress)
-        },
-        onWalletChanged() {
-            localStorage.setItem(SELECTED_WALLET_ID_KEY, this.selectedWalletId.toString())
-            this.selectedAddress = ''
-            this.ensureSelectedAddress()
-            this.onInputChanged()
-        },
-        onOwnerChanged() {
-            if (this.selectedWallet) {
-                this.selectedAddress = resolveVetDomainAddress(this.selectedWallet, this.selectedAddress)
-            }
-            this.onInputChanged()
         },
         scheduleCheck() {
             window.clearTimeout(this.lookupTimer)
@@ -489,6 +432,11 @@ export default Vue.extend({
                 this.errors.owner = this.$t('domains.msg_select_owner').toString()
             } else if (!this.contracts) {
                 this.errors.owner = this.$t('domains.msg_network_unsupported').toString()
+            }
+            const hiddenSelectionError = this.errors.wallet || this.errors.owner
+            if (hiddenSelectionError) {
+                this.statusText = hiddenSelectionError
+                this.statusClass = 'bg-red-1 text-negative'
             }
             return !this.errors.name && !this.errors.years && !this.errors.wallet && !this.errors.owner
         },
