@@ -50,8 +50,7 @@
 import Vue from 'vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
-
-const MIN_PASSWORD_LEN = 6
+import { validateNewPasswordInput } from 'src/utils/new-password'
 
 export default Vue.extend({
     components: { PromptDialogToolbar },
@@ -94,13 +93,10 @@ export default Vue.extend({
         async onSubmit() {
             (this.$refs.pwd as Vue).$el.getElementsByTagName('input')[0].focus()
 
-            if (this.inputValue.length === 0) {
-                return
-            }
             this.error = ''
             await this.$nextTick()
             if (this.password) {
-                if (this.inputValue !== this.password) {
+                if (validateNewPasswordInput(this.inputValue, this.password) === 'mismatch') {
                     this.inputValue = ''
                     this.password = ''
                     await this.$nextTick()
@@ -109,7 +105,7 @@ export default Vue.extend({
                 }
                 this.ok(this.password)
             } else {
-                if (this.inputValue.length < MIN_PASSWORD_LEN) {
+                if (validateNewPasswordInput(this.inputValue) === 'too-short') {
                     this.error = this.$t('newPasswordDialog.msg_password_too_short').toString()
                     return
                 }
