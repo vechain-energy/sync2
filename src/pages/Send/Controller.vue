@@ -28,6 +28,7 @@
             <q-item-label header>{{$t('send.label_amount')}}</q-item-label>
             <q-input
                 no-error-icon
+                :aria-label="$t('send.label_amount').toString()"
                 autocomplete="off"
                 class="q-mx-md"
                 v-model="amount"

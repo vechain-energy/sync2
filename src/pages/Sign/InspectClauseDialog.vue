@@ -53,6 +53,7 @@
                                 <q-input
                                     square
                                     v-if="clause.data && clause.data.length > 2"
+                                    aria-label="Clause data"
                                     dense
                                     class="monospace"
                                     input-class="clause-data-textarea"

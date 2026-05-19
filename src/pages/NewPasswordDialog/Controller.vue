@@ -13,9 +13,11 @@
                     <!-- prevent chrome warning -->
                     <q-input
                         v-show="false"
+                        aria-hidden="true"
                         autocomplete="username"
                     />
                     <q-input
+                        :aria-label="inputLabel"
                         autofocus
                         class="q-mx-xl"
                         ref="pwd"
