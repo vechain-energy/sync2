@@ -278,7 +278,8 @@ export default {
 
         // notify
         msg_wallet_not_found: 'Wallet not found',
-        msg_backup_load_failed: 'you need to try again. Backup words could not be loaded.'
+        msg_backup_load_failed: 'you need to try again. Backup words could not be loaded.',
+        msg_backup_save_failed: 'you need to try again. Backup status was not saved.'
     },
     sign: {
         title: 'Sign',

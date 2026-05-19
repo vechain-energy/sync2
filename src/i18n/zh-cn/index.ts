@@ -277,7 +277,8 @@ export default {
 
         // notify
         msg_wallet_not_found: '找不到钱包',
-        msg_backup_load_failed: '请重试。无法加载备份助记词。'
+        msg_backup_load_failed: '请重试。无法加载备份助记词。',
+        msg_backup_save_failed: '请重试。备份状态未保存。'
     },
     sign: {
         title: '签名',
