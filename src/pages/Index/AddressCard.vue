@@ -28,8 +28,7 @@
                     >--.--</amount-label>
                     <span
                         class="monospace text-caption q-ml-sm"
-                        v-html="bal.symbol"
-                    />
+                    >{{bal.symbol}}</span>
                 </q-item-label>
             </q-item-section>
         </q-item>
@@ -40,9 +39,9 @@
                     <span class="index">{{index+1}}</span>
                     <!-- address -->
                     <address-label
+                        class="address-card__address"
                         :addr="address"
                         :gid="gid"
-                        style="font-size: 0.85rem"
                     />
                 </q-item-label>
             </q-item-section>
@@ -98,7 +97,7 @@ export default Vue.extend({
         balances() {
             return [{
                 value: this.account && this.account.balance,
-                symbol: 'VET&nbsp;',
+                symbol: 'VET',
                 decimals: 18
             },
             {
@@ -127,5 +126,8 @@ export default Vue.extend({
 .amount {
     font-size: 1.25rem;
     line-height: 1.6rem;
+}
+.address-card__address {
+    font-size: 0.85rem;
 }
 </style>
