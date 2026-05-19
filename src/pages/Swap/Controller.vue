@@ -89,10 +89,11 @@
                 :loading="quoteLoading"
             />
 
+            <q-item-label header>{{$t('swap.label_details')}}</q-item-label>
             <q-expansion-item
                 dense
                 class="q-mx-md"
-                :label="$t('swap.label_details')"
+                :label="detailsTitle"
                 :caption="detailsCaption"
             >
                 <q-item-label header>{{$t('swap.label_source')}}</q-item-label>
@@ -111,9 +112,12 @@
                                 <div class="row items-center no-wrap full-width">
                                     <q-avatar
                                         size="28px"
-                                        class="bg-grey-3 text-primary text-caption"
+                                        class="bg-grey-3"
                                     >
-                                        {{sourceMark(scope.opt.label)}}
+                                        <AggregatorLogo
+                                            :name="scope.opt.label"
+                                            size="20"
+                                        />
                                     </q-avatar>
                                     <div class="col q-ml-sm ellipsis">
                                         <div class="ellipsis">{{scope.opt.label}}</div>
@@ -129,9 +133,12 @@
                                     <q-item-section avatar>
                                         <q-avatar
                                             size="md"
-                                            class="bg-grey-3 text-primary"
+                                            class="bg-grey-3"
                                         >
-                                            {{sourceMark(scope.opt.label)}}
+                                            <AggregatorLogo
+                                                :name="scope.opt.label"
+                                                size="24"
+                                            />
                                         </q-avatar>
                                     </q-item-section>
                                     <q-item-section>
@@ -252,6 +259,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import { BigNumber } from 'bignumber.js'
+import AggregatorLogo from './AggregatorLogo.vue'
 import PageAction from 'src/components/PageAction.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageToolbar from 'src/components/PageToolbar.vue'
@@ -339,6 +347,7 @@ function amountHasValidShape(amount: string, decimals: number): boolean {
 
 export default Vue.extend({
     components: {
+        AggregatorLogo,
         PageAction,
         PageContent,
         PageToolbar,
@@ -427,11 +436,14 @@ export default Vue.extend({
                 ? formatDisplayAmount(this.selectedQuote.minimumOutputAmount, this.toToken.decimals)
                 : '0'
         },
+        detailsTitle(): string {
+            return this.selectedQuote ? this.selectedQuote.aggregatorName : this.$t('swap.label_source').toString()
+        },
         detailsCaption(): string {
             if (!this.selectedQuote || !this.toToken) {
                 return ''
             }
-            return `${this.selectedQuote.aggregatorName} - ${this.outputText} ${this.toToken.symbol}`
+            return `${this.outputText} ${this.toToken.symbol}`
         },
         quoteOptions(): SelectOption<string>[] {
             return this.quotes.map(quote => {
@@ -707,9 +719,6 @@ export default Vue.extend({
             } finally {
                 this.swapping = false
             }
-        },
-        sourceMark(name: string): string {
-            return name.slice(0, 1).toUpperCase()
         }
     }
 })
