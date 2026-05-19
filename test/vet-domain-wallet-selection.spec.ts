@@ -2,8 +2,6 @@
 import * as assert from 'assert'
 import { genesises } from '../src/consts'
 import {
-    buildVetDomainAddressOptions,
-    buildVetDomainWalletOptions,
     findVetDomainWallet,
     resolveVetDomainAddress
 } from '../src/utils/vet-domain-wallet-selection'
@@ -34,18 +32,7 @@ const walletB: M.Wallet = {
 }
 
 describe('vet domain wallet selection', () => {
-    it('builds wallet and address picker options', () => {
-        assert.deepStrictEqual(buildVetDomainWalletOptions([walletA, walletB]), [
-            { label: 'Main Wallet - 0x11111111...11111111', value: 1 },
-            { label: 'Test Wallet - 0x33333333...33333333', value: 2 }
-        ])
-        assert.deepStrictEqual(buildVetDomainAddressOptions(walletA), [
-            { label: '#1 - 0x11111111...11111111', value: walletA.meta.addresses[0], walletId: 1 },
-            { label: '#2 - 0x22222222...22222222', value: walletA.meta.addresses[1], walletId: 1 }
-        ])
-    })
-
-    it('keeps selected wallet and address in the same wallet', () => {
+    it('keeps the hidden wallet and owner address in the same wallet', () => {
         assert.strictEqual(findVetDomainWallet([walletA, walletB], 2), walletB)
         assert.strictEqual(findVetDomainWallet([walletA, walletB], 99), walletA)
         assert.strictEqual(resolveVetDomainAddress(walletB, walletA.meta.addresses[0]), walletB.meta.addresses[0])
