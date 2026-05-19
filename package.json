@@ -87,11 +87,14 @@
     "@babel/parser": "7.7.5"
   },
   "overrides": {
+    "cipher-base": "1.0.7",
     "electron-updater": {
       "js-yaml": "4.1.1"
     },
     "node-hid": {
       "tar-fs": "2.1.4"
-    }
+    },
+    "pbkdf2": "3.1.5",
+    "sha.js": "2.4.12"
   }
 }
