@@ -5,6 +5,7 @@
             :caption="group? group.name : ''"
             :sideIcon="count > 1 ? 'unfold_more': ''"
             :clickable="count > 1"
+            :gid="gid"
         />
         <q-popup-proxy
             v-if="count > 1"
@@ -28,6 +29,7 @@
                             :key="`a-${gi}-${ai}`"
                             :text="addr"
                             :active="signer === addr"
+                            :gid="gid"
                             @click="$emit('select', addr)"
                         />
                     </template>
@@ -46,6 +48,7 @@ export default Vue.extend({
     components: { SignerItem },
     props: {
         signer: String,
+        gid: String,
         groups: Array as () => SignerGroup[]
     },
     computed: {

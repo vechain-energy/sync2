@@ -8,6 +8,7 @@
             <page-content>
                 <head-item
                     :address="address"
+                    :gid="wallet.gid"
                     :name="wallet.meta.name"
                 />
                 <q-item dense>

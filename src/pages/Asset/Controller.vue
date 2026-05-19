@@ -27,7 +27,7 @@
                         v-if="wallet"
                     >{{wallet.meta.name}}</q-item-label>
                     <q-item-label caption>
-                        ┗ <address-label :addr="address" />
+                        ┗ <address-label :addr="address" :gid="wallet.gid" />
                     </q-item-label>
                 </head-item>
             </async-resolve>

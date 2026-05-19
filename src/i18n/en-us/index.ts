@@ -144,6 +144,7 @@ export default {
         msg_invalid_amount: 'Invalid amount',
         msg_invalid_address: 'Please enter a valid address',
         msg_invalid_address_checksum: 'Address checksum failed',
+        msg_vet_domain_unresolved: 'you need to check the name or switch network',
         action_send: 'Send'
     },
     activities: {

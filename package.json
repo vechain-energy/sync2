@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
-    "test": "echo \"No test specified\" && exit 0",
+    "test": "node -r ts-node/register/transpile-only test/run.ts",
     "install": "electron-rebuild"
   },
   "dependencies": {
@@ -60,6 +60,8 @@
     "qrcode-svg": "^1.1.0",
     "quasar": "^1.15.0",
     "thor-devkit": "^2.0.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^3.9.10",
     "validator-ts": "^0.9.1",
     "vue-async-computed": "^3.8.2",
     "vue-class-component": "^7.2.2",

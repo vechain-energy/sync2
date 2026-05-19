@@ -23,6 +23,7 @@
                     :index="i"
                     :clause="c"
                     :tokens="tokens"
+                    :gid="gid"
                     @click="onClickClause(i, c)"
                 />
             </page-content>
@@ -49,6 +50,7 @@
                     <signer-selector
                         :signer="signer"
                         :groups="signerGroups"
+                        :gid="gid"
                         @select="signer=$event"
                     />
                 </template>
@@ -314,7 +316,8 @@ export default Common.extend({
                 parent: this,
                 component: InspectClauseDialog,
                 index,
-                clause
+                clause,
+                gid: this.gid
             })
         }
     }

@@ -40,6 +40,7 @@
                     <!-- address -->
                     <address-label
                         :addr="address"
+                        :gid="gid"
                         style="font-size: 0.85rem"
                     />
                 </q-item-label>
@@ -67,6 +68,7 @@ export default Vue.extend({
     components: { AddressLabel, AmountLabel, AddressAvatar },
     props: {
         address: String,
+        gid: String,
         index: Number,
         account: Object as () => (Connex.Thor.Account | null)
     },

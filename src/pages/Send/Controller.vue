@@ -13,6 +13,7 @@
             <To
                 v-model="to"
                 class="q-mx-md"
+                :gid="wallet && wallet.gid"
                 :wallets="toWallets"
                 :error-message="errors.to"
                 :error="!!errors.to"
@@ -63,6 +64,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
+import { isVetDomainName } from 'src/utils/vet-domains'
 
 export default Vue.extend({
     components: {
@@ -170,9 +172,14 @@ export default Vue.extend({
             return regexp.test(v) ? parseFloat(v) > 0 : false
         },
         validate(): boolean {
-            this.errors.to = this.isAddress(this.to)
-                ? this.checkSumAddress(this.to) ? '' : this.$t('send.msg_invalid_address_checksum').toString()
-                : this.$t('send.msg_invalid_address').toString()
+            const to = this.to || ''
+            if (this.isAddress(to)) {
+                this.errors.to = this.checkSumAddress(to) ? '' : this.$t('send.msg_invalid_address_checksum').toString()
+            } else if (isVetDomainName(to)) {
+                this.errors.to = this.$t('send.msg_vet_domain_unresolved').toString()
+            } else {
+                this.errors.to = this.$t('send.msg_invalid_address').toString()
+            }
 
             this.errors.amount = this.balanceCheck(this.amount) ? '' : this.$t('send.msg_invalid_amount').toString()
 

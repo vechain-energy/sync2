@@ -7,8 +7,9 @@
         dense
         placeholder="0x"
         clearable
-        v-model.lazy="to"
+        v-model.lazy="input"
         spellcheck="false"
+        :hint="resolvedHint"
     >
         <template
             v-if="isAddress(to)"
@@ -18,7 +19,7 @@
         </template>
         <template v-slot:append>
             <q-btn
-                v-show="hasCamera && !to"
+                v-show="hasCamera && !input"
                 rounded
                 dense
                 icon="qr_code_scanner"
@@ -47,6 +48,7 @@
                                 @click="onSelectAddress(addr)"
                                 :key="`${gi} + ${ai}`"
                                 :address="addr"
+                                :gid="gid"
                             />
                         </template>
                     </template>
@@ -63,6 +65,7 @@ import { AddressGroup } from './models'
 import AddressItem from './AddressItem.vue'
 import QrScannerDialog from 'pages/QrScannerDialog'
 import { QrScanner } from 'src/utils/qr-scanner'
+import { isVetDomainName, normalizeVetDomainName } from 'src/utils/vet-domains'
 
 export default Vue.extend({
     components: {
@@ -78,11 +81,26 @@ export default Vue.extend({
             type: Array as () => AddressGroup[],
             default: []
         },
-        address: String
+        address: String,
+        gid: String
     },
     data() {
         return {
-            to: this.address
+            input: this.address || ''
+        }
+    },
+    computed: {
+        inputIsVetDomain(): boolean {
+            return isVetDomainName(this.input || '')
+        },
+        to(): string {
+            return this.inputIsVetDomain ? this.resolvedAddress || this.input : this.input || ''
+        },
+        resolvedHint(): string {
+            if (this.inputIsVetDomain) {
+                return this.resolvedAddress
+            }
+            return this.resolvedName
         }
     },
     asyncComputed: {
@@ -93,11 +111,34 @@ export default Vue.extend({
             } else {
                 return QrScanner.hasCamera()
             }
+        },
+        resolvedAddress: {
+            async get(): Promise<string> {
+                if (!this.gid || !this.inputIsVetDomain) {
+                    return ''
+                }
+                const [resolvedAddress] = await this.$svc.bc(this.gid).vetDomainsAddressesOf([normalizeVetDomainName(this.input)])
+                return resolvedAddress
+            },
+            default: ''
+        },
+        resolvedName: {
+            async get(): Promise<string> {
+                if (!this.gid || !address.test(this.input)) {
+                    return ''
+                }
+                const [resolvedName] = await this.$svc.bc(this.gid).vetDomainsNamesOf([this.input])
+                return resolvedName
+            },
+            default: ''
         }
     },
     watch: {
         address(v: string) {
-            this.to = v
+            if (v === this.resolvedAddress) {
+                return
+            }
+            this.input = v
         },
         to(v: string) {
             this.$emit('change', v)
@@ -106,11 +147,11 @@ export default Vue.extend({
     methods: {
         isAddress: address.test,
         onSelectAddress(addr: string) {
-            this.to = address.toChecksumed(addr)
+            this.input = address.toChecksumed(addr)
         },
         async onClickScan() {
             try {
-                this.to = await this.$dialog<string>({ component: QrScannerDialog })
+                this.input = await this.$dialog<string>({ component: QrScannerDialog })
             } catch { }
         }
     }

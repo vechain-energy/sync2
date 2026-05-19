@@ -143,6 +143,7 @@ export default {
         msg_invalid_amount: '无效数额',
         msg_invalid_address: '请输入有效地址',
         msg_invalid_address_checksum: '地址检验失败',
+        msg_vet_domain_unresolved: 'you need to check the name or switch network',
         action_send: '发送'
     },
     activities: {

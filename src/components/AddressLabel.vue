@@ -13,7 +13,20 @@ import { address } from 'thor-devkit'
 export default Vue.extend({
     props: {
         addr: String,
+        gid: String,
         full: Boolean
+    },
+    asyncComputed: {
+        resolvedName: {
+            async get(): Promise<string> {
+                if (!this.gid || !address.test(this.addr)) {
+                    return ''
+                }
+                const [name] = await this.$svc.bc(this.gid).vetDomainsNamesOf([this.addr])
+                return name
+            },
+            default: ''
+        }
     },
     computed: {
         displayString() {
@@ -21,6 +34,9 @@ export default Vue.extend({
                 return ''
             }
             const checksumed = address.toChecksumed(this.addr)
+            if (this.resolvedName) {
+                return this.full ? `${this.resolvedName} (${checksumed})` : this.resolvedName
+            }
             return this.full ? checksumed : checksumed.slice(0, 6) + '⋯' + checksumed.slice(-6)
         }
     },

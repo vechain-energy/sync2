@@ -175,7 +175,7 @@ export default Vue.extend({
                 return
             }
 
-            let result = null
+            let result: object | null = null
             if (request.type === 'tx') {
                 const { payload } = request
                 result = await this.$signTx(gid, {
@@ -197,7 +197,10 @@ export default Vue.extend({
                     domain: host || ''
                 })
             }
-            this.respond({ payload: result! })
+            if (!result) {
+                return
+            }
+            this.respond({ payload: result })
             this.$router.replace({ name: 'sign-success', query: { type: request.type } })
         },
         async postStatus(suffix: string, result: object) {
