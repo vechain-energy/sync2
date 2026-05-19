@@ -23,31 +23,28 @@
 
             <q-item-label header>{{$t('swap.label_from')}}</q-item-label>
             <TokenSelector
-                class="q-mx-md"
                 :tokens="tokens"
                 v-model="fromSymbol"
                 :address="selectedAddress"
                 @change="onFromTokenChanged"
             />
-            <div class="row q-mx-md q-col-gutter-sm items-start">
-                <div class="col">
-                    <q-input
-                        dense
-                        outlined
-                        no-error-icon
-                        autocomplete="off"
-                        type="text"
-                        inputmode="decimal"
-                        placeholder="0.00"
-                        v-model="amount"
-                        :label="$t('swap.label_amount')"
-                        :disable="!supported"
-                        :error="!!amountError"
-                        :error-message="amountError"
-                        @input="onAmountChanged"
-                    />
-                </div>
-                <div class="col-auto swap-max">
+            <q-input
+                dense
+                outlined
+                no-error-icon
+                autocomplete="off"
+                class="q-mx-md"
+                type="text"
+                inputmode="decimal"
+                placeholder="0.00"
+                v-model="amount"
+                :label="$t('swap.label_amount')"
+                :disable="!supported"
+                :error="!!amountError"
+                :error-message="amountError"
+                @input="onAmountChanged"
+            >
+                <template v-slot:append>
                     <q-btn
                         v-if="fromToken"
                         dense
@@ -57,8 +54,8 @@
                         :label="$t('swap.action_max')"
                         @click="setMaxAmount"
                     />
-                </div>
-            </div>
+                </template>
+            </q-input>
 
             <div class="text-center q-py-sm">
                 <q-btn
@@ -73,7 +70,6 @@
 
             <q-item-label header>{{$t('swap.label_to')}}</q-item-label>
             <TokenSelector
-                class="q-mx-md"
                 :tokens="tokens"
                 v-model="toSymbol"
                 :address="selectedAddress"
@@ -89,15 +85,17 @@
                 :loading="quoteLoading"
             />
 
-            <q-item-label header>{{$t('swap.label_details')}}</q-item-label>
             <q-expansion-item
                 dense
-                class="q-mx-md"
-                :label="detailsTitle"
-                :caption="detailsCaption"
+                class="swap-details"
             >
+                <template v-slot:header>
+                    <q-item-section>
+                        <q-item-label header class="q-pa-none">{{$t('swap.label_details')}}</q-item-label>
+                    </q-item-section>
+                </template>
                 <q-item-label header>{{$t('swap.label_source')}}</q-item-label>
-                <div class="row q-col-gutter-sm items-center">
+                <div class="row q-mx-md q-col-gutter-sm items-center">
                     <div class="col">
                         <q-select
                             dense
@@ -159,7 +157,7 @@
                 <q-list
                     v-if="selectedQuote"
                     dense
-                    class="q-mt-sm"
+                    class="q-mx-md q-mt-sm"
                 >
                     <q-item>
                         <q-item-section class="text-caption text-grey-7">{{$t('swap.label_min_received')}}</q-item-section>
@@ -180,7 +178,7 @@
                 </q-list>
 
                 <q-item-label header>{{$t('swap.label_slippage')}}</q-item-label>
-                <div class="q-gutter-y-sm">
+                <div class="q-mx-md q-gutter-y-sm">
                     <div class="row q-col-gutter-sm items-center">
                         <div class="col">
                             <q-btn
@@ -435,15 +433,6 @@ export default Vue.extend({
             return this.selectedQuote && this.toToken
                 ? formatDisplayAmount(this.selectedQuote.minimumOutputAmount, this.toToken.decimals)
                 : '0'
-        },
-        detailsTitle(): string {
-            return this.selectedQuote ? this.selectedQuote.aggregatorName : this.$t('swap.label_source').toString()
-        },
-        detailsCaption(): string {
-            if (!this.selectedQuote || !this.toToken) {
-                return ''
-            }
-            return `${this.outputText} ${this.toToken.symbol}`
         },
         quoteOptions(): SelectOption<string>[] {
             return this.quotes.map(quote => {
@@ -724,6 +713,6 @@ export default Vue.extend({
 })
 </script>
 <style scoped lang="sass">
-.swap-max
-  padding-top: 10px
+.swap-details
+  margin-top: 16px
 </style>
