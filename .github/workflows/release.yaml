@@ -87,11 +87,10 @@ jobs:
         run: npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Build Electron binaries
-        run: npx quasar build -m electron
+        run: npx quasar build -m electron -- --publish never
         env:
           NODE_OPTIONS: --openssl-legacy-provider
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Electron binaries to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -143,29 +142,11 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --ignore-scripts
 
-      - name: Setup macOS notarization env
-        shell: bash
-        run: |
-          if [ -z "$APPLE_AUTH_PRIVATE_KEY" ] || [ -z "$APPLE_API_KEY_ID" ]; then
-            echo "macOS notarization key is not configured. Build will continue without notarization."
-            exit 0
-          fi
-
-          rm -fr ~/private_keys
-          mkdir ~/private_keys
-          echo "$APPLE_AUTH_PRIVATE_KEY" | base64 -D > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
-        env:
-          APPLE_AUTH_PRIVATE_KEY: ${{ secrets.APPLE_AUTH_PRIVATE_KEY }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-
       - name: Build Electron binaries
-        run: npx quasar build -m electron
+        run: npx quasar build -m electron -- --publish never
         env:
           NODE_OPTIONS: --openssl-legacy-provider
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Electron binaries to GitHub Release
         uses: softprops/action-gh-release@v2
