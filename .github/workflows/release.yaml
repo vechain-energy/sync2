@@ -72,7 +72,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '20'
           cache: 'npm'
 
       - uses: actions/setup-python@v5
@@ -84,11 +84,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
 
       - name: Install dependencies
-        run: npx -p npm@9 npm ci --legacy-peer-deps --ignore-scripts
+        run: npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Build Electron binaries
         run: npx quasar build -m electron
         env:
+          NODE_OPTIONS: --openssl-legacy-provider
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
 
@@ -132,7 +133,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '20'
           cache: 'npm'
 
       - uses: actions/setup-python@v5
@@ -140,7 +141,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: npx -p npm@9 npm ci --legacy-peer-deps --ignore-scripts
+        run: npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Setup macOS notarization env
         shell: bash
@@ -160,6 +161,7 @@ jobs:
       - name: Build Electron binaries
         run: npx quasar build -m electron
         env:
+          NODE_OPTIONS: --openssl-legacy-provider
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
