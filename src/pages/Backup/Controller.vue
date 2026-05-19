@@ -71,8 +71,11 @@ export default Vue.extend({
                         .toString('utf8')
                         .split(' ')
                     this.next()
-                } catch (error) {
-                    console.warn(error)
+                } catch {
+                    this.$q.notify({
+                        type: 'negative',
+                        message: this.$t('backup.msg_backup_load_failed').toString()
+                    })
                     this.$backOrHome()
                 }
             } catch { }
