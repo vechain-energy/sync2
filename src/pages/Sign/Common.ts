@@ -3,6 +3,7 @@ import { SignerGroup } from './models'
 import { Transaction, Certificate, blake2b256 } from 'thor-devkit'
 import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
 import { isSoftwareWalletType, signHashWithSoftwareWallet } from './software-signer'
+import { buildSignerGroups } from './signer-groups'
 
 type SignableTransaction = Transaction<Transaction.LegacyBody | Transaction.DynamicFeeBody>
 
@@ -21,22 +22,7 @@ export default Vue.extend({
             return (this.wallets || []).find(w => w.meta.addresses.includes(this.signer)) || null
         },
         signerGroups(): SignerGroup[] {
-            const enforcedSigner = this.req.options.signer
-            const wallets = this.wallets || []
-
-            if (enforcedSigner) {
-                const w = wallets.find(w => w.meta.addresses.includes(enforcedSigner))
-                return [{
-                    name: w ? w.meta.name : '',
-                    addresses: [enforcedSigner]
-                }]
-            }
-            return wallets.map(w => {
-                return {
-                    name: w.meta.name,
-                    addresses: w.meta.addresses
-                }
-            })
+            return buildSignerGroups(this.wallets || [], this.req.options.signer, this.req.signers)
         }
     },
     asyncComputed: {

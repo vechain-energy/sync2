@@ -26,6 +26,7 @@ export default Vue.extend({
                 if (!this.gid || !address.test(this.addr)) {
                     return ''
                 }
+                this.$svc.bc(this.gid).vetDomainsRevision()
                 const [name] = await this.$svc.bc(this.gid).vetDomainsNamesOf([this.addr])
                 return name
             },

@@ -2,6 +2,7 @@ import { abis } from 'src/consts'
 import { createPool } from './pool'
 import { commitTx } from './tx-commiter'
 import { cleanResolvedAddress, cleanResolvedName, isVetDomainName, normalizeVetDomainName } from 'src/utils/vet-domains'
+import Vue from 'vue'
 
 const VetDomainsResolverByGid: Record<string, string> = {
     // MainNet Resolver Utility
@@ -54,6 +55,11 @@ const vetDomainsGetNamesABI = {
 function serve(gid: string, pool: ReturnType<typeof createPool>) {
     const namesByAddress = new Map<string, string>()
     const addressesByName = new Map<string, string>()
+    const vetDomainsReactor = Vue.observable({ v: 0 })
+
+    function touchVetDomains() {
+        vetDomainsReactor.v++
+    }
 
     return {
         get thor() { return pool.get(gid).thor },
@@ -75,6 +81,20 @@ function serve(gid: string, pool: ReturnType<typeof createPool>) {
         },
         supportsVetDomains() {
             return !!VetDomainsResolverByGid[gid]
+        },
+        vetDomainsRevision() {
+            return vetDomainsReactor.v
+        },
+        setVetDomainsPrimaryName(addr: string, name: string) {
+            const resolvedAddress = cleanResolvedAddress(addr)
+            const resolvedName = cleanResolvedName(name)
+            if (!resolvedAddress || !resolvedName) {
+                return
+            }
+
+            namesByAddress.set(resolvedAddress.toLowerCase(), resolvedName)
+            addressesByName.set(resolvedName, resolvedAddress)
+            touchVetDomains()
         },
         async vetDomainsAddressesOf(names: string[]): Promise<string[]> {
             const resolver = VetDomainsResolverByGid[gid]

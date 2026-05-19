@@ -26,9 +26,11 @@ async function main() {
     await import('./vet-domains.spec')
     await import('./fee-market.spec')
     await import('./config-nodes.spec')
+    await import('./signer-groups.spec')
     await import('./private-key.spec')
     await import('./vault-worker.spec')
     await import('./vet-domain-registration.spec')
+    await import('./vet-domain-wallet-name.spec')
     await import('./vet-domain-wallet-selection.spec')
 
     for (const test of tests) {

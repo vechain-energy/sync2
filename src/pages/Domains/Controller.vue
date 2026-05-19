@@ -1,157 +1,221 @@
 <template>
-    <q-form
-        class="column fit no-wrap"
-        @submit="onCheck"
-    >
+    <div class="column fit no-wrap">
         <page-toolbar
-            :title="$t('domains.title')"
-            :gid="selectedWallet && selectedWallet.gid"
+            :title="confirmation ? $t('domains.title_confirmation') : $t('domains.title')"
+            :gid="confirmation ? confirmation.gid : selectedWallet && selectedWallet.gid"
         />
-        <page-content
-            padding
-            class="col"
-            innerClass="q-gutter-md"
+        <template v-if="confirmation">
+            <page-content
+                padding
+                class="col"
+                innerClass="q-gutter-md"
+            >
+                <div class="text-center q-py-lg">
+                    <q-icon
+                        name="check_circle_outline"
+                        color="positive"
+                        size="4rem"
+                    />
+                    <div class="text-h5 q-mt-md">{{confirmation.name}}</div>
+                    <div class="text-grey-7">{{$t('domains.msg_registration_confirmed')}}</div>
+                </div>
+                <q-banner
+                    v-if="confirmation.primary"
+                    class="bg-orange-1 text-deep-orange"
+                >
+                    {{$t('domains.msg_primary_confirmed', { name: confirmation.name })}}
+                </q-banner>
+                <q-list
+                    bordered
+                    separator
+                >
+                    <q-item>
+                        <q-item-section>{{$t('domains.label_status')}}</q-item-section>
+                        <q-item-section side>{{$t('domains.label_submitted')}}</q-item-section>
+                    </q-item>
+                    <q-item>
+                        <q-item-section>{{$t('domains.label_owner')}}</q-item-section>
+                        <q-item-section side>
+                            <address-label
+                                :addr="confirmation.owner"
+                                :gid="confirmation.gid"
+                                full
+                            />
+                        </q-item-section>
+                    </q-item>
+                    <q-item>
+                        <q-item-section>{{$t('domains.label_transaction')}}</q-item-section>
+                        <q-item-section side>{{confirmation.txid.slice(0, 10)}}...{{confirmation.txid.slice(-8)}}</q-item-section>
+                    </q-item>
+                </q-list>
+            </page-content>
+            <page-action>
+                <q-btn
+                    outline
+                    color="primary"
+                    :label="$t('activities.title')"
+                    @click="$router.push({name: 'activities'})"
+                />
+                <q-btn
+                    unelevated
+                    color="primary"
+                    :label="$t('common.finish')"
+                    @click="resetAfterConfirmation"
+                />
+            </page-action>
+        </template>
+        <q-form
+            v-else
+            class="column fit no-wrap"
+            @submit="onCheck"
         >
-            <q-input
-                outlined
-                v-model.trim="inputName"
-                :label="$t('domains.label_name')"
-                suffix=".vet"
-                autocomplete="off"
-                spellcheck="false"
-                :disable="!!commitment"
-                :error="!!errors.name"
-                :error-message="errors.name"
-                no-error-icon
-                @input="onInputChanged"
-            />
-            <q-input
-                outlined
-                v-model.number="years"
-                type="number"
-                min="1"
-                step="1"
-                :label="$t('domains.label_years')"
-                :disable="!!commitment"
-                :error="!!errors.years"
-                :error-message="errors.years"
-                no-error-icon
-                @input="onInputChanged"
-            />
-            <q-select
-                outlined
-                emit-value
-                map-options
-                :disable="!!commitment"
-                v-model="selectedWalletId"
-                :options="walletOptions"
-                :label="$t('domains.label_wallet')"
-                :error="!!errors.wallet"
-                :error-message="errors.wallet"
-                no-error-icon
-                @input="onWalletChanged"
-            />
-            <q-select
-                outlined
-                emit-value
-                map-options
-                :disable="!!commitment || !selectedWallet"
-                v-model="selectedAddress"
-                :options="addressOptions"
-                :label="$t('domains.label_owner')"
-                :error="!!errors.owner"
-                :error-message="errors.owner"
-                no-error-icon
-                @input="onOwnerChanged"
-            />
-            <q-checkbox
-                v-model="setAsPrimary"
-                :disable="!!commitment"
-                :label="$t('domains.label_set_primary')"
-                @input="onPrimaryChanged"
-            />
-            <q-banner
-                v-if="statusText"
-                :class="statusClass"
+            <page-content
+                padding
+                class="col"
+                innerClass="q-gutter-md"
             >
-                {{statusText}}
-            </q-banner>
-            <q-list
-                v-if="info"
-                bordered
-                separator
-            >
-                <q-item>
-                    <q-item-section>{{$t('domains.label_status')}}</q-item-section>
-                    <q-item-section side>
-                        <q-badge
-                            :color="info.available ? 'positive' : 'negative'"
-                            :label="info.available ? $t('domains.label_available') : $t('domains.label_unavailable')"
-                        />
-                    </q-item-section>
-                </q-item>
-                <q-item>
-                    <q-item-section>{{$t('domains.label_cost')}}</q-item-section>
-                    <q-item-section side>
-                        <span>
-                            <amount-label
-                                :value="price"
-                                :decimals="18"
-                                :fixed="2"
-                            /> VET
-                        </span>
-                    </q-item-section>
-                </q-item>
-                <q-item>
-                    <q-item-section>{{$t('domains.label_network')}}</q-item-section>
-                    <q-item-section side>{{$netDisplayName(selectedWallet.gid)}}</q-item-section>
-                </q-item>
-                <q-item v-if="commitment">
-                    <q-item-section>{{$t('domains.label_wait')}}</q-item-section>
-                    <q-item-section side>{{waitText}}</q-item-section>
-                </q-item>
-            </q-list>
-            <q-banner
-                v-if="commitment"
-                class="bg-orange-1 text-deep-orange"
-            >
-                {{$t('domains.msg_keep_open')}}
-            </q-banner>
-        </page-content>
-        <page-action>
-            <q-btn
-                type="submit"
-                outline
-                color="primary"
-                :disable="!!commitment"
-                :loading="checking"
-                :label="$t('domains.action_check')"
-            />
-            <q-btn
-                v-if="!commitment"
-                unelevated
-                color="primary"
-                :disable="!canCommit"
-                :loading="committing"
-                :label="$t('domains.action_commit')"
-                @click="onCommit"
-            />
-            <q-btn
-                v-else
-                unelevated
-                color="primary"
-                :disable="!canRegister"
-                :loading="registering"
-                :label="$t('domains.action_register')"
-                @click="onRegister"
-            />
-        </page-action>
-    </q-form>
+                <q-input
+                    outlined
+                    v-model.trim="inputName"
+                    :label="$t('domains.label_name')"
+                    suffix=".vet"
+                    autocomplete="off"
+                    spellcheck="false"
+                    :disable="!!commitment"
+                    :error="!!errors.name"
+                    :error-message="errors.name"
+                    no-error-icon
+                    @input="onInputChanged"
+                />
+                <q-input
+                    outlined
+                    v-model.number="years"
+                    type="number"
+                    min="1"
+                    step="1"
+                    :label="$t('domains.label_years')"
+                    :disable="!!commitment"
+                    :error="!!errors.years"
+                    :error-message="errors.years"
+                    no-error-icon
+                    @input="onInputChanged"
+                />
+                <q-select
+                    outlined
+                    emit-value
+                    map-options
+                    :disable="!!commitment"
+                    v-model="selectedWalletId"
+                    :options="walletOptions"
+                    :label="$t('domains.label_wallet')"
+                    :error="!!errors.wallet"
+                    :error-message="errors.wallet"
+                    no-error-icon
+                    @input="onWalletChanged"
+                />
+                <q-select
+                    outlined
+                    emit-value
+                    map-options
+                    :disable="!!commitment || !selectedWallet"
+                    v-model="selectedAddress"
+                    :options="addressOptions"
+                    :label="$t('domains.label_owner')"
+                    :error="!!errors.owner"
+                    :error-message="errors.owner"
+                    no-error-icon
+                    @input="onOwnerChanged"
+                />
+                <q-checkbox
+                    v-model="setAsPrimary"
+                    :disable="!!commitment"
+                    :label="$t('domains.label_set_primary')"
+                    @input="onPrimaryChanged"
+                />
+                <q-banner
+                    v-if="statusText"
+                    :class="statusClass"
+                >
+                    {{statusText}}
+                </q-banner>
+                <q-list
+                    v-if="info"
+                    bordered
+                    separator
+                >
+                    <q-item>
+                        <q-item-section>{{$t('domains.label_status')}}</q-item-section>
+                        <q-item-section side>
+                            <q-badge
+                                :color="info.available ? 'positive' : 'negative'"
+                                :label="info.available ? $t('domains.label_available') : $t('domains.label_unavailable')"
+                            />
+                        </q-item-section>
+                    </q-item>
+                    <q-item>
+                        <q-item-section>{{$t('domains.label_cost')}}</q-item-section>
+                        <q-item-section side>
+                            <span>
+                                <amount-label
+                                    :value="price"
+                                    :decimals="18"
+                                    :fixed="2"
+                                /> VET
+                            </span>
+                        </q-item-section>
+                    </q-item>
+                    <q-item>
+                        <q-item-section>{{$t('domains.label_network')}}</q-item-section>
+                        <q-item-section side>{{$netDisplayName(selectedWallet.gid)}}</q-item-section>
+                    </q-item>
+                    <q-item v-if="commitment">
+                        <q-item-section>{{$t('domains.label_wait')}}</q-item-section>
+                        <q-item-section side>{{waitText}}</q-item-section>
+                    </q-item>
+                </q-list>
+                <q-banner
+                    v-if="commitment"
+                    class="bg-orange-1 text-deep-orange"
+                >
+                    {{$t('domains.msg_keep_open')}}
+                </q-banner>
+            </page-content>
+            <page-action>
+                <q-btn
+                    type="submit"
+                    outline
+                    color="primary"
+                    :disable="!!commitment"
+                    :loading="checking"
+                    :label="$t('domains.action_check')"
+                />
+                <q-btn
+                    v-if="!commitment"
+                    unelevated
+                    color="primary"
+                    :disable="!canCommit"
+                    :loading="committing"
+                    :label="$t('domains.action_commit')"
+                    @click="onCommit"
+                />
+                <q-btn
+                    v-else
+                    unelevated
+                    color="primary"
+                    :disable="!canRegister"
+                    :loading="registering"
+                    :label="$t('domains.action_register')"
+                    @click="onRegister"
+                />
+            </page-action>
+        </q-form>
+    </div>
 </template>
 <script lang="ts">
 import Vue from 'vue'
 import { randomBytes } from 'crypto'
 import AmountLabel from 'src/components/AmountLabel.vue'
+import AddressLabel from 'src/components/AddressLabel.vue'
 import PageAction from 'src/components/PageAction.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageToolbar from 'src/components/PageToolbar.vue'
@@ -172,6 +236,7 @@ import {
     sumVetDomainPrice,
     vetDomainAvailableABI,
     vetDomainCommitmentArgs,
+    vetDomainFullName,
     vetDomainMakeCommitmentABI,
     vetDomainMaxCommitmentAgeABI,
     vetDomainMinCommitmentAgeABI,
@@ -199,6 +264,14 @@ type CommitState = {
     maxAge: number
 }
 
+type ConfirmationState = {
+    gid: string
+    name: string
+    owner: string
+    primary: boolean
+    txid: string
+}
+
 type DomainErrors = {
     name: string
     years: string
@@ -221,13 +294,14 @@ type DomainData = {
     statusText: string
     statusClass: string
     commitState: CommitState | null
+    confirmation: ConfirmationState | null
     now: number
     timer: number
     lookupTimer: number
 }
 
 export default Vue.extend({
-    components: { AmountLabel, PageAction, PageContent, PageToolbar },
+    components: { AddressLabel, AmountLabel, PageAction, PageContent, PageToolbar },
     data(): DomainData {
         return {
             inputName: '',
@@ -249,6 +323,7 @@ export default Vue.extend({
             statusText: '',
             statusClass: '',
             commitState: null as CommitState | null,
+            confirmation: null as ConfirmationState | null,
             now: Date.now(),
             timer: 0,
             lookupTimer: 0
@@ -373,6 +448,24 @@ export default Vue.extend({
         onPrimaryChanged() {
             this.commitState = null
         },
+        walletSigners(): string[] {
+            if (!this.selectedWallet || !this.selectedAddress) {
+                return []
+            }
+            return [
+                this.selectedAddress,
+                ...this.selectedWallet.meta.addresses.filter(addr => addr !== this.selectedAddress)
+            ]
+        },
+        resetAfterConfirmation() {
+            this.confirmation = null
+            this.inputName = ''
+            this.info = null
+            this.commitState = null
+            this.statusText = ''
+            this.statusClass = ''
+            this.scheduleCheck()
+        },
         validateInputs(): boolean {
             this.errors.name = ''
             this.errors.years = ''
@@ -468,9 +561,9 @@ export default Vue.extend({
                 await this.$signTx(this.selectedWallet.gid, {
                     message: [buildVetDomainCommitClause(this.contracts, commitment)],
                     options: {
-                        signer: this.selectedAddress,
                         comment: this.$t('domains.comment_commit', { name: `${params.name}.vet` }).toString()
-                    }
+                    },
+                    signers: this.walletSigners()
                 })
                 this.commitState = {
                     commitment,
@@ -495,17 +588,30 @@ export default Vue.extend({
             }
             this.registering = true
             try {
+                const wallet = this.selectedWallet
+                const params = this.commitState.params
                 await this.onCheck()
                 if (!this.info || !this.info.available) {
                     throw new Error(this.$t('domains.msg_unavailable').toString())
                 }
-                await this.$signTx(this.selectedWallet.gid, {
-                    message: [buildVetDomainRegisterClause(this.contracts, this.commitState.params, this.info.price)],
+                const response = await this.$signTx(wallet.gid, {
+                    message: [buildVetDomainRegisterClause(this.contracts, params, this.info.price)],
                     options: {
-                        signer: this.selectedAddress,
-                        comment: this.$t('domains.comment_register', { name: `${this.commitState.params.name}.vet` }).toString()
-                    }
+                        comment: this.$t('domains.comment_register', { name: vetDomainFullName(params.name) }).toString()
+                    },
+                    signers: this.walletSigners()
                 })
+                const fullName = vetDomainFullName(params.name)
+                if (params.setAsPrimary) {
+                    this.$svc.bc(wallet.gid).setVetDomainsPrimaryName(params.owner, fullName)
+                }
+                this.confirmation = {
+                    gid: wallet.gid,
+                    name: fullName,
+                    owner: params.owner,
+                    primary: params.setAsPrimary,
+                    txid: response.txid
+                }
                 this.statusText = this.$t('domains.msg_submitted').toString()
                 this.statusClass = 'bg-green-1 text-positive'
                 this.commitState = null
