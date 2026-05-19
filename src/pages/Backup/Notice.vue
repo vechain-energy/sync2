@@ -2,7 +2,10 @@
     <q-list>
         <q-item class="justify-center">
             <q-item-section>
-                <img src="~/assets/backup.svg">
+                <img
+                    src="~/assets/backup.svg"
+                    alt=""
+                >
             </q-item-section>
         </q-item>
         <q-item-label

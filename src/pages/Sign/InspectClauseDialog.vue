@@ -21,7 +21,7 @@
                 <q-item>
                     <q-item-section>
                         <q-item-label caption>To</q-item-label>
-                        <q-item-label style="word-break:break-all">
+                        <q-item-label class="break-all">
                             <address-label
                                 :addr="clause.to"
                                 :gid="gid"
@@ -53,10 +53,11 @@
                                 <q-input
                                     square
                                     v-if="clause.data && clause.data.length > 2"
+                                    aria-label="Clause data"
                                     dense
                                     class="monospace"
+                                    input-class="clause-data-textarea"
                                     type="textarea"
-                                    :input-style="{height: '146px'}"
                                     standout
                                     readonly
                                     :value="clause.data"
@@ -93,22 +94,24 @@ import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import { abi } from 'thor-devkit'
 import axios from 'axios'
+import { parseStoredJson } from 'src/utils/json'
 
 async function queryAbi(signature: string): Promise<abi.Function.Definition | null> {
-    let abi = JSON.parse(localStorage.getItem(signature) || 'null')
-    if (!abi) {
+    let abiItem = parseStoredJson<abi.Function.Definition | null>(localStorage.getItem(signature) || '', null)
+    if (!abiItem) {
         try {
             const response = await axios.get(`https://b32.vecha.in/q/${signature}.json`, { timeout: 3 * 1000 })
-            const abis = response.data
-            localStorage.setItem(signature, JSON.stringify(abis[0]))
-            abi = abis[0]
-        } catch (error) {
-            console.error(error)
-            abi = null
+            const abis = Array.isArray(response.data) ? response.data : []
+            abiItem = abis[0] || null
+            if (abiItem) {
+                localStorage.setItem(signature, JSON.stringify(abiItem))
+            }
+        } catch {
+            abiItem = null
         }
     }
 
-    return abi
+    return abiItem
 }
 
 export default Vue.extend({
@@ -154,7 +157,7 @@ export default Vue.extend({
             if (this.clause.abi) {
                 try {
                     return this.decodeDataToReadable(this.clause.abi as abi.Function.Definition, data)
-                } catch (e) { console.log(e) }
+                } catch { }
             }
 
             // double check
@@ -162,7 +165,7 @@ export default Vue.extend({
             if (abiItem) {
                 try {
                     return this.decodeDataToReadable(abiItem, data)
-                } catch (e) { console.log(e) }
+                } catch { }
             }
 
             return null
@@ -189,5 +192,13 @@ export default Vue.extend({
     overflow: auto;
     background-color: #0000000d;
     border: 1px dashed #b8b8b8;
+}
+
+.break-all {
+    word-break: break-all;
+}
+
+.clause-data-textarea {
+    height: 146px;
 }
 </style>

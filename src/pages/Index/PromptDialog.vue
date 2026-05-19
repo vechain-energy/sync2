@@ -12,6 +12,7 @@
                     <q-item-label header>{{opts.message}}</q-item-label>
                     <q-input
                         ref="input"
+                        :aria-label="opts.message || opts.title"
                         class="q-mx-sm"
                         dense
                         autofocus

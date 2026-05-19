@@ -37,7 +37,7 @@ export function nextFrame() {
  */
 export function transitionEnd(el: HTMLElement) {
     let removeListener = () => { }
-    const end = new Promise(resolve => {
+    const end = new Promise<void>(resolve => {
         const cb = (ev: TransitionEvent) => {
             if (ev && ev.target !== el) {
                 return
@@ -50,7 +50,7 @@ export function transitionEnd(el: HTMLElement) {
         removeListener = () => el.removeEventListener('transitionend', cb)
     })
 
-    const timeout = new Promise(resolve => setTimeout(resolve, getTimeout(el) + 1))
+    const timeout = new Promise<void>(resolve => setTimeout(resolve, getTimeout(el) + 1))
     return Promise.race([end, timeout])
         .then(() => removeListener())
 }

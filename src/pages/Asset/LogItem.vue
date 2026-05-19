@@ -49,13 +49,18 @@
                             flat
                             dense
                             icon="content_copy"
+                            :aria-label="$t('common.copy').toString()"
+                            :title="$t('common.copy').toString()"
                         />
                         <q-btn
+                            v-if="logTxExplorerUrl"
                             rounded
                             @click="viewOnExplorer"
                             dense
                             flat
                             icon="search"
+                            :aria-label="$t('common.view_on_explorer').toString()"
+                            :title="$t('common.view_on_explorer').toString()"
                         />
                     </div>
                 </q-item-section>
@@ -68,10 +73,10 @@ import Vue from 'vue'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import { openURL } from 'src/utils/open-url'
 import AmountLabel from 'components/AmountLabel.vue'
-import { urls, genesises } from 'src/consts'
 import { TransferLogItem } from './models'
 import { formatDate } from 'src/utils/format'
 import { copyText } from 'src/utils/clipboard'
+import { txExplorerUrl } from 'src/utils/explorer'
 
 export default Vue.extend({
     components: {
@@ -108,15 +113,8 @@ export default Vue.extend({
                 }
             }
         },
-        txDetailUrl(): string {
-            switch (genesises.which(this.log.token.gid)) {
-                case 'main':
-                    return `${urls.explorerMain}transactions/`
-                case 'test':
-                    return `${urls.explorerTest}transactions/`
-                default:
-                    return ''
-            }
+        logTxExplorerUrl(): string {
+            return txExplorerUrl(this.log.token.gid, this.log.meta.txID)
         }
     },
     methods: {
@@ -124,12 +122,18 @@ export default Vue.extend({
             return formatDate(timestamp * 1000, { relative: true })
         },
         viewOnExplorer() {
-            openURL(`${this.txDetailUrl}${this.log.meta.txID}`)
+            this.logTxExplorerUrl && openURL(this.logTxExplorerUrl)
         },
-        copy(str: string) {
-            copyText(str).then(() => {
-                this.$q.notify(this.$t('common.copied'))
-            }).catch(console.error)
+        async copy(str: string) {
+            try {
+                await copyText(str)
+                this.$q.notify(this.$t('common.copied').toString())
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('common.copy_failed').toString()
+                })
+            }
         }
     }
 })

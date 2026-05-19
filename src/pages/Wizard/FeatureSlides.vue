@@ -16,10 +16,10 @@
             class="column no-wrap q-gutter-y-md text-center"
         >
             <img
-                class="q-my-auto"
-                style="max-height:200px;min-height:32px;max-width:100%"
+                class="feature-slide-image q-my-auto"
                 draggable="false"
                 :src="item.img"
+                :alt="item.title"
             />
             <div class="text-h6">{{item.title}}</div>
             <div class="text-body2">{{item.content}}</div>
@@ -57,3 +57,10 @@ export default Vue.extend({
     }
 })
 </script>
+<style scoped>
+.feature-slide-image {
+    max-height: 200px;
+    min-height: 32px;
+    max-width: 100%;
+}
+</style>

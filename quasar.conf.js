@@ -176,6 +176,9 @@ module.exports = configure(function (ctx) {
 
       // https://quasar.dev/quasar-cli/cli-documentation/handling-webpack
       extendWebpack (cfg) {
+        const CopyWebpackPlugin = require('copy-webpack-plugin')
+
+        cfg.output = cfg.output || {}
         cfg.output.hashFunction = 'sha256'
 
         cfg.resolve.alias = {
@@ -205,16 +208,23 @@ module.exports = configure(function (ctx) {
           cfg.externals['node-hid'] = 'commonjs node-hid'
         }
 
+        const copyPatterns = [{
+          from: path.join(__dirname, 'src/statics'),
+          to: 'statics',
+          noErrorOnMissing: true
+        }]
         if (ctx.modeName === 'pwa') {
-          const CopyWebpackPlugin = require('copy-webpack-plugin')
-          for (const p of cfg.plugins) {
-            if (p instanceof CopyWebpackPlugin) {
-              p.patterns.push({
-                from: path.join(__dirname, 'public'),
-                noErrorOnMissing: true
-              })
-            }
-          }
+          copyPatterns.push({
+            from: path.join(__dirname, 'public'),
+            to: '',
+            noErrorOnMissing: true
+          })
+        }
+        const copyPlugin = cfg.plugins.find(p => p instanceof CopyWebpackPlugin)
+        if (copyPlugin) {
+          copyPlugin.patterns.push(...copyPatterns)
+        } else {
+          cfg.plugins.push(new CopyWebpackPlugin({ patterns: copyPatterns }))
         }
 
         if (process.env.NODE_ENV === 'production') {

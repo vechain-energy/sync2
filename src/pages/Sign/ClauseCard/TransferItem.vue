@@ -3,7 +3,7 @@
         <q-item dense>
             <q-item-section
                 avatar
-                style="min-width:0px"
+                class="transfer-token"
             >
                 <token-avatar
                     :spec="op.token"
@@ -13,7 +13,7 @@
             <q-item-section>
                 <q-item-label class="ellipsis">
                     <amount-label
-                        style="font-size:1.2rem;"
+                        class="transfer-amount"
                         :value="op.amount"
                         :decimals="op.token.decimals"
                         long
@@ -70,3 +70,12 @@ export default Vue.extend({
     }
 })
 </script>
+<style scoped>
+.transfer-token {
+    min-width: 0;
+}
+
+.transfer-amount {
+    font-size: 1.2rem;
+}
+</style>

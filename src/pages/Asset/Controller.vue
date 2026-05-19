@@ -42,6 +42,8 @@
                         flat
                         round
                         icon="send"
+                        :aria-label="$t('send.action_send').toString()"
+                        :title="$t('send.action_send').toString()"
                         :to="{name: 'send', query: { wid: walletId, i: addressIndex, symbol: symbol }}"
                     />
                 </q-item-section>
@@ -88,7 +90,7 @@ export default Vue.extend({
     },
     asyncComputed: {
         wallet(): Promise<M.Wallet | null> {
-            return this.$svc.wallet.get(parseInt(this.walletId))
+            return this.$svc.wallet.get(parseInt(this.walletId, 10))
         },
         token: {
             async get(): Promise<M.TokenSpec | null> {
@@ -110,7 +112,7 @@ export default Vue.extend({
     },
     computed: {
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
+            return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex, 10)] : ''
         }
     }
 })

@@ -24,6 +24,8 @@
                 dense
                 icon="qr_code_scanner"
                 flat
+                :aria-label="$t('common.scan_qr_code').toString()"
+                :title="$t('common.scan_qr_code').toString()"
                 @click.stop="onClickScan"
             />
         </template>

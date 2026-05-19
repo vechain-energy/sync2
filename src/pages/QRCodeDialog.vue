@@ -12,16 +12,14 @@
             </q-toolbar>
             <q-card-section>
                 <q-responsive
-                    class="q-mx-auto"
-                    style="max-width: 240px"
+                    class="q-mx-auto qr-code-frame"
                     :ratio="1"
                 >
                     <q-r-code class="full-width">{{req.content}}</q-r-code>
                 </q-responsive>
                 <div
                     v-if="req.message"
-                    :class="req.messageClass"
-                    style="word-break: break-all;"
+                    :class="[req.messageClass, 'break-all']"
                 >{{req.message}}</div>
             </q-card-section>
             <q-card-actions>
@@ -53,13 +51,26 @@ export default Vue.extend({
         show() { (this.$refs.dialog as QDialog).show() },
         // method is REQUIRED by $q.dialog
         hide() { (this.$refs.dialog as QDialog).hide() },
-        onCopy() {
-            copyText(this.req.content).then(
-                () => {
-                    this.$q.notify(this.$t('common.copied'))
-                }
-            ).catch(console.error)
+        async onCopy() {
+            try {
+                await copyText(this.req.content)
+                this.$q.notify(this.$t('common.copied').toString())
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('common.copy_failed').toString()
+                })
+            }
         }
     }
 })
 </script>
+<style scoped>
+.qr-code-frame {
+    max-width: 240px;
+}
+
+.break-all {
+    word-break: break-all;
+}
+</style>

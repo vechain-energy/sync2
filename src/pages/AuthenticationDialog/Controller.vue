@@ -13,10 +13,12 @@
                     <!-- prevent chrome warning -->
                     <q-input
                         v-show="false"
+                        aria-hidden="true"
                         autocomplete="username"
                     />
                     <q-input
                         :disable="loading"
+                        :aria-label="$t('authenticationDialog.label_input_password').toString()"
                         autofocus
                         class="q-mx-lg"
                         ref="pwd"

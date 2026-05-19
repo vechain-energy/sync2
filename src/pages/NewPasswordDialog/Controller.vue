@@ -9,12 +9,15 @@
             <prompt-dialog-toolbar>{{hint}}</prompt-dialog-toolbar>
             <q-form @submit="onSubmit()">
                 <q-card-section>
+                    <p class="text-center">{{inputLabel}}</p>
                     <!-- prevent chrome warning -->
                     <q-input
                         v-show="false"
+                        aria-hidden="true"
                         autocomplete="username"
                     />
                     <q-input
+                        :aria-label="inputLabel"
                         autofocus
                         class="q-mx-xl"
                         ref="pwd"
@@ -47,8 +50,7 @@
 import Vue from 'vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
-
-const MIN_PASSWORD_LEN = 6
+import { validateNewPasswordInput } from 'src/utils/new-password'
 
 export default Vue.extend({
     components: { PromptDialogToolbar },
@@ -69,6 +71,11 @@ export default Vue.extend({
             return this.password
                 ? this.$t('common.confirm').toString()
                 : this.$t('common.next').toString()
+        },
+        inputLabel(): string {
+            return this.password
+                ? this.$t('newPasswordDialog.label_confirm_password').toString()
+                : this.$t('newPasswordDialog.label_input_password').toString()
         }
     },
     watch: {
@@ -86,13 +93,10 @@ export default Vue.extend({
         async onSubmit() {
             (this.$refs.pwd as Vue).$el.getElementsByTagName('input')[0].focus()
 
-            if (this.inputValue.length === 0) {
-                return
-            }
             this.error = ''
             await this.$nextTick()
             if (this.password) {
-                if (this.inputValue !== this.password) {
+                if (validateNewPasswordInput(this.inputValue, this.password) === 'mismatch') {
                     this.inputValue = ''
                     this.password = ''
                     await this.$nextTick()
@@ -101,7 +105,7 @@ export default Vue.extend({
                 }
                 this.ok(this.password)
             } else {
-                if (this.inputValue.length < MIN_PASSWORD_LEN) {
+                if (validateNewPasswordInput(this.inputValue) === 'too-short') {
                     this.error = this.$t('newPasswordDialog.msg_password_too_short').toString()
                     return
                 }

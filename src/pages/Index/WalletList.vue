@@ -8,6 +8,8 @@
                     round
                     dense
                     icon="add_circle_outline"
+                    :aria-label="$t('index.action_new_address').toString()"
+                    :title="$t('index.action_new_address').toString()"
                     :to="{name:'new-wallet'}"
                 />
             </q-item-section>

@@ -28,6 +28,7 @@
             <q-item-label header>{{$t('send.label_amount')}}</q-item-label>
             <q-input
                 no-error-icon
+                :aria-label="$t('send.label_amount').toString()"
                 autocomplete="off"
                 class="q-mx-md"
                 v-model="amount"
@@ -65,6 +66,7 @@ import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
 import { isVetDomainName } from 'src/utils/vet-domains'
+import { dialogErrorMessage } from 'src/utils/dialog-error'
 
 export default Vue.extend({
     components: {
@@ -92,7 +94,7 @@ export default Vue.extend({
     },
     asyncComputed: {
         wallet(): Promise<M.Wallet | null> {
-            return this.$svc.wallet.get(parseInt(this.wid))
+            return this.$svc.wallet.get(parseInt(this.wid, 10))
         },
         recent: {
             async get(): Promise<string[]> {
@@ -153,7 +155,7 @@ export default Vue.extend({
             return this.wallet ? this.wallet.meta.addresses[parseInt(this.i, 10)] : ''
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i)] : ''
+            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i, 10)] : ''
         }
     },
     methods: {
@@ -185,7 +187,7 @@ export default Vue.extend({
 
             return (!this.errors.to && !this.errors.amount)
         },
-        onSend() {
+        async onSend() {
             if (!this.validate()) {
                 return
             }
@@ -209,13 +211,14 @@ export default Vue.extend({
                     comment
                 }
             }
-            this.$signTx(this.wallet!.gid, {
-                message: [msgItem],
-                options: {
-                    signer: this.from,
-                    comment: comment
-                }
-            }).then(() => {
+            try {
+                await this.$signTx(this.wallet!.gid, {
+                    message: [msgItem],
+                    options: {
+                        signer: this.from,
+                        comment: comment
+                    }
+                })
                 // eslint-disable-next-line @typescript-eslint/camelcase
                 this.$gtag.event('token-send', { event_label: this.sym })
                 const temp = [this.to, ...this.recent].reduce((result: string[], cv: string | null) => {
@@ -226,7 +229,16 @@ export default Vue.extend({
                     this.$svc.config.saveRecentRecipients(this.wallet.gid, temp)
                 }
                 this.$router.replace({ name: 'sign-success', query: { type: 'tx' } })
-            })
+            } catch (err) {
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (!message) {
+                    return
+                }
+                this.$q.notify({
+                    type: 'negative',
+                    message
+                })
+            }
         }
     }
 })

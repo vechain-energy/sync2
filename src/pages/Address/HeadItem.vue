@@ -27,6 +27,8 @@
                 round
                 @click="showQR"
                 icon="qr_code_2"
+                :aria-label="$t('address.action_receive').toString()"
+                :title="$t('address.action_receive').toString()"
             />
         </q-item-section>
     </q-item>

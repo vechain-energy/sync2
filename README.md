@@ -71,6 +71,11 @@ npm install
 npm run lint
 ```
 
+### Type-check the files
+```bash
+npm run typecheck
+```
+
 ### Run tests
 ```bash
 npm test

@@ -10,13 +10,16 @@
         <div class="fit overflow-hidden">
             <q-btn
                 size="lg"
-                class="q-ml-md float-left"
-                style="z-index: 1111"
+                class="qr-scanner-dialog__close q-ml-md float-left"
                 flat
                 dense
                 round
                 icon="close"
-                text-color="white" @click="hide()" />
+                text-color="white"
+                :aria-label="$t('common.close').toString()"
+                :title="$t('common.close').toString()"
+                @click="hide()"
+            />
             <Scanner
                 class="fit"
                 @input="onScanned"
@@ -47,6 +50,10 @@ export default Vue.extend({
         },
         onError(err: Error) {
             console.warn(err)
+            this.$q.notify({
+                type: 'negative',
+                message: this.$t('common.camera_scan_failed').toString()
+            })
             this.hide()
         },
         onShow() {
@@ -58,3 +65,8 @@ export default Vue.extend({
     }
 })
 </script>
+<style lang="scss" scoped>
+.qr-scanner-dialog__close {
+    z-index: 1111;
+}
+</style>

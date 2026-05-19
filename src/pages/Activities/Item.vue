@@ -88,6 +88,8 @@
                             v-if="entry.link"
                             @click="openLink(entry.link)"
                             icon="link"
+                            :aria-label="$t('common.open_link').toString()"
+                            :title="$t('common.open_link').toString()"
                         />
                         <template v-if="entry.type === 'tx' && entry.id">
                             <q-btn
@@ -96,13 +98,18 @@
                                 flat
                                 dense
                                 icon="content_copy"
+                                :aria-label="$t('common.copy').toString()"
+                                :title="$t('common.copy').toString()"
                             />
                             <q-btn
+                                v-if="entryTxExplorerUrl"
                                 rounded
                                 @click="viewOnExplorer"
                                 dense
                                 flat
                                 icon="search"
+                                :aria-label="$t('common.view_on_explorer').toString()"
+                                :title="$t('common.view_on_explorer').toString()"
                             />
                         </template>
                         <q-btn
@@ -112,6 +119,8 @@
                             rounded
                             dense
                             icon="message"
+                            :aria-label="$t('common.view').toString()"
+                            :title="$t('common.view').toString()"
                         />
                     </div>
                 </q-item-section>
@@ -122,10 +131,11 @@
 <script lang="ts">
 import Vue from 'vue'
 import { openURL } from 'src/utils/open-url'
-import { urls, genesises } from 'src/consts'
+import { genesises } from 'src/consts'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import { formatDate } from 'src/utils/format'
 import { copyText } from 'src/utils/clipboard'
+import { txExplorerUrl } from 'src/utils/explorer'
 
 export type Entry = {
     gid: string
@@ -176,15 +186,8 @@ export default Vue.extend({
             }
             return result
         },
-        txDetailUrl(): string {
-            switch (genesises.which(this.entry.gid)) {
-                case 'main':
-                    return `${urls.explorerMain}transactions/`
-                case 'test':
-                    return `${urls.explorerTest}transactions/`
-                default:
-                    return ''
-            }
+        entryTxExplorerUrl(): string {
+            return txExplorerUrl(this.entry.gid, this.entry.id)
         },
         networkBadgeText(): string {
             if (this.entry.gid === genesises.main.id) {
@@ -194,17 +197,23 @@ export default Vue.extend({
         }
     },
     methods: {
-        copy(str: string) {
-            copyText(str).then(() => {
-                this.$q.notify(this.$t('common.copied'))
-            }).catch(console.error)
+        async copy(str: string) {
+            try {
+                await copyText(str)
+                this.$q.notify(this.$t('common.copied').toString())
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('common.copy_failed').toString()
+                })
+            }
         },
         openLink(link: string) {
             const regexp = this.entry.type === 'tx' ? /{txid}/g : /{certid}/g
             openURL(link.replace(regexp, this.entry.id))
         },
         viewOnExplorer() {
-            openURL(`${this.txDetailUrl}${this.entry.id}`)
+            this.entryTxExplorerUrl && openURL(this.entryTxExplorerUrl)
         },
         viewContent() {
             this.$q.dialog({

@@ -15,6 +15,7 @@
                     <q-item-label header>URL</q-item-label>
                     <q-input
                         ref="input"
+                        aria-label="URL"
                         class="q-mx-sm"
                         dense
                         autofocus

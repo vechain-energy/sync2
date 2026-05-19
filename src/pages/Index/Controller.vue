@@ -8,6 +8,7 @@
             <page-toolbar
                 :title="title"
                 icon="menu"
+                :nav-label="$t('index.label_wallets').toString()"
                 :gid="wallet && wallet.gid"
                 @action="drawerOpen=true"
             >
@@ -17,6 +18,8 @@
                     flat
                     round
                     icon="more_horiz"
+                    :aria-label="$t('common.more').toString()"
+                    :title="$t('common.more').toString()"
                 >
                     <option-menu :wallet="wallet" />
                 </q-btn>
@@ -78,6 +81,7 @@ import OptionMenu from './OptionMenu.vue'
 import SideDrawer from 'components/SideDrawer.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import { scroll } from 'quasar'
+import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
 const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
 
@@ -86,7 +90,7 @@ export default Vue.extend({
     data: () => {
         return {
             drawerOpen: false,
-            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0')
+            selectedWalletId: parseStoredNonNegativeInteger(localStorage.getItem(SELECTED_WALLET_ID_KEY))
         }
     },
     computed: {

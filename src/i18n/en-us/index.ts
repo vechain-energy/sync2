@@ -15,7 +15,13 @@ export default {
         decline: 'Decline',
         copy: 'Copy',
         copied: 'Copied to clipboard',
+        copy_failed: 'you need to copy manually. Clipboard access failed.',
         close: 'Close',
+        back: 'Back',
+        more: 'More',
+        open_link: 'Open link',
+        view_on_explorer: 'View on explorer',
+        scan_qr_code: 'Scan QR code',
         continue: 'Continue',
         view: 'View',
 
@@ -29,6 +35,7 @@ export default {
         something_wrong: 'Something is wrong',
         no_wallet: 'No wallet created yet',
         invalid_input: 'Invalid input',
+        camera_scan_failed: 'you need to allow camera access or enter the code manually',
 
         // notify
         wallet_updated: 'Wallet updated',
@@ -122,12 +129,15 @@ export default {
         action_nodes: 'Nodes',
         action_language: 'Language',
         msg_password_changed: 'Password changed',
+        msg_password_change_failed: 'you need to try again. Password was not changed.',
         action_user_guide: 'User Guide'
     },
     nodes: {
         title_add_dialog: 'Add Node',
         msg_node_added: 'Node added',
         msg_node_deleted: 'Node deleted',
+        msg_node_add_failed: 'you need to try again. Node was not added.',
+        msg_node_delete_failed: 'you need to try again. Node was not deleted.',
         msg_node_existed: 'Node already exists',
         msg_delete: 'Are you sure you want to delete the node?'
     },
@@ -161,7 +171,8 @@ export default {
         title: 'Asset',
         label_history: 'History',
         msg_no_history: 'No transfer history',
-        msg_no_more: '- The End - '
+        msg_no_more: '- The End - ',
+        msg_history_load_error: 'you need to check the network and try again. History could not be loaded.'
     },
     send: {
         title: 'Send',
@@ -190,6 +201,7 @@ export default {
         label_unavailable: 'Unavailable',
         action_max: 'MAX',
         action_swap: 'Swap',
+        action_switch_tokens: 'Switch tokens',
         msg_mainnet_only: 'you need to switch to Main Net',
         msg_invalid_amount: 'you need to enter a valid amount',
         msg_insufficient_balance: 'you need to lower the amount or select a wallet with balance',
@@ -246,7 +258,9 @@ export default {
         msg_password_mismatch: 'Password mismatch',
         msg_password_too_short: 'Password too short (at least 6 characters)',
         title_set_new_password: 'Set New Password',
-        title_confirm_password: 'Confirm Your Password'
+        title_confirm_password: 'Confirm Your Password',
+        label_input_password: 'Enter a new password',
+        label_confirm_password: 'Enter the same password again'
     },
     backup: {
         title: 'Backup',
@@ -263,7 +277,9 @@ export default {
         msg_mnemonic_backup_only: 'you need to export the private key for this wallet',
 
         // notify
-        msg_wallet_not_found: 'Wallet not found'
+        msg_wallet_not_found: 'Wallet not found',
+        msg_backup_load_failed: 'you need to try again. Backup words could not be loaded.',
+        msg_backup_save_failed: 'you need to try again. Backup status was not saved.'
     },
     sign: {
         title: 'Sign',
@@ -336,6 +352,7 @@ export default {
     },
     bioAuth: {
         title: 'Biometric Authentication',
-        msg_auth_failed: 'Authenticate failed,Please try again'
+        msg_auth_failed: 'Authenticate failed,Please try again',
+        msg_save_failed: 'you need to try again. Biometric unlock was not changed.'
     }
 }

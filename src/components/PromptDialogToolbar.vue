@@ -6,6 +6,8 @@
             dense
             round
             icon="close"
+            :aria-label="$t('common.close').toString()"
+            :title="$t('common.close').toString()"
             v-close-popup
         />
         <q-toolbar-title class="text-center">
@@ -18,6 +20,8 @@
             flat
             dense
             round
+            aria-hidden="true"
+            tabindex="-1"
         />
     </q-toolbar>
 </template>

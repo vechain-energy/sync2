@@ -1,12 +1,14 @@
 <template>
     <div
         class="fit column no-wrap drawer-panel"
-        style="width: 300px !important;max-width:80vw"
     >
         <!-- drawer content header -->
         <q-toolbar>
             <q-avatar square>
-                <img src="~assets/sync-logo.svg">
+                <img
+                    src="~assets/sync-logo.svg"
+                    alt="Sync2"
+                >
             </q-avatar>
             <q-toolbar-title>
                 Sync2
@@ -116,3 +118,9 @@ export default Vue.extend({
     }
 })
 </script>
+<style scoped>
+.drawer-panel {
+    width: 300px !important;
+    max-width: 80vw;
+}
+</style>

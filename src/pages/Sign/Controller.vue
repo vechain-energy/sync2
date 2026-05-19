@@ -141,7 +141,6 @@ export default Vue.extend({
             // eslint-disable-next-line @typescript-eslint/camelcase
             this.$gtag.event('connex-sign', { event_label: request.origin })
             this.postStatus(ACCEPTED_SUFFIX, {})
-            // TODO validate body
             return request
         }
     },

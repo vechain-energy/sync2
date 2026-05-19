@@ -6,6 +6,8 @@
                 flat
                 round
                 icon="add"
+                :aria-label="$t('common.add').toString()"
+                :title="$t('common.add').toString()"
                 @click="onAdd"
             />
         </page-toolbar>
@@ -57,6 +59,8 @@
                                     dense
                                     round
                                     icon="delete_forever"
+                                    :aria-label="$t('common.delete').toString()"
+                                    :title="$t('common.delete').toString()"
                                 />
                             </q-item-section>
                         </q-item>
@@ -128,23 +132,34 @@ export default Vue.extend({
             this.$set(this.activeMap, val.genesis.id, val.url)
         },
         async onAdd() {
+            let node: M.Node
             try {
-                const node = await this.$dialog<M.Node>({
+                node = await this.$dialog<M.Node>({
                     component: AddDialog,
                     state: this.addNodeState
                 })
+            } catch {
+                return
+            }
 
-                if (this.nodes.find(n => n.genesis.id === node.genesis.id && n.url === node.url)) {
-                    this.$q.notify({
-                        type: 'warning',
-                        message: this.$t('nodes.msg_node_existed').toString()
-                    })
-                    return
-                }
+            if (this.nodes.find(n => n.genesis.id === node.genesis.id && n.url === node.url)) {
+                this.$q.notify({
+                    type: 'warning',
+                    message: this.$t('nodes.msg_node_existed').toString()
+                })
+                return
+            }
+
+            try {
                 await this.$svc.config.node.save([...this.nodes, node])
                 this.$q.notify(this.$t('nodes.msg_node_added').toString())
                 this.addNodeState.url = ''
-            } catch { }
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('nodes.msg_node_add_failed').toString()
+                })
+            }
         },
         async onDelete(val: M.Node) {
             try {
@@ -162,10 +177,20 @@ export default Vue.extend({
                         unelevated: true
                     }
                 })
-                const nodes = this.nodes.filter(n => !(n.genesis.id === val.genesis.id && n.url === val.url))
+            } catch {
+                return
+            }
+
+            const nodes = this.nodes.filter(n => !(n.genesis.id === val.genesis.id && n.url === val.url))
+            try {
                 await this.$svc.config.node.save(nodes)
                 this.$q.notify(this.$t('nodes.msg_node_deleted').toString())
-            } catch { }
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('nodes.msg_node_delete_failed').toString()
+                })
+            }
         }
     },
     beforeDestroy() {

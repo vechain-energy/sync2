@@ -222,6 +222,8 @@ import {
     findVetDomainWallet,
     resolveVetDomainAddress
 } from 'src/utils/vet-domain-wallet-selection'
+import { dialogErrorMessage } from 'src/utils/dialog-error'
+import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
 const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
 
@@ -277,7 +279,7 @@ export default Vue.extend({
             inputName: '',
             years: 1,
             setAsPrimary: true,
-            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0', 10),
+            selectedWalletId: parseStoredNonNegativeInteger(localStorage.getItem(SELECTED_WALLET_ID_KEY)),
             selectedAddress: '',
             wallets: [] as M.Wallet[],
             info: null as null | VetDomainRegistrationInfo,
@@ -529,8 +531,11 @@ export default Vue.extend({
                 this.statusText = this.$t('domains.msg_committed').toString()
                 this.statusClass = 'bg-orange-1 text-deep-orange'
             } catch (err) {
-                this.statusText = err.message || this.$t('common.something_wrong').toString()
-                this.statusClass = 'bg-red-1 text-negative'
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (message) {
+                    this.statusText = message
+                    this.statusClass = 'bg-red-1 text-negative'
+                }
             } finally {
                 this.committing = false
             }
@@ -570,8 +575,11 @@ export default Vue.extend({
                 this.commitState = null
                 this.info = null
             } catch (err) {
-                this.statusText = err.message || this.$t('common.something_wrong').toString()
-                this.statusClass = 'bg-red-1 text-negative'
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (message) {
+                    this.statusText = message
+                    this.statusClass = 'bg-red-1 text-negative'
+                }
             } finally {
                 this.registering = false
             }

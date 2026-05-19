@@ -140,8 +140,12 @@ export default Vue.extend({
                         return this.$svc.wallet.update(this.walletId, m)
                     }
                 )
-            } catch (error) {
-                console.warn(error)
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('backup.msg_backup_save_failed').toString()
+                })
+                return
             }
 
             this.$emit('done')

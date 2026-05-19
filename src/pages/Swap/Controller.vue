@@ -64,6 +64,8 @@
                     color="primary"
                     icon="swap_vert"
                     :disable="!supported || tokens.length < 2"
+                    :aria-label="$t('swap.action_switch_tokens').toString()"
+                    :title="$t('swap.action_switch_tokens').toString()"
                     @click="swapTokens"
                 />
             </div>
@@ -266,6 +268,7 @@ import TokenSelector from 'src/pages/Send/TokenSelector.vue'
 import { SignerGroup } from 'src/pages/Sign/models'
 import { buildSignerGroups } from 'src/pages/Sign/signer-groups'
 import { genesises } from 'src/consts'
+import { dialogErrorMessage } from 'src/utils/dialog-error'
 import { toWei } from 'src/utils/format'
 import {
     BuiltSwapQuote,
@@ -703,8 +706,11 @@ export default Vue.extend({
                 })
                 this.$router.replace({ name: 'sign-success', query: { type: 'tx' } })
             } catch (err) {
-                this.statusText = err instanceof Error ? err.message : this.$t('common.something_wrong').toString()
-                this.statusClass = 'bg-red-1 text-negative'
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (message) {
+                    this.statusText = message
+                    this.statusClass = 'bg-red-1 text-negative'
+                }
             } finally {
                 this.swapping = false
             }

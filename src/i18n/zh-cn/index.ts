@@ -15,7 +15,13 @@ export default {
         decline: '拒绝',
         copy: '复制',
         copied: '已复制到剪贴板',
+        copy_failed: '请手动复制。无法访问剪贴板。',
         close: '关闭',
+        back: '返回',
+        more: '更多',
+        open_link: '打开链接',
+        view_on_explorer: '在浏览器中查看',
+        scan_qr_code: '扫描二维码',
         continue: '继续',
         view: '查看',
 
@@ -29,6 +35,7 @@ export default {
         something_wrong: '出错了',
         no_wallet: '还未创建钱包',
         invalid_input: '无效输入',
+        camera_scan_failed: '请允许相机访问，或手动输入代码',
 
         // notify
         wallet_updated: '钱包已更新',
@@ -121,12 +128,15 @@ export default {
         action_nodes: '节点设置',
         action_language: '语言偏好',
         msg_password_changed: '密码已修改',
+        msg_password_change_failed: '请重试。密码未修改。',
         action_user_guide: '用户指南'
     },
     nodes: {
         title_add_dialog: '添加节点',
         msg_node_added: '节点已添加',
         msg_node_deleted: '节点已删除',
+        msg_node_add_failed: '请重试。节点未添加。',
+        msg_node_delete_failed: '请重试。节点未删除。',
         msg_node_existed: '节点已存在',
         msg_delete: '确认删除该节点?'
     },
@@ -160,7 +170,8 @@ export default {
         title: '资产',
         label_history: '转账记录',
         msg_no_history: '无记录',
-        msg_no_more: '- 完 - '
+        msg_no_more: '- 完 - ',
+        msg_history_load_error: 'you need to check the network and try again. 无法加载转账记录。'
     },
     send: {
         title: '发送',
@@ -189,6 +200,7 @@ export default {
         label_unavailable: '不可用',
         action_max: '最大',
         action_swap: '兑换',
+        action_switch_tokens: '切换代币',
         msg_mainnet_only: 'you need to switch to Main Net',
         msg_invalid_amount: 'you need to enter a valid amount',
         msg_insufficient_balance: 'you need to lower the amount or select a wallet with balance',
@@ -245,7 +257,9 @@ export default {
         msg_password_mismatch: '密码不一致',
         msg_password_too_short: '密码过短(至少6位)',
         title_set_new_password: '设置新密码',
-        title_confirm_password: '确认您的密码'
+        title_confirm_password: '确认您的密码',
+        label_input_password: '输入新密码',
+        label_confirm_password: '再次输入相同密码'
     },
     backup: {
         title: '备份',
@@ -262,7 +276,9 @@ export default {
         msg_mnemonic_backup_only: 'you need to export the private key for this wallet',
 
         // notify
-        msg_wallet_not_found: '找不到钱包'
+        msg_wallet_not_found: '找不到钱包',
+        msg_backup_load_failed: '请重试。无法加载备份助记词。',
+        msg_backup_save_failed: '请重试。备份状态未保存。'
     },
     sign: {
         title: '签名',
@@ -335,6 +351,7 @@ export default {
     },
     bioAuth: {
         title: '生物识别验证',
-        msg_auth_failed: '身份验证失败,请重试'
+        msg_auth_failed: '身份验证失败,请重试',
+        msg_save_failed: '请重试。生物识别解锁未修改。'
     }
 }

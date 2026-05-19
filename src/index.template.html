@@ -4,13 +4,15 @@
 <%
   const templateCtx = htmlWebpackPlugin.options.ctx || (typeof ctx !== 'undefined' ? ctx : { mode: {} })
   const templateMode = templateCtx.mode || {}
+  const productName = htmlWebpackPlugin.options.productName || 'Sync2'
+  const productDescription = htmlWebpackPlugin.options.productDescription || 'VeChain Sync2'
 %>
 
 <head>
-  <title><%= htmlWebpackPlugin.options.productName %></title>
+  <title><%= productName %></title>
 
   <meta charset="utf-8">
-  <meta name="description" content="<%= htmlWebpackPlugin.options.productDescription %>">
+  <meta name="description" content="<%= productDescription %>">
   <meta name="format-detection" content="telephone=no">
   <meta name="msapplication-tap-highlight" content="no">
   <meta name="viewport"
@@ -70,7 +72,10 @@
         if((location.hash||'').startsWith('#/sign?')) {
           const forward = localStorage.getItem('connex-forward')
           if(forward) {
-            location.href = new URL(location.hash, forward).href
+            const forwardUrl = new URL(forward)
+            if(forwardUrl.protocol === 'http:' || forwardUrl.protocol === 'https:') {
+              location.href = new URL(location.hash, forwardUrl.href).href
+            }
           }
         }
       } catch(err) {

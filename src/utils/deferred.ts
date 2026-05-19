@@ -9,7 +9,7 @@ export class Deferred<T> extends Promise<T> {
             return
         }
 
-        let _resolve: (v?: T | PromiseLike<T>) => void
+        let _resolve: (v: T | PromiseLike<T>) => void
         let _reject: (reason?: unknown) => void
         super((resolve, reject) => {
             _resolve = resolve
@@ -21,7 +21,7 @@ export class Deferred<T> extends Promise<T> {
         this.catch(() => { })
     }
 
-    resolve!: (v?: T | PromiseLike<T>) => void
+    resolve!: (v: T | PromiseLike<T>) => void
     reject!: (reason?: unknown) => void
 }
 

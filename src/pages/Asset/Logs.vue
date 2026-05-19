@@ -15,6 +15,16 @@
             <q-separator inset="item" />
         </div>
         <div
+            v-if="loadError"
+            class="text-negative q-ma-md row items-center no-wrap"
+        >
+            <q-icon
+                name="warning"
+                class="q-mr-sm"
+            />
+            <span>{{$t('asset.msg_history_load_error')}}</span>
+        </div>
+        <div
             v-if="noMore"
             class="text-center q-my-md text-grey"
         >
@@ -55,6 +65,7 @@ export default Vue.extend({
             logs: [] as TransferLogItem[],
             offset: 0,
             noMore: false,
+            loadError: false,
             splitBlock: null as unknown as number
         }
     },
@@ -65,10 +76,16 @@ export default Vue.extend({
                 let list: TransferLogItem[] = []
                 const from = (this.logs.length ? this.logs[0].meta.blockNumber : this.splitBlock) + 1
                 const to = 2 ** 32 - 1
-                while (on) {
-                    const r = await this.query(from, to, list.length)
-                    on = r.length === this.pageSize
-                    list = [...list, ...r]
+                try {
+                    while (on) {
+                        const r = await this.query(from, to, list.length)
+                        on = r.length === this.pageSize
+                        list = [...list, ...r]
+                    }
+                    this.loadError = false
+                } catch (error) {
+                    console.warn('load recent transfers:', error)
+                    this.loadError = true
                 }
                 return list
             },
@@ -104,10 +121,11 @@ export default Vue.extend({
                 this.pageNum++
                 this.logs = [...this.logs, ...logs]
                 this.noMore = logs.length < this.pageSize
+                this.loadError = false
                 done(logs.length < this.pageSize)
             } catch (error) {
-                // TODO error
-                console.log(error)
+                console.warn('load transfers:', error)
+                this.loadError = true
                 done(true)
             }
         },
