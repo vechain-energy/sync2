@@ -38,6 +38,7 @@ declare namespace M {
         origin?: string
         signers?: string[]
         preferredSigner?: string
+        actionLabel?: string
     }
 
     type TxResponse = Connex.Vendor.TxResponse

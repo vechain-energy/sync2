@@ -67,7 +67,7 @@
                     v-else
                     unelevated
                     color="primary"
-                    :label="$t('sign.action_sign')"
+                    :label="signActionLabel"
                     @click="onClickSign()"
                     :loading="thor.status.head.number === 0"
                 />
@@ -179,6 +179,9 @@ export default Common.extend({
         },
         isDelegation(): boolean {
             return !!this.req.options.delegator
+        },
+        signActionLabel(): string {
+            return this.req.actionLabel || this.$t('sign.action_sign').toString()
         },
         thor(): Connex.Thor { return this.$svc.bc(this.gid).thor },
         estimation(): EstimateGasResult | null {

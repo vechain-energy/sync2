@@ -13,6 +13,7 @@ import Sign from 'pages/Sign'
 import SignSuccess from 'pages/SignSuccess.vue'
 import Activities from 'pages/Activities'
 import Domains from 'pages/Domains'
+import Swap from 'pages/Swap'
 
 const routes: RouteConfig[] = [
     {
@@ -71,6 +72,10 @@ const routes: RouteConfig[] = [
             path: 'domains',
             name: 'domains',
             component: Domains
+        }, {
+            path: 'swap',
+            name: 'swap',
+            component: Swap
         }]
     }
 ]
