@@ -22,9 +22,9 @@ Compared to Sync v1, the most significant change is that the built-in dApp brows
 | --- | --- | --- |
 | Browser (nightly/unstable) | | https://lite.sync.vecha.in |
 | Desktop | | |
-| | Windows | [Releases](https://github.com/vechain/sync2/releases/latest) |
-| | macOS | [Releases](https://github.com/vechain/sync2/releases/latest) |
-| | Linux | [Releases](https://github.com/vechain/sync2/releases/latest) |
+| | Windows | [Releases](https://github.com/vechain-energy/sync2/releases/latest) |
+| | macOS | [Releases](https://github.com/vechain-energy/sync2/releases/latest) |
+| | Linux | [Releases](https://github.com/vechain-energy/sync2/releases/latest) |
 | Mobile | | |
 | | Android | [Google Play](https://play.google.com/store/apps/details?id=org.vechain.sync2) |
 | | iOS | [App Store](https://apps.apple.com/app/6446363029) |
@@ -90,6 +90,8 @@ Browser version will be updated automatically by [Action](./.github/workflows/de
 + `git tag v<version>`
 + `git push origin v<version>`
 + Check [Action](./.github/workflows/release.yaml) for more detailed info.
++ The release workflow creates a draft GitHub Release and uploads built Electron binaries for Windows, macOS, and Linux.
++ Review the draft release assets, then publish the release manually.
 </details>
 
 ## License

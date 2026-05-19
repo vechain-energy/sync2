@@ -3,87 +3,202 @@ name: Release native version
 on:
   push:
     tags:
-    - 'v*'
-
+      - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish, for example v2.1.0'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
+  release-meta:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Resolve release tag
+        id: meta
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          if [[ ! "$tag" =~ ^v[0-9]+(\.[0-9]+)*(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release tag: $tag" >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
   create-gh-release:
+    needs: release-meta
     runs-on: ubuntu-latest
     steps:
-      - name: Create Release 
-        # as electron-builder needs draft to upload artifacts, create a draft first
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      - name: Create draft GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.release-meta.outputs.tag }}
+          name: Sync2 ${{ needs.release-meta.outputs.tag }}
           draft: true
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-electron:
-    needs: create-gh-release
+    needs:
+      - release-meta
+      - create-gh-release
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2019]
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+          - os: windows-2022
+            platform: windows
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '14'
           cache: 'npm'
-          
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install libs on ubuntu
         if: startsWith(matrix.os, 'ubuntu')
-        run: sudo apt install -y libusb-1.0-0-dev libudev-dev
-      
-      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
+
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build and Release
+      - name: Build Electron binaries
         run: npx quasar build -m electron
         env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
+      - name: Upload Electron binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-meta.outputs.tag }}
+          draft: true
+          fail_on_unmatched_files: false
+          files: |
+            dist/electron/Packaged/*.AppImage
+            dist/electron/Packaged/*.exe
+            dist/electron/Packaged/*.dmg
+            dist/electron/Packaged/*.zip
+            dist/electron/Packaged/*.yml
+            dist/electron/Packaged/*.blockmap
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }} 
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }} 
+
+      - name: Upload Electron workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync2-electron-${{ matrix.platform }}
+          if-no-files-found: error
+          path: |
+            dist/electron/Packaged/*.AppImage
+            dist/electron/Packaged/*.exe
+            dist/electron/Packaged/*.dmg
+            dist/electron/Packaged/*.zip
+            dist/electron/Packaged/*.yml
+            dist/electron/Packaged/*.blockmap
 
   release-electron-macos:
-    needs: create-gh-release
-    runs-on: self_mac_11.0
-
+    needs:
+      - release-meta
+      - create-gh-release
+    runs-on: macos-15-intel
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '14'
+          cache: 'npm'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
         run: npm ci
 
-      - name: Setup macOS Notarization env
+      - name: Setup macOS notarization env
+        shell: bash
         run: |
-          rm -fr ~/private_keys && mkdir ~/private_keys
-          echo $APPLE_AUTH_PRIVATE_KEY | base64 -D > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
-        env:
-          APPLE_AUTH_PRIVATE_KEY: ${{secrets.APPLE_AUTH_PRIVATE_KEY}}
-          APPLE_API_KEY_ID: ${{secrets.APPLE_API_KEY_ID}}
+          if [ -z "$APPLE_AUTH_PRIVATE_KEY" ] || [ -z "$APPLE_API_KEY_ID" ]; then
+            echo "macOS notarization key is not configured. Build will continue without notarization."
+            exit 0
+          fi
 
-      - name: Build and Release
+          rm -fr ~/private_keys
+          mkdir ~/private_keys
+          echo "$APPLE_AUTH_PRIVATE_KEY" | base64 -D > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+        env:
+          APPLE_AUTH_PRIVATE_KEY: ${{ secrets.APPLE_AUTH_PRIVATE_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+
+      - name: Build Electron binaries
         run: npx quasar build -m electron
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.CSC_LINK }} 
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }} 
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }} 
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
+      - name: Upload Electron binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-meta.outputs.tag }}
+          draft: true
+          fail_on_unmatched_files: false
+          files: |
+            dist/electron/Packaged/*.dmg
+            dist/electron/Packaged/*.zip
+            dist/electron/Packaged/*.yml
+            dist/electron/Packaged/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Electron workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync2-electron-macos
+          if-no-files-found: error
+          path: |
+            dist/electron/Packaged/*.dmg
+            dist/electron/Packaged/*.zip
+            dist/electron/Packaged/*.yml
+            dist/electron/Packaged/*.blockmap
+
   release-android:
-    needs: create-gh-release
+    needs:
+      - release-meta
+      - create-gh-release
     runs-on: self_mac_11.0
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm ci
 
       - name: Build bundle
@@ -126,30 +241,28 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "33.0.2"
 
-      - name: Set up variable
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-          
       - name: Rename apk file
-        run: mv ${{steps.sign_apk.outputs.signedReleaseFile}} dist/android/apk/Sync2-android-${{ steps.vars.outputs.tag }}.apk
-      
+        run: mv ${{steps.sign_apk.outputs.signedReleaseFile}} dist/android/apk/Sync2-android-${{ needs.release-meta.outputs.version }}.apk
+
       - name: Rename bundle file
-        run: mv ${{steps.sign_bundle.outputs.signedReleaseFile}} dist/android/bundle/Sync2-android-${{ steps.vars.outputs.tag }}.aab
+        run: mv ${{steps.sign_bundle.outputs.signedReleaseFile}} dist/android/bundle/Sync2-android-${{ needs.release-meta.outputs.version }}.aab
 
       - name: Calculate checksum of output file
-        run: shasum -a 512 dist/android/apk/Sync2-android-${{ steps.vars.outputs.tag }}.apk | cut -f1 -d\ | xxd -r -p | base64 -b 0 > dist/android/apk/Sync2-android-${{ steps.vars.outputs.tag }}-apk-SHASUM
+        run: shasum -a 512 dist/android/apk/Sync2-android-${{ needs.release-meta.outputs.version }}.apk | cut -f1 -d\ | xxd -r -p | base64 -b 0 > dist/android/apk/Sync2-android-${{ needs.release-meta.outputs.version }}-apk-SHASUM
 
       - name: Upload apk to GH release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.release-meta.outputs.tag }}
           draft: true
           files: |
-            dist/android/apk/Sync2-android-${{ steps.vars.outputs.tag }}.apk
-            dist/android/apk/Sync2-android-${{ steps.vars.outputs.tag }}-apk-SHASUM
+            dist/android/apk/Sync2-android-${{ needs.release-meta.outputs.version }}.apk
+            dist/android/apk/Sync2-android-${{ needs.release-meta.outputs.version }}-apk-SHASUM
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload aab to artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          path: dist/android/bundle/Sync2-android-${{ steps.vars.outputs.tag }}.aab
+          name: sync2-android-bundle
+          path: dist/android/bundle/Sync2-android-${{ needs.release-meta.outputs.version }}.aab
