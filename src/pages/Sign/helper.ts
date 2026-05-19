@@ -1,26 +1,6 @@
 import { abi, Transaction } from 'thor-devkit'
 import { abis } from 'src/consts'
-import { BigNumber } from 'bignumber.js'
-
-const paramsCache: Record<string, string> = {}
-
-async function getBaseGasPrice(thor: Connex.Thor) {
-    const baseGasPrice = '0x000000000000000000000000000000000000626173652d6761732d7072696365'
-    const k = `${thor.genesis.id}-${baseGasPrice}`
-    if (paramsCache[k]) {
-        return paramsCache[k]
-    } else {
-        const address = '0x0000000000000000000000000000506172616d73'
-        const result = await thor
-            .account(address)
-            .method(abis.paramsGet)
-            .cache([address])
-            .call(baseGasPrice)
-
-        paramsCache[k] = result.data
-        return result.data
-    }
-}
+import { FeeMarket, GALACTICA_NODE_REQUIRED } from './fee-market'
 
 export type EstimateGasResult = {
     caller: string
@@ -28,7 +8,27 @@ export type EstimateGasResult = {
     reverted: boolean
     revertReason: string
     vmError: string
-    baseGasPrice: string
+    feeMarket: FeeMarket
+}
+
+async function getFeeMarket(thor: Connex.Thor): Promise<FeeMarket> {
+    if (!thor.fees) {
+        throw new Error(GALACTICA_NODE_REQUIRED)
+    }
+
+    try {
+        const [history, priorityFee] = await Promise.all([
+            thor.fees.history().count(1).get(),
+            thor.fees.priorityFee()
+        ])
+        const baseFeePerGas = history.baseFeePerGas[history.baseFeePerGas.length - 1] || thor.status.head.baseFeePerGas
+        if (!baseFeePerGas || !priorityFee) {
+            throw new Error(GALACTICA_NODE_REQUIRED)
+        }
+        return { baseFeePerGas, priorityFee }
+    } catch {
+        throw new Error(GALACTICA_NODE_REQUIRED)
+    }
 }
 
 export async function estimateGas(
@@ -62,7 +62,7 @@ export async function estimateGas(
         gas = intrinsicGas + (execGas ? (execGas + 15000) : 0)
     }
 
-    const bgp = await getBaseGasPrice(thor)
+    const feeMarket = await getFeeMarket(thor)
     const lastOutput = outputs.slice().pop()
     return {
         caller,
@@ -70,16 +70,8 @@ export async function estimateGas(
         reverted: lastOutput ? lastOutput.reverted : false,
         revertReason: lastOutput ? (lastOutput.revertReason || '') : '',
         vmError: lastOutput ? lastOutput.vmError : '',
-        baseGasPrice: bgp
+        feeMarket
     }
-}
-
-export function calcFee(gas: number, baseGasPrice: string, gasPriceCoef: number) {
-    return new BigNumber(baseGasPrice)
-        .times(gasPriceCoef)
-        .idiv(255)
-        .plus(baseGasPrice)
-        .times(gas)
 }
 
 const TRANSFER_SIG = new abi.Function(abis.transfer).signature

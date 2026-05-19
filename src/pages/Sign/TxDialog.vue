@@ -41,9 +41,9 @@
                         @click="showWarnings()"
                     />
 
-                    <gas-fee-bar :fee="fee" :isDelegation="isDelegation">
+                    <gas-fee-bar :fee="fee" :maxFee="maxFee" :isDelegation="isDelegation">
                         <priority-selector
-                            v-model="gasPriceCoef"
+                            v-model="feePriority"
                             :calcFee="calcFee"
                         />
                     </gas-fee-bar>
@@ -82,7 +82,7 @@ import PageToolbar from 'src/components/PageToolbar.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageAction from 'src/components/PageAction.vue'
 import SignerSelector from './SignerSelector.vue'
-import { estimateGas, EstimateGasResult, calcFee, decodeAsTokenTransferClause } from './helper'
+import { estimateGas, EstimateGasResult, decodeAsTokenTransferClause } from './helper'
 import PrioritySelector from './PrioritySelector.vue'
 import GasFeeBar from './GasFeeBar.vue'
 import ClauseCard from './ClauseCard'
@@ -92,6 +92,22 @@ import { randomBytes } from 'crypto'
 import ErrorTip from './ErrorTip.vue'
 import WarningListDialog from './WarningListDialog.vue'
 import InspectClauseDialog from './InspectClauseDialog.vue'
+import {
+    FeePriority,
+    buildDynamicFeeTxBody,
+    calcCurrentFee,
+    calcMaxFee,
+    calcMaxFeePerGas,
+    calcPriorityFeePerGas
+} from './fee-market'
+
+type AsyncComputedState = {
+    $asyncComputed: {
+        delayedEstimation: {
+            exception?: Error
+        }
+    }
+}
 
 export default Common.extend({
     components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip },
@@ -100,7 +116,7 @@ export default Common.extend({
     },
     data() {
         return {
-            gasPriceCoef: 0
+            feePriority: FeePriority.Regular
         }
     },
     computed: {
@@ -109,12 +125,27 @@ export default Common.extend({
             if (!est) {
                 return null
             }
-            return (coef: number) => {
-                return calcFee(est.gas, est.baseGasPrice, coef).toString()
+            return (priority: number) => {
+                const priorityFeePerGas = calcPriorityFeePerGas(est.feeMarket.priorityFee, priority)
+                return calcCurrentFee(est.gas, est.feeMarket.baseFeePerGas, priorityFeePerGas).toString()
             }
         },
+        priorityFeePerGas(): BigNumber | null {
+            const est = this.estimation
+            return est ? calcPriorityFeePerGas(est.feeMarket.priorityFee, this.feePriority) : null
+        },
+        maxFeePerGas(): BigNumber | null {
+            const est = this.estimation
+            const priorityFeePerGas = this.priorityFeePerGas
+            return est && priorityFeePerGas ? calcMaxFeePerGas(est.feeMarket.baseFeePerGas, priorityFeePerGas) : null
+        },
         fee(): string | null {
-            return this.calcFee ? this.calcFee(this.gasPriceCoef) : null
+            return this.calcFee ? this.calcFee(this.feePriority) : null
+        },
+        maxFee(): string | null {
+            const est = this.estimation
+            const maxFeePerGas = this.maxFeePerGas
+            return est && maxFeePerGas ? calcMaxFee(est.gas, maxFeePerGas).toString() : null
         },
         criticalError(): Error | null {
             if (!this.wallet) {
@@ -124,6 +155,11 @@ export default Common.extend({
             const head = this.thor.status.head
             if (head.number > 0 && this.req.options.delegator && !((head.txsFeatures || 0) & 1)) {
                 return { name: this.$t('sign.label_critical_error').toString(), message: this.$t('sign.msg_vip191_not_supported').toString() }
+            }
+            const vm = this as unknown as AsyncComputedState
+            const estimationException = vm.$asyncComputed.delayedEstimation.exception
+            if (head.number > 0 && estimationException) {
+                return { name: this.$t('sign.label_critical_error').toString(), message: estimationException.message }
             }
             return null
         },
@@ -155,7 +191,7 @@ export default Common.extend({
     asyncComputed: {
         // the result may not match the current signer
         delayedEstimation(): Promise<EstimateGasResult | null> {
-            if (!this.wallet) {
+            if (!this.wallet || this.thor.status.head.number === 0) {
                 return Promise.resolve(null)
             }
             return estimateGas(
@@ -174,7 +210,7 @@ export default Common.extend({
         },
         async energyWarning(): Promise<Error | null> {
             const est = this.estimation
-            const fee = this.fee
+            const fee = this.maxFee
             if (!est || !fee || (this.req.options.delegator && !this.req.options.delegator.signer)) {
                 return null
             }
@@ -224,8 +260,10 @@ export default Common.extend({
             const est = this.estimation
             const wallet = this.wallet
             const signer = this.signer
+            const priorityFeePerGas = this.priorityFeePerGas
+            const maxFeePerGas = this.maxFeePerGas
 
-            if (!est || !wallet) {
+            if (!est || !wallet || !priorityFeePerGas || !maxFeePerGas) {
                 return
             }
 
@@ -237,32 +275,26 @@ export default Common.extend({
                 })
             }
 
-            let tx!: Transaction
+            let tx!: Transaction<Transaction.DynamicFeeBody>
             let delegatorSig: Buffer | undefined
 
             const originSig = await this.signTx(wallet, signer, () => {
                 // compose the tx body
-                const txBody: Transaction.Body = {
-                    chainTag: Number.parseInt(this.thor.genesis.id.slice(-2), 16),
-                    blockRef: this.thor.status.head.id.slice(0, 18),
-                    expiration: 18, // about 3 mins
-                    clauses: this.req.message.map(item => {
-                        return {
-                            to: item.to,
-                            value: '0x' + new BigNumber(item.value).toString(16),
-                            data: item.data || '0x'
-                        }
-                    }),
-                    gasPriceCoef: this.gasPriceCoef,
-                    gas: est.gas,
-                    dependsOn: this.req.options.dependsOn || null,
-                    nonce: '0x' + randomBytes(8).toString('hex')
-                }
+                const txBody = buildDynamicFeeTxBody(
+                    this.thor.genesis.id,
+                    this.thor.status.head.id,
+                    this.req.message,
+                    est.gas,
+                    priorityFeePerGas,
+                    maxFeePerGas,
+                    this.req.options.dependsOn,
+                    '0x' + randomBytes(8).toString('hex')
+                )
 
                 return this.$loading(async () => {
                     const delegator = this.req.options.delegator
                     if (delegator) {
-                        tx = new Transaction({ ...txBody, reserved: { features: 1 /* VIP191 bit */ } })
+                        tx = new Transaction({ ...txBody, reserved: { features: Transaction.DELEGATED_MASK } })
                         try {
                             const resp = await this.$axios.post(delegator.url, {
                                 raw: '0x' + tx.encode().toString('hex'),

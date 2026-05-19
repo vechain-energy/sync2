@@ -1,8 +1,13 @@
 import { boot } from 'quasar/wrappers'
+import { VueConstructor } from 'vue'
 import * as State from './state'
 import * as Plugins from './plugins'
 import * as Modals from './modals'
 import { genesises } from 'src/consts'
+
+type BootParams = {
+    Vue: VueConstructor
+}
 
 declare module 'vue/types/vue' {
     interface Vue {
@@ -15,7 +20,7 @@ declare module 'vue/types/vue' {
     }
 }
 
-export default boot(({ Vue }) => {
+export default boot(({ Vue }: BootParams) => {
     State.boot()
     Plugins.boot()
     Modals.boot()

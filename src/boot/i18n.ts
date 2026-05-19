@@ -1,7 +1,11 @@
 import { boot } from 'quasar/wrappers'
 import messages from 'src/i18n'
-import Vue from 'vue'
+import Vue, { ComponentOptions } from 'vue'
 import VueI18n from 'vue-i18n'
+
+type BootParams = {
+    app: ComponentOptions<Vue>
+}
 
 declare module 'vue/types/vue' {
     interface Vue {
@@ -18,7 +22,7 @@ export const i18n = new VueI18n({
     silentFallbackWarn: true
 })
 
-export default boot(({ app }) => {
+export default boot(({ app }: BootParams) => {
     // Set i18n instance on app
     app.i18n = i18n
 })

@@ -17,6 +17,13 @@
                 <q-avatar size="1em">
                     <img src="~assets/vtho.svg">
                 </q-avatar>
+                <q-item-label v-if="maxFee" caption>
+                    {{$t('sign.label_max_fee')}}
+                    <amount-label
+                        :value="maxFee"
+                        :decimals="18"
+                    />
+                </q-item-label>
                 <q-item-label v-if="isDelegation" caption>{{$t('sign.msg_fee_delegation')}}</q-item-label>
             </q-item-label>
         </q-item-section>
@@ -35,6 +42,7 @@ export default Vue.extend({
     components: { AmountLabel },
     props: {
         fee: String,
+        maxFee: String,
         isDelegation: Boolean
     }
 })

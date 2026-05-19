@@ -41,7 +41,7 @@
                         clickable
                         v-close-popup
                         @click="$emit('change', l.value)"
-                        :active="coef === l.value"
+                        :active="priority === l.value"
                     >
                         <q-item-section avatar>
                             <q-icon :name="l.icon" />
@@ -78,27 +78,27 @@ type Level = {
 export default Vue.extend({
     components: { AmountLabel },
     model: {
-        prop: 'coef',
+        prop: 'priority',
         event: 'change'
     },
     props: {
-        coef: Number,
-        calcFee: Function as unknown as (() => ((coef: number) => void) | null)
+        priority: Number,
+        calcFee: Function as unknown as (() => ((priority: number) => string) | null)
     },
     computed: {
         levels(): Level[] {
             return [
-                { icon: 'directions_walk', label: this.$t('sign.label_priority_regular').toString(), value: 0 },
-                { icon: 'directions_car', label: this.$t('sign.label_priority_medium').toString(), value: 127 },
-                { icon: 'flight', label: this.$t('sign.label_priority_high').toString(), value: 255 }
+                { icon: 'directions_walk', label: this.$t('sign.label_priority_regular').toString(), value: 100 },
+                { icon: 'directions_car', label: this.$t('sign.label_priority_medium').toString(), value: 150 },
+                { icon: 'flight', label: this.$t('sign.label_priority_high').toString(), value: 200 }
             ]
         },
         level(): Level | null {
-            return this.levels.find(l => l.value === this.coef) || null
+            return this.levels.find(l => l.value === this.priority) || null
         }
     },
     watch: {
-        coef(newVal: number) {
+        priority(newVal: number) {
             if (!this.levels.find(l => l.value === newVal)) {
                 this.$emit('change', this.levels[0].value)
             }

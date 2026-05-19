@@ -34,7 +34,7 @@ declare namespace M {
 
     interface TxRequest {
         message: Connex.Vendor.TxMessage
-        options: Connex.Driver.TxOptions
+        options: Connex.Signer.TxOptions
         origin?: string
     }
 
@@ -42,7 +42,7 @@ declare namespace M {
 
     interface CertRequest {
         message: Connex.Vendor.CertMessage,
-        options: Connex.Driver.CertOptions
+        options: Connex.Signer.CertOptions
         domain: string,
         origin?: string,
     }

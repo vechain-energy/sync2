@@ -4,6 +4,8 @@ import { Transaction, secp256k1, Certificate, blake2b256 } from 'thor-devkit'
 import { Vault } from 'src/core/vault'
 import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
 
+type SignableTransaction = Transaction<Transaction.LegacyBody | Transaction.DynamicFeeBody>
+
 export default Vue.extend({
     props: {
         gid: String,
@@ -51,7 +53,7 @@ export default Vue.extend({
         }
     },
     methods: {
-        async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<Transaction>): Promise<Buffer> {
+        async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<SignableTransaction>): Promise<Buffer> {
             if (wallet.meta.type === 'hd') {
                 // acquire user master key
                 const umk = await this.$authenticate()

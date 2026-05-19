@@ -199,6 +199,7 @@ export default {
         // sign tx/cert
         label_select_priority: 'Priority',
         label_estimate_fee: 'Est. Fee',
+        label_max_fee: 'Max Fee',
         label_priority_regular: 'Regular',
         label_priority_medium: 'Medium',
         label_priority_high: 'High',
