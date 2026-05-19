@@ -8,19 +8,27 @@ import {
     normalizeVetDomainName
 } from '../src/utils/vet-domains'
 
-describe('.vet.domains helpers', () => {
+describe('.vet domain helpers', () => {
     it('normalizes names before lookup', () => {
+        assert.strictEqual(normalizeVetDomainName('  Alice.VET  '), 'alice.vet')
         assert.strictEqual(normalizeVetDomainName('  Alice.VET.Domains  '), 'alice.vet.domains')
     })
 
-    it('accepts valid .vet.domains names only', () => {
+    it('accepts valid .vet and .vet.domains names only', () => {
+        assert.strictEqual(isVetDomainName('alice.vet'), true)
+        assert.strictEqual(isVetDomainName('pay.alice.vet'), true)
         assert.strictEqual(isVetDomainName('alice.vet.domains'), true)
         assert.strictEqual(isVetDomainName('pay.alice.vet.domains'), true)
         assert.strictEqual(isVetDomainName('xn--alice.vet.domains'), true)
 
+        assert.strictEqual(isVetDomainName('vet'), false)
+        assert.strictEqual(isVetDomainName('.vet'), false)
         assert.strictEqual(isVetDomainName('vet.domains'), false)
         assert.strictEqual(isVetDomainName('.vet.domains'), false)
         assert.strictEqual(isVetDomainName('alice.vet.domain'), false)
+        assert.strictEqual(isVetDomainName('bad name.vet'), false)
+        assert.strictEqual(isVetDomainName('-bad.vet'), false)
+        assert.strictEqual(isVetDomainName('bad-.vet'), false)
         assert.strictEqual(isVetDomainName('bad name.vet.domains'), false)
         assert.strictEqual(isVetDomainName('-bad.vet.domains'), false)
         assert.strictEqual(isVetDomainName('bad-.vet.domains'), false)
@@ -36,6 +44,7 @@ describe('.vet.domains helpers', () => {
     })
 
     it('cleans reverse lookup names', () => {
+        assert.strictEqual(cleanResolvedName('Alice.VET'), 'alice.vet')
         assert.strictEqual(cleanResolvedName('Alice.VET.Domains'), 'alice.vet.domains')
         assert.strictEqual(cleanResolvedName('alice.vet.domain'), '')
     })

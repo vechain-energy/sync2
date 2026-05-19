@@ -1,6 +1,6 @@
 import { address } from 'thor-devkit'
 
-export const VET_DOMAIN_SUFFIX = '.vet.domains'
+export const VET_DOMAIN_SUFFIXES = ['.vet', '.vet.domains']
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 export function normalizeVetDomainName(input: string): string {
@@ -13,11 +13,12 @@ function isValidDomainLabel(label: string): boolean {
 
 export function isVetDomainName(input: string): boolean {
     const normalized = normalizeVetDomainName(input)
-    if (!normalized.endsWith(VET_DOMAIN_SUFFIX)) {
+    const suffix = VET_DOMAIN_SUFFIXES.find(item => normalized.endsWith(item))
+    if (!suffix) {
         return false
     }
 
-    const baseName = normalized.slice(0, -VET_DOMAIN_SUFFIX.length)
+    const baseName = normalized.slice(0, -suffix.length)
     const labels = baseName.split('.')
     return labels.length > 0 && labels.every(isValidDomainLabel)
 }

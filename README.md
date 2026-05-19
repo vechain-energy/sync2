@@ -6,6 +6,10 @@ The next generation VeChain wallet for all platforms.
 
 Compared to Sync v1, the most significant change is that the built-in dApp browser is abandoned. That means now dApps can freely run in your favorite web browser.
 
+## Wallet Features
+
+- `.vet` and `.vet.domains` names can be entered as recipients and displayed for known addresses.
+
 ## Supported Platforms
 
 | Platform | | Link |
