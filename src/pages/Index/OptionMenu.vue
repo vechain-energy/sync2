@@ -39,7 +39,7 @@ export default Vue.extend({
         }
     },
     methods: {
-        newAddress() {
+        async newAddress() {
             const wallet = this.wallet
             if (!wallet) {
                 return
@@ -48,14 +48,22 @@ export default Vue.extend({
             if (addresses.length >= MAX_ADDRESS) {
                 return
             }
-            const vault = Vault.decode(wallet.vault)
-            const newAddress = vault.derive(addresses.length).address
-            const newMeta: M.Wallet.Meta = {
-                ...wallet.meta,
-                addresses: [...addresses, newAddress]
-            }
+            try {
+                const vault = Vault.decode(wallet.vault)
+                const newAddress = vault.derive(addresses.length).address
+                const newMeta: M.Wallet.Meta = {
+                    ...wallet.meta,
+                    addresses: [...addresses, newAddress]
+                }
 
-            this.$svc.wallet.update(wallet.id, newMeta)
+                await this.$svc.wallet.update(wallet.id, newMeta)
+                this.$q.notify(this.$t('common.wallet_updated').toString())
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('common.something_wrong').toString()
+                })
+            }
         },
         async rename() {
             const wallet = this.wallet
