@@ -30,6 +30,7 @@ async function main() {
     await import('./signer-groups.spec')
     await import('./private-key.spec')
     await import('./vault-worker.spec')
+    await import('./directives.spec')
     await import('./vet-domain-registration.spec')
     await import('./vet-domain-profile.spec')
     await import('./vet-domain-wallet-name.spec')
