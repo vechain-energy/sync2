@@ -94,21 +94,24 @@ import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import { abi } from 'thor-devkit'
 import axios from 'axios'
+import { parseStoredJson } from 'src/utils/json'
 
 async function queryAbi(signature: string): Promise<abi.Function.Definition | null> {
-    let abi = JSON.parse(localStorage.getItem(signature) || 'null')
-    if (!abi) {
+    let abiItem = parseStoredJson<abi.Function.Definition | null>(localStorage.getItem(signature) || '', null)
+    if (!abiItem) {
         try {
             const response = await axios.get(`https://b32.vecha.in/q/${signature}.json`, { timeout: 3 * 1000 })
-            const abis = response.data
-            localStorage.setItem(signature, JSON.stringify(abis[0]))
-            abi = abis[0]
+            const abis = Array.isArray(response.data) ? response.data : []
+            abiItem = abis[0] || null
+            if (abiItem) {
+                localStorage.setItem(signature, JSON.stringify(abiItem))
+            }
         } catch {
-            abi = null
+            abiItem = null
         }
     }
 
-    return abi
+    return abiItem
 }
 
 export default Vue.extend({

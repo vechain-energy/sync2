@@ -11,4 +11,10 @@ describe('config JSON helpers', () => {
         assert.deepStrictEqual(parseStoredJson('', [] as string[]), [])
         assert.deepStrictEqual(parseStoredJson('not-json', [] as string[]), [])
     })
+
+    it('supports nullable stored objects', () => {
+        const fallback = null as { name: string } | null
+        assert.deepStrictEqual(parseStoredJson('{"name":"transfer"}', fallback), { name: 'transfer' })
+        assert.strictEqual(parseStoredJson('not-json', fallback), null)
+    })
 })
