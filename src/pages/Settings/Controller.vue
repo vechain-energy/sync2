@@ -114,7 +114,10 @@ export default Vue.extend({
                         message: this.$t('bioAuth.msg_auth_failed').toString()
                     })
                 } else {
-                    console.warn(err)
+                    this.$q.notify({
+                        type: 'negative',
+                        message: this.$t('bioAuth.msg_save_failed').toString()
+                    })
                 }
             }
         },
@@ -128,9 +131,11 @@ export default Vue.extend({
                         await this.$svc.config.setUserMasterKeyGlob(JSON.stringify(glob))
                     })
                     this.$q.notify(this.$t('settings.msg_password_changed'))
-                } catch (err) {
-                    // fatal error
-                    console.error(err)
+                } catch {
+                    this.$q.notify({
+                        type: 'negative',
+                        message: this.$t('settings.msg_password_change_failed').toString()
+                    })
                 }
             } catch { }
         },

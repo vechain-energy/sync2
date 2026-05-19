@@ -129,6 +129,7 @@ export default {
         action_nodes: 'Nodes',
         action_language: 'Language',
         msg_password_changed: 'Password changed',
+        msg_password_change_failed: 'you need to try again. Password was not changed.',
         action_user_guide: 'User Guide'
     },
     nodes: {
@@ -347,6 +348,7 @@ export default {
     },
     bioAuth: {
         title: 'Biometric Authentication',
-        msg_auth_failed: 'Authenticate failed,Please try again'
+        msg_auth_failed: 'Authenticate failed,Please try again',
+        msg_save_failed: 'you need to try again. Biometric unlock was not changed.'
     }
 }

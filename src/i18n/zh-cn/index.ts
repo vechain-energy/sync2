@@ -128,6 +128,7 @@ export default {
         action_nodes: '节点设置',
         action_language: '语言偏好',
         msg_password_changed: '密码已修改',
+        msg_password_change_failed: '请重试。密码未修改。',
         action_user_guide: '用户指南'
     },
     nodes: {
@@ -346,6 +347,7 @@ export default {
     },
     bioAuth: {
         title: '生物识别验证',
-        msg_auth_failed: '身份验证失败,请重试'
+        msg_auth_failed: '身份验证失败,请重试',
+        msg_save_failed: '请重试。生物识别解锁未修改。'
     }
 }
