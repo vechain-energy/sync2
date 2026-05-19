@@ -83,6 +83,26 @@ export const vetDomainRentPriceABI: abi.Function.Definition = {
     type: 'function'
 }
 
+export const vetDomainMinCommitmentAgeABI: abi.Function.Definition = {
+    constant: true,
+    inputs: [],
+    name: 'minCommitmentAge',
+    outputs: [{ name: '', type: 'uint256' }],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function'
+}
+
+export const vetDomainMaxCommitmentAgeABI: abi.Function.Definition = {
+    constant: true,
+    inputs: [],
+    name: 'maxCommitmentAge',
+    outputs: [{ name: '', type: 'uint256' }],
+    payable: false,
+    stateMutability: 'view',
+    type: 'function'
+}
+
 export const vetDomainMakeCommitmentABI: abi.Function.Definition = {
     constant: true,
     inputs: [
@@ -154,6 +174,34 @@ export function yearsToDuration(years: number): number {
 
 export function sumVetDomainPrice(price: VetDomainPrice): string {
     return new BigNumber(price.base || 0).plus(price.premium || 0).toFixed(0)
+}
+
+function isRecord(value: unknown): value is Record<string | number, unknown> {
+    return typeof value === 'object' && value !== null
+}
+
+export function decodedBoolean(decoded: Record<string | number, unknown>): boolean {
+    return decoded[0] === true
+}
+
+export function decodedString(decoded: Record<string | number, unknown>, key: string): string {
+    const value = decoded[key] || decoded[0]
+    return typeof value === 'string' ? value : ''
+}
+
+export function decodedNumber(decoded: Record<string | number, unknown>): number {
+    const value = decoded[0]
+    return typeof value === 'string' || typeof value === 'number' ? Number(value) : 0
+}
+
+export function decodedVetDomainPrice(decoded: Record<string | number, unknown>): VetDomainPrice {
+    const price = isRecord(decoded[0]) ? decoded[0] : decoded
+    const base = price.base || price[0]
+    const premium = price.premium || price[1]
+    return {
+        base: typeof base === 'string' || typeof base === 'number' ? base.toString() : '0',
+        premium: typeof premium === 'string' || typeof premium === 'number' ? premium.toString() : '0'
+    }
 }
 
 export function buildVetDomainCommitClause(contracts: VetDomainContracts, commitment: string): Connex.VM.Clause {

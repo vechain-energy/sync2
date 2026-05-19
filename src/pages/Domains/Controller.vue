@@ -143,6 +143,10 @@ import {
     VetDomainRegistrationInfo,
     buildVetDomainCommitClause,
     buildVetDomainRegisterClause,
+    decodedBoolean,
+    decodedNumber,
+    decodedString,
+    decodedVetDomainPrice,
     getVetDomainContracts,
     isBasicRegistrationName,
     normalizeRegistrationName,
@@ -150,6 +154,8 @@ import {
     vetDomainAvailableABI,
     vetDomainCommitmentArgs,
     vetDomainMakeCommitmentABI,
+    vetDomainMaxCommitmentAgeABI,
+    vetDomainMinCommitmentAgeABI,
     vetDomainRentPriceABI,
     vetDomainValidABI,
     yearsToDuration
@@ -191,6 +197,7 @@ type DomainData = {
     commitState: CommitState | null
     now: number
     timer: number
+    lookupTimer: number
 }
 
 export default Vue.extend({
@@ -214,7 +221,8 @@ export default Vue.extend({
             statusClass: '',
             commitState: null as CommitState | null,
             now: Date.now(),
-            timer: 0
+            timer: 0,
+            lookupTimer: 0
         }
     },
     computed: {
@@ -278,6 +286,7 @@ export default Vue.extend({
         addressOptions(options: AddressOption[]) {
             if (!this.selectedAddress && options.length > 0) {
                 this.selectedAddress = options[0].value
+                this.scheduleCheck()
             }
         }
     },
@@ -286,11 +295,28 @@ export default Vue.extend({
             this.now = Date.now()
         }, 1000)
         this.wallets = await this.$svc.wallet.all()
+        this.ensureSelectedAddress()
+        this.scheduleCheck()
     },
     beforeDestroy() {
         window.clearInterval(this.timer)
+        window.clearTimeout(this.lookupTimer)
     },
     methods: {
+        ensureSelectedAddress() {
+            if (!this.selectedAddress && this.addressOptions.length > 0) {
+                this.selectedAddress = this.addressOptions[0].value
+            }
+        },
+        scheduleCheck() {
+            window.clearTimeout(this.lookupTimer)
+            if (this.commitment || !this.inputName.trim()) {
+                return
+            }
+            this.lookupTimer = window.setTimeout(() => {
+                void this.onCheck()
+            }, 650)
+        },
         onInputChanged() {
             this.info = null
             this.commitState = null
@@ -299,6 +325,7 @@ export default Vue.extend({
             this.errors.name = ''
             this.errors.years = ''
             this.errors.owner = ''
+            this.scheduleCheck()
         },
         validateInputs(): boolean {
             this.errors.name = ''
@@ -319,6 +346,7 @@ export default Vue.extend({
             return !this.errors.name && !this.errors.years && !this.errors.owner
         },
         async onCheck() {
+            window.clearTimeout(this.lookupTimer)
             if (!this.validateInputs() || !this.selectedWallet || !this.contracts) {
                 return
             }
@@ -328,26 +356,28 @@ export default Vue.extend({
             try {
                 const name = this.normalizedName
                 const duration = yearsToDuration(Number(this.years))
+                const selectedAddress = this.selectedAddress
+                const selectedGid = this.selectedWallet.gid
                 const controller = this.$svc.bc(this.selectedWallet.gid).thor.account(this.contracts.controller)
                 const [available, valid, rentPrice, minAge, maxAge] = await Promise.all([
                     controller.method(vetDomainAvailableABI).call(name),
                     controller.method(vetDomainValidABI).call(name),
                     controller.method(vetDomainRentPriceABI).call(name, duration),
-                    controller.method({ constant: true, inputs: [], name: 'minCommitmentAge', outputs: [{ name: '', type: 'uint256' }], payable: false, stateMutability: 'view', type: 'function' }).call(),
-                    controller.method({ constant: true, inputs: [], name: 'maxCommitmentAge', outputs: [{ name: '', type: 'uint256' }], payable: false, stateMutability: 'view', type: 'function' }).call()
+                    controller.method(vetDomainMinCommitmentAgeABI).call(),
+                    controller.method(vetDomainMaxCommitmentAgeABI).call()
                 ])
-                const price = rentPrice.decoded[0] || rentPrice.decoded
+                const currentWallet = this.selectedWallet
+                if (name !== this.normalizedName || selectedAddress !== this.selectedAddress || !currentWallet || selectedGid !== currentWallet.gid) {
+                    return
+                }
                 this.info = {
                     name,
                     duration,
-                    available: !!available.decoded[0],
-                    valid: !!valid.decoded[0],
-                    minCommitmentAge: Number(minAge.decoded[0]),
-                    maxCommitmentAge: Number(maxAge.decoded[0]),
-                    price: {
-                        base: price.base || price[0] || '0',
-                        premium: price.premium || price[1] || '0'
-                    }
+                    available: decodedBoolean(available.decoded),
+                    valid: decodedBoolean(valid.decoded),
+                    minCommitmentAge: decodedNumber(minAge.decoded),
+                    maxCommitmentAge: decodedNumber(maxAge.decoded),
+                    price: decodedVetDomainPrice(rentPrice.decoded)
                 }
                 this.statusText = this.info.available
                     ? this.$t('domains.msg_available').toString()
@@ -369,7 +399,7 @@ export default Vue.extend({
                 .account(this.contracts.controller)
                 .method(vetDomainMakeCommitmentABI)
                 .call(...vetDomainCommitmentArgs(params))
-            return output.decoded.commitment || output.decoded[0]
+            return decodedString(output.decoded, 'commitment')
         },
         async onCommit() {
             if (!this.canCommit || !this.selectedWallet || !this.contracts || !this.info) {

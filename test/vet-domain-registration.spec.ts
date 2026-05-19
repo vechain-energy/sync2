@@ -5,6 +5,10 @@ import { genesises } from '../src/consts'
 import {
     buildVetDomainCommitClause,
     buildVetDomainRegisterClause,
+    decodedBoolean,
+    decodedNumber,
+    decodedString,
+    decodedVetDomainPrice,
     getVetDomainContracts,
     isBasicRegistrationName,
     normalizeRegistrationName,
@@ -41,6 +45,18 @@ describe('vet domain registration helpers', () => {
         assert.strictEqual(yearsToDuration(2), 63072000)
         assert.throws(() => yearsToDuration(0), /invalid duration/)
         assert.strictEqual(sumVetDomainPrice({ base: '10', premium: '5' }), '15')
+    })
+
+    it('decodes controller call outputs', () => {
+        assert.strictEqual(decodedBoolean({ 0: true }), true)
+        assert.strictEqual(decodedBoolean({ 0: false }), false)
+        assert.strictEqual(decodedNumber({ 0: '10' }), 10)
+        assert.strictEqual(decodedString({ commitment: '0x1234' }, 'commitment'), '0x1234')
+        assert.deepStrictEqual(decodedVetDomainPrice({ 0: ['100', '7'] }), { base: '100', premium: '7' })
+        const namedPrice = ['100', '7'] as unknown[] & { base: string; premium: string }
+        namedPrice.base = '100'
+        namedPrice.premium = '7'
+        assert.deepStrictEqual(decodedVetDomainPrice({ 0: namedPrice }), { base: '100', premium: '7' })
     })
 
     it('builds commit and register clauses', () => {
