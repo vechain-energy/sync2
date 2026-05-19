@@ -72,7 +72,10 @@
         if((location.hash||'').startsWith('#/sign?')) {
           const forward = localStorage.getItem('connex-forward')
           if(forward) {
-            location.href = new URL(location.hash, forward).href
+            const forwardUrl = new URL(forward)
+            if(forwardUrl.protocol === 'http:' || forwardUrl.protocol === 'https:') {
+              location.href = new URL(location.hash, forwardUrl.href).href
+            }
           }
         }
       } catch(err) {
