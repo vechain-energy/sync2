@@ -35,6 +35,11 @@ You can easily port your dApp by integrating [Connex v2](https://github.com/vech
 
 ## Build from source 
 
+### Requirements
+
+- Node.js 24 LTS
+- npm 10+
+
 ### Install the dependencies
 ```bash
 npm install
@@ -44,19 +49,19 @@ npm install
 
 * web mode
     ```bash
-    quasar dev
+    npx quasar dev
     ```
 * electron mode
     ```bash
-    quasar dev -m electron
+    npx quasar dev -m electron
     ```
 * ios mode
     ```bash
-    quasar dev -m ios
+    npx quasar dev -m ios
     ```
 * android mode
     ```bash
-    quasar dev -m android
+    npx quasar dev -m android
     ```
 
 ### Lint the files
@@ -71,7 +76,7 @@ npm test
 
 ### Build the app for production
 ```bash
-quasar build
+npx quasar build
 ```
 
 ## Version release flow

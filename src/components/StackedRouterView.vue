@@ -184,13 +184,13 @@ export default Vue.extend({
                     this.stack = newVal
                     const v1 = newVal[newVal.length - 1]
 
-                    if (!v1.query['no-transition-in'] && !v1.meta.noTransitionIn) {
+                    if (!v1.query['no-transition-in'] && !(v1.meta && v1.meta.noTransitionIn)) {
                         await this.transit({ r1: 1, r2: 0 })
                     }
                 } else if (newVal.length < oldVal.length && newVal.length > 0) {
                     // pop out
                     const v1 = this.stack[this.stack.length - 1]
-                    if (!v1.query['no-transition-out'] && !v1.meta.noTransitionOut) {
+                    if (!v1.query['no-transition-out'] && !(v1.meta && v1.meta.noTransitionOut)) {
                         await this.transit({ r2: 1, r3: 0 })
                     }
                     this.stack = newVal

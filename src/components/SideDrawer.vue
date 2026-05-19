@@ -29,6 +29,21 @@
 import Vue from 'vue'
 import { transitionEnd, newVelometer, newPipeline } from 'src/utils/transit'
 
+type TouchPanEvent = {
+    isFirst?: boolean;
+    isFinal?: boolean;
+    offset: { x: number };
+    delta: { x: number };
+    duration: number;
+}
+
+function parentElement(vm: Vue): HTMLElement | null {
+    if (!vm.$parent || !(vm.$parent.$el instanceof HTMLElement)) {
+        return null
+    }
+    return vm.$parent.$el
+}
+
 export default Vue.extend({
     props: {
         value: Boolean,
@@ -56,10 +71,12 @@ export default Vue.extend({
             return !this.opened && !this.panning && !this.transiting
         },
         animatedViews() {
+            const parent = parentElement(this)
+            const backdrop = this.$refs.backdrop
             return [
-                this.$parent.$el as HTMLElement,
-                this.$refs.backdrop as HTMLElement
-            ]
+                parent,
+                backdrop instanceof HTMLElement ? backdrop : null
+            ].filter((el): el is HTMLElement => el !== null)
         }
     },
     watch: {
@@ -69,17 +86,24 @@ export default Vue.extend({
         opened() {
             this.pipeline.run(() => this.transit())
         },
-        width(newVal: boolean) {
-            (this.$parent.$el as HTMLElement).style.setProperty('--drawer-width', `${newVal}`)
+        width(newVal: number) {
+            this.setParentProperty('--drawer-width', `${newVal}`)
         },
         openRatio(newVal: number) {
-            (this.$parent.$el as HTMLElement).style.setProperty('--drawer-open-ratio', `${newVal}`)
+            this.setParentProperty('--drawer-open-ratio', `${newVal}`)
         },
         transitionMul(newVal: number) {
-            (this.$parent.$el as HTMLElement).style.setProperty('--drawer-transition-mul', `${newVal}`)
+            this.setParentProperty('--drawer-transition-mul', `${newVal}`)
         }
     },
     methods: {
+        setParentProperty(name: string, value: string) {
+            const parent = parentElement(this)
+            if (!parent) {
+                return
+            }
+            parent.style.setProperty(name, value)
+        },
         onClickBackdrop() {
             if (this.opened && !this.panning && !this.transiting) {
                 this.opened = false
@@ -112,14 +136,13 @@ export default Vue.extend({
             this.transitionMul = 1
             this.transiting = false
         },
-        handleTouchPanExternal(ev: Record<string, unknown>) {
+        handleTouchPanExternal(ev: TouchPanEvent) {
             if (this.opened || this.transiting || this.disable) {
                 return
             }
             this.handleTouchPan(ev)
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        handleTouchPan(ev: Record<string, any>) {
+        handleTouchPan(ev: TouchPanEvent) {
             if (ev.isFirst) {
                 document.body.classList.add('drawer-body--prevent-scroll')
                 this.panning = true
@@ -149,11 +172,17 @@ export default Vue.extend({
         }
     },
     mounted() {
-        this.$parent.$el.classList.add('drawer-parent')
+        const parent = parentElement(this)
+        if (parent) {
+            parent.classList.add('drawer-parent')
+        }
         this.opened = this.value
     },
     beforeDestroy() {
-        this.$parent.$el.classList.remove('drawer-parent')
+        const parent = parentElement(this)
+        if (parent) {
+            parent.classList.remove('drawer-parent')
+        }
     }
 })
 </script>

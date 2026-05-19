@@ -131,7 +131,11 @@ module.exports = configure(function (ctx) {
 
     // https://quasar.dev/quasar-cli/cli-documentation/supporting-ts
     supportTS: {
-      tsCheckerConfig: { eslint: true }
+      tsCheckerConfig: {
+        eslint: {
+          files: './src/**/*.{ts,js,vue}'
+        }
+      }
     },
 
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
@@ -156,12 +160,14 @@ module.exports = configure(function (ctx) {
         implementation: require('sass'),
         sassOptions: {
           indentedSyntax: true,
+          quietDeps: true,
           outputStyle: 'expanded'
         }
       },
       scssLoaderOptions: {
         implementation: require('sass'),
         sassOptions: {
+          quietDeps: true,
           outputStyle: 'expanded'
         }
       },
@@ -170,6 +176,8 @@ module.exports = configure(function (ctx) {
 
       // https://quasar.dev/quasar-cli/cli-documentation/handling-webpack
       extendWebpack (cfg) {
+        cfg.output.hashFunction = 'sha256'
+
         cfg.resolve.alias = {
           ...cfg.resolve.alias,
           core: path.resolve(__dirname, './src/core'),

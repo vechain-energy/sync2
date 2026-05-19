@@ -45,7 +45,10 @@ export function newUpdater() {
         get available() { return available },
         get downloaded() { return downloaded },
 
-        check() { return autoUpdater.checkForUpdates().then(r => r.updateInfo) },
+        async check() {
+            const result = await autoUpdater.checkForUpdates()
+            return result ? result.updateInfo : null
+        },
         quitAndInstall() { autoUpdater.quitAndInstall() }
     }
 }
