@@ -25,6 +25,17 @@
         </div>
         <!-- drawer content footer -->
         <q-list padding>
+            <q-item :to="{name: 'domains'}">
+                <q-item-section avatar>
+                    <q-icon
+                        size="sm"
+                        name="language"
+                    />
+                </q-item-section>
+                <q-item-section>
+                    <q-item-label>{{$t('index.action_domains')}}</q-item-label>
+                </q-item-section>
+            </q-item>
             <q-item :to="{name: 'settings'}">
                 <q-item-section avatar>
                     <q-icon
