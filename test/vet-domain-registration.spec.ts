@@ -39,6 +39,10 @@ describe('vet domain registration helpers', () => {
         assert.strictEqual(isBasicRegistrationName('sub.alice.vet'), false)
     })
 
+    it('keeps namehash stable', () => {
+        assert.strictEqual(vetDomainNamehash('alice.vet'), '0xd64e39d0f682838582d287e4261976a889a236c931d77a1813aa312b43acb934')
+    })
+
     it('maps supported network contracts', () => {
         assert.strictEqual(getVetDomainContracts(genesises.main.id)!.controller, '0x07479F2710d16a0bACbE6C25b9b32447364C0A33')
         assert.strictEqual(getVetDomainContracts(genesises.test.id)!.controller, '0xAA854565401724f7061E0C366cA132c87C1e5F60')

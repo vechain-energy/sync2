@@ -2,6 +2,16 @@ import { abis } from 'src/consts'
 import { createPool } from './pool'
 import { commitTx } from './tx-commiter'
 import { cleanResolvedAddress, cleanResolvedName, isVetDomainName, normalizeVetDomainName } from 'src/utils/vet-domains'
+import { decodedString, getVetDomainContracts, vetDomainNamehash } from 'src/utils/vet-domain-registration'
+import {
+    VET_DOMAIN_PROFILE_TEXT_KEYS,
+    VetDomainProfile,
+    convertVetDomainProfileUriToUrl,
+    emptyVetDomainProfile,
+    getVetDomainRegistry,
+    vetDomainResolverABI,
+    vetDomainTextABI
+} from 'src/utils/vet-domain-profile'
 import Vue from 'vue'
 
 const VetDomainsResolverByGid: Record<string, string> = {
@@ -55,6 +65,8 @@ const vetDomainsGetNamesABI = {
 function serve(gid: string, pool: ReturnType<typeof createPool>) {
     const namesByAddress = new Map<string, string>()
     const addressesByName = new Map<string, string>()
+    const resolverByName = new Map<string, string>()
+    const profileByName = new Map<string, VetDomainProfile>()
     const vetDomainsReactor = Vue.observable({ v: 0 })
 
     function touchVetDomains() {
@@ -84,6 +96,14 @@ function serve(gid: string, pool: ReturnType<typeof createPool>) {
         },
         vetDomainsRevision() {
             return vetDomainsReactor.v
+        },
+        setVetDomainProfile(name: string, profile: VetDomainProfile) {
+            const resolvedName = cleanResolvedName(name)
+            if (!resolvedName) {
+                return
+            }
+            profileByName.set(resolvedName, profile)
+            touchVetDomains()
         },
         setVetDomainsPrimaryName(addr: string, name: string) {
             const resolvedAddress = cleanResolvedAddress(addr)
@@ -126,6 +146,77 @@ function serve(gid: string, pool: ReturnType<typeof createPool>) {
             return normalizedNames.map(name => {
                 return isVetDomainName(name) ? addressesByName.get(name) || '' : ''
             })
+        },
+        async vetDomainResolverOf(name: string): Promise<string> {
+            const normalizedName = cleanResolvedName(name)
+            const contracts = getVetDomainContracts(gid)
+            if (!normalizedName || !contracts) {
+                return ''
+            }
+
+            if (!resolverByName.has(normalizedName)) {
+                try {
+                    const output = await this.thor
+                        .account(getVetDomainRegistry(contracts))
+                        .method(vetDomainResolverABI)
+                        .cache([])
+                        .call(vetDomainNamehash(normalizedName))
+                    resolverByName.set(normalizedName, cleanResolvedAddress(decodedString(output.decoded, 'resolverAddress')))
+                } catch (err) {
+                    console.warn('vet domain resolver:', err)
+                    resolverByName.set(normalizedName, '')
+                }
+            }
+            return resolverByName.get(normalizedName) || ''
+        },
+        async vetDomainProfileOf(name: string): Promise<VetDomainProfile> {
+            const normalizedName = cleanResolvedName(name)
+            if (!normalizedName || !getVetDomainContracts(gid)) {
+                return emptyVetDomainProfile()
+            }
+
+            if (!profileByName.has(normalizedName)) {
+                const resolver = await this.vetDomainResolverOf(normalizedName)
+                if (!resolver) {
+                    profileByName.set(normalizedName, emptyVetDomainProfile())
+                } else {
+                    const node = vetDomainNamehash(normalizedName)
+                    const profile = emptyVetDomainProfile()
+                    await Promise.all(VET_DOMAIN_PROFILE_TEXT_KEYS.map(async key => {
+                        try {
+                            const output = await this.thor
+                                .account(resolver)
+                                .method(vetDomainTextABI)
+                                .cache([])
+                                .call(node, key)
+                            profile[key] = decodedString(output.decoded, '')
+                        } catch (err) {
+                            console.warn(`vet domain text ${key}:`, err)
+                            profile[key] = ''
+                        }
+                    }))
+                    profileByName.set(normalizedName, profile)
+                }
+            }
+            return profileByName.get(normalizedName) || emptyVetDomainProfile()
+        },
+        async vetDomainAvatarOfAddress(addr: string): Promise<string> {
+            const resolvedAddress = cleanResolvedAddress(addr)
+            if (!resolvedAddress || !getVetDomainContracts(gid)) {
+                return ''
+            }
+
+            const [name] = await this.vetDomainsNamesOf([resolvedAddress])
+            if (!name) {
+                return ''
+            }
+            try {
+                const profile = await this.vetDomainProfileOf(name)
+                return convertVetDomainProfileUriToUrl(profile.avatar, gid)
+            } catch (err) {
+                console.warn('vet domain avatar:', err)
+                return ''
+            }
         },
         async vetDomainsNamesOf(addresses: string[]): Promise<string[]> {
             const resolver = VetDomainsResolverByGid[gid]

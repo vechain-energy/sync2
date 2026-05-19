@@ -4,7 +4,7 @@
         v-bind="$attrs"
     >
         <q-item-section avatar>
-            <address-avatar size="md" :addr="address" />
+            <address-avatar size="md" :addr="address" :gid="gid" />
         </q-item-section>
         <q-item-section>
             <address-label :addr="address" :gid="gid" />

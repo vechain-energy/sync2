@@ -6,6 +6,7 @@
         <q-item-section avatar>
             <address-avatar
                 :addr="address"
+                :gid="gid"
                 size="xl"
             />
         </q-item-section>

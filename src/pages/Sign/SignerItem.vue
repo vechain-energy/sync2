@@ -7,6 +7,7 @@
             <address-avatar
                 v-if="isTextAddress"
                 :addr="text"
+                :gid="gid"
                 size="md"
             />
         </q-item-section>

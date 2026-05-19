@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
 import { genesises } from '../src/consts'
-import { buildSignerGroups } from '../src/pages/Sign/signer-groups'
+import { buildSignerGroups, selectSigner } from '../src/pages/Sign/signer-groups'
 
 const wallet: M.Wallet = {
     id: 1,
@@ -57,5 +57,21 @@ describe('signer groups', () => {
             name: 'Wallet',
             addresses: [wallet.meta.addresses[0]]
         }])
+    })
+
+    it('preselects preferred signer without enforcing it', () => {
+        const groups = buildSignerGroups([wallet, otherWallet], undefined, [
+            wallet.meta.addresses[0],
+            wallet.meta.addresses[1]
+        ])
+
+        assert.strictEqual(
+            selectSigner(groups, wallet.meta.addresses[1], wallet.meta.addresses[0].toUpperCase()),
+            wallet.meta.addresses[0]
+        )
+        assert.strictEqual(
+            selectSigner(groups, wallet.meta.addresses[1]),
+            wallet.meta.addresses[1]
+        )
     })
 })

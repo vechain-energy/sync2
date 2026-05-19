@@ -53,3 +53,21 @@ export function buildSignerGroups(wallets: M.Wallet[], enforcedSigner?: string, 
 
     return groups
 }
+
+export function selectSigner(groups: SignerGroup[], currentSigner: string, preferredSigner?: string): string {
+    const preferred = preferredSigner && groups
+        .reduce<string[]>((items, group) => items.concat(group.addresses), [])
+        .find(address => address.toLowerCase() === preferredSigner.toLowerCase())
+    if (preferred) {
+        return preferred
+    }
+
+    const current = groups.some(group => {
+        return group.addresses.some(address => address.toLowerCase() === currentSigner.toLowerCase())
+    })
+    if (current) {
+        return currentSigner
+    }
+
+    return groups[0] && groups[0].addresses[0] ? groups[0].addresses[0] : ''
+}
