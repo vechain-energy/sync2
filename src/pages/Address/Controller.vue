@@ -5,13 +5,12 @@
             :gid="wallet && wallet.gid"
         >
             <q-btn
-                v-if="canExportPrivateKey"
+                v-if="optionSheets.length > 0"
                 flat
                 round
-                icon="vpn_key"
-                @click="onExportPrivateKey"
+                icon="more_horiz"
             >
-                <q-tooltip>{{$t('address.action_export_private_key')}}</q-tooltip>
+                <pop-sheets :sheets="optionSheets" />
             </q-btn>
         </page-toolbar>
         <template v-if="wallet">
@@ -90,6 +89,7 @@ import HeadItem from './HeadItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import PopSheets, { Sheet } from 'components/PopSheets.vue'
 import PromptDialog, { PromptOptions } from 'pages/Index/PromptDialog.vue'
 import PrivateKeyDialog from './PrivateKeyDialog.vue'
 import { Vault } from 'src/core/vault'
@@ -101,7 +101,8 @@ export default Vue.extend({
         HeadItem,
         AsyncResolve,
         PageToolbar,
-        PageContent
+        PageContent,
+        PopSheets
     },
     props: {
         walletId: String,
@@ -135,6 +136,13 @@ export default Vue.extend({
         },
         canExportPrivateKey(): boolean {
             return !!this.wallet && this.wallet.meta.type !== 'ledger'
+        },
+        optionSheets(): Sheet[] {
+            return [{
+                label: this.$t('address.action_export_private_key').toString(),
+                action: () => { void this.onExportPrivateKey() },
+                hidden: !this.canExportPrivateKey
+            }]
         }
     },
     methods: {
