@@ -55,6 +55,11 @@ export default Vue.extend({
                 this.$backOrHome()
                 return
             }
+            if (wallet.meta.type !== 'hd') {
+                this.$q.notify(this.$t('backup.msg_mnemonic_backup_only'))
+                this.$backOrHome()
+                return
+            }
 
             this.id = wallet.id
             this.meta = wallet.meta

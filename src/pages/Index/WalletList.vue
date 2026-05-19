@@ -32,7 +32,9 @@
             >
                 <q-item-section>
                     <q-item-label lines="1">
-                      <svg-ledger v-if="wallet.meta.type === 'ledger'"/> {{wallet.meta.name}}
+                      <svg-ledger v-if="wallet.meta.type === 'ledger'"/>
+                      <q-icon v-if="wallet.meta.type === 'private-key'" name="vpn_key" />
+                      {{wallet.meta.name}}
                     </q-item-label>
                     <q-item-label
                         v-if="wallet.gid !==mainnetGid"

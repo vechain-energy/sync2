@@ -19,12 +19,12 @@ export default Vue.extend({
             return [{
                 label: this.$t('index.action_new_address').toString(),
                 action: () => this.newAddress(),
-                hidden: this.wallet.meta.addresses.length >= MAX_ADDRESS
+                hidden: this.wallet.meta.addresses.length >= MAX_ADDRESS || this.wallet.meta.type === 'private-key'
             },
             {
                 label: this.$t('index.action_backup').toString(),
                 action: () => this.$router.push({ name: 'backup', params: { walletId: this.wallet.id.toString() } }),
-                hidden: this.wallet.meta.type === 'ledger'
+                hidden: this.wallet.meta.type !== 'hd'
             },
             {
                 label: this.$t('index.action_rename').toString(),

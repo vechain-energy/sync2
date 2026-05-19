@@ -3,7 +3,16 @@
         <page-toolbar
             :title="$t('address.title')"
             :gid="wallet && wallet.gid"
-        />
+        >
+            <q-btn
+                v-if="optionSheets.length > 0"
+                flat
+                round
+                icon="more_horiz"
+            >
+                <pop-sheets :sheets="optionSheets" />
+            </q-btn>
+        </page-toolbar>
         <template v-if="wallet">
             <page-content>
                 <head-item
@@ -80,6 +89,11 @@ import HeadItem from './HeadItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import PopSheets, { Sheet } from 'components/PopSheets.vue'
+import PromptDialog, { PromptOptions } from 'pages/Index/PromptDialog.vue'
+import PrivateKeyDialog from './PrivateKeyDialog.vue'
+import { Vault } from 'src/core/vault'
+import { formatPrivateKey } from 'src/utils/private-key'
 
 export default Vue.extend({
     components: {
@@ -87,7 +101,8 @@ export default Vue.extend({
         HeadItem,
         AsyncResolve,
         PageToolbar,
-        PageContent
+        PageContent,
+        PopSheets
     },
     props: {
         walletId: String,
@@ -113,8 +128,64 @@ export default Vue.extend({
         }
     },
     computed: {
+        addressIndexNumber(): number {
+            return parseInt(this.addressIndex)
+        },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
+            return this.wallet ? this.wallet.meta.addresses[this.addressIndexNumber] : ''
+        },
+        canExportPrivateKey(): boolean {
+            return !!this.wallet && this.wallet.meta.type !== 'ledger'
+        },
+        optionSheets(): Sheet[] {
+            return [{
+                label: this.$t('address.action_export_private_key').toString(),
+                action: () => { void this.onExportPrivateKey() },
+                hidden: !this.canExportPrivateKey
+            }]
+        }
+    },
+    methods: {
+        async onExportPrivateKey() {
+            const wallet = this.wallet
+            if (!wallet || wallet.meta.type === 'ledger') {
+                return
+            }
+
+            try {
+                const opts: PromptOptions = {
+                    title: this.$t('address.action_export_private_key').toString(),
+                    message: this.$t('address.msg_export_private_key_warning').toString(),
+                    model: '',
+                    action: {
+                        label: this.$t('common.continue').toString(),
+                        color: 'negative'
+                    },
+                    validate: input => input.trim() === 'EXPORT' ? '' : this.$t('common.invalid_input').toString()
+                }
+                await this.$dialog<string>({
+                    component: PromptDialog,
+                    opts
+                })
+
+                const umk = await this.$authenticate()
+                let privateKey = ''
+                await this.$loading(() => {
+                    const vault = Vault.decode(wallet.vault)
+                    const key = vault.derive(this.addressIndexNumber).unlock(umk)
+                    try {
+                        privateKey = formatPrivateKey(key)
+                    } finally {
+                        key.fill(0)
+                    }
+                    return Promise.resolve()
+                })
+
+                await this.$dialog({
+                    component: PrivateKeyDialog,
+                    privateKey
+                })
+            } catch { }
         }
     }
 })

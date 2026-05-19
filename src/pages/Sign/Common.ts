@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import { SignerGroup } from './models'
-import { Transaction, secp256k1, Certificate, blake2b256 } from 'thor-devkit'
-import { Vault } from 'src/core/vault'
+import { Transaction, Certificate, blake2b256 } from 'thor-devkit'
 import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
+import { isSoftwareWalletType, signHashWithSoftwareWallet } from './software-signer'
 
 type SignableTransaction = Transaction<Transaction.LegacyBody | Transaction.DynamicFeeBody>
 
@@ -54,15 +54,12 @@ export default Vue.extend({
     },
     methods: {
         async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<SignableTransaction>): Promise<Buffer> {
-            if (wallet.meta.type === 'hd') {
+            if (isSoftwareWalletType(wallet.meta.type)) {
                 // acquire user master key
                 const umk = await this.$authenticate()
 
                 const tx = await buildTx()
-                const vault = Vault.decode(wallet.vault)
-                const node = vault.derive(wallet.meta.addresses.indexOf(signer))
-                const sk = node.unlock(umk)
-                return secp256k1.sign(tx.signingHash(), sk)
+                return signHashWithSoftwareWallet(wallet, signer, umk, tx.signingHash())
             } else if (wallet.meta.type === 'ledger') {
                 const tx = await buildTx()
                 return this.$dialog({
@@ -78,14 +75,11 @@ export default Vue.extend({
             }
         },
         async signCert(wallet: M.Wallet, cert: Certificate): Promise<Buffer> {
-            if (wallet.meta.type === 'hd') {
+            if (isSoftwareWalletType(wallet.meta.type)) {
                 // acquire user master key
                 const umk = await this.$authenticate()
 
-                const vault = Vault.decode(wallet.vault)
-                const node = vault.derive(wallet.meta.addresses.indexOf(cert.signer))
-                const sk = node.unlock(umk)
-                return secp256k1.sign(blake2b256(Certificate.encode(cert)), sk)
+                return signHashWithSoftwareWallet(wallet, cert.signer, umk, blake2b256(Certificate.encode(cert)))
             } else if (wallet.meta.type === 'ledger') {
                 return this.$dialog({
                     component: LedgerSignDialog,

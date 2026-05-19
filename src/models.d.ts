@@ -16,7 +16,7 @@ declare namespace M {
     namespace Wallet {
         interface Meta {
             name: string
-            type: 'hd' | 'ledger'
+            type: 'hd' | 'ledger' | 'private-key'
             addresses: string[]
             backedUp?: boolean
         }

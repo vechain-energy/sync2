@@ -89,8 +89,11 @@ export default {
         mnemonic_words_count: '助记词数量',
         action_generate: '生成',
         action_import: '导入',
+        action_import_mnemonic: '助记词',
+        action_import_private_key: '私钥',
         label_wallet_name: '钱包名称',
         label_mnemonic: '请输入您的助记词',
+        label_private_key: '私钥',
         label_advance: '高级模式',
         action_custom_path: '自定义',
         action_vet_path: 'Vechain',
@@ -98,6 +101,8 @@ export default {
         label_path: '路径',
         msg_example: '示例',
         msg_invalid_path: '无效助记词路径',
+        msg_private_key_error: 'you need to enter a valid private key',
+        msg_private_key_warning: '只导入您拥有的私钥。任何人拿到私钥都能转走该地址资产。',
         label_ledger_user: 'Ledger用户？',
         action_ledger_link: '现在绑定'
     },
@@ -126,7 +131,12 @@ export default {
     address: {
         title: '地址',
         label_assets: '资产',
-        action_receive: '接收'
+        action_receive: '接收',
+        action_export_private_key: '导出私钥',
+        title_export_private_key: '私钥',
+        label_private_key: '私钥',
+        msg_export_private_key_warning: '任何人拿到此私钥都能转走该地址资产。Sync2 永远不会要求您分享私钥。输入 EXPORT 继续。',
+        msg_private_key_reveal_warning: '离线保存此私钥。不要分享。'
     },
     asset: {
         title: '资产',
@@ -172,6 +182,7 @@ export default {
         msg_backup_tips_2: '请确保存放于安全的地方',
         msg_backup_tips_3: '请勿截图或录制屏幕',
         label_your_mnemonic: '抄写您的助记词',
+        msg_mnemonic_backup_only: 'you need to export the private key for this wallet',
 
         // notify
         msg_wallet_not_found: '找不到钱包'
