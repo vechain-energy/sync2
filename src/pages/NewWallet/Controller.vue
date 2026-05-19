@@ -8,6 +8,8 @@
                 flat
                 icon="more_horiz"
                 round
+                :aria-label="$t('common.more').toString()"
+                :title="$t('common.more').toString()"
             >
                 <pop-sheets :sheets="optionSheets" />
             </q-btn>

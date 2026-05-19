@@ -42,6 +42,8 @@
                         flat
                         round
                         icon="send"
+                        :aria-label="$t('send.action_send').toString()"
+                        :title="$t('send.action_send').toString()"
                         :to="{name: 'send', query: { wid: walletId, i: addressIndex, symbol: symbol }}"
                     />
                 </q-item-section>

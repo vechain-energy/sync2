@@ -6,6 +6,8 @@
                 flat
                 round
                 icon="add"
+                :aria-label="$t('common.add').toString()"
+                :title="$t('common.add').toString()"
                 @click="onAdd"
             />
         </page-toolbar>
@@ -57,6 +59,8 @@
                                     dense
                                     round
                                     icon="delete_forever"
+                                    :aria-label="$t('common.delete').toString()"
+                                    :title="$t('common.delete').toString()"
                                 />
                             </q-item-section>
                         </q-item>

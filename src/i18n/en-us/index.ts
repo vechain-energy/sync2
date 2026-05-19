@@ -197,6 +197,7 @@ export default {
         label_unavailable: 'Unavailable',
         action_max: 'MAX',
         action_swap: 'Swap',
+        action_switch_tokens: 'Switch tokens',
         msg_mainnet_only: 'you need to switch to Main Net',
         msg_invalid_amount: 'you need to enter a valid amount',
         msg_insufficient_balance: 'you need to lower the amount or select a wallet with balance',

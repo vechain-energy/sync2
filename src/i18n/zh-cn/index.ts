@@ -196,6 +196,7 @@ export default {
         label_unavailable: '不可用',
         action_max: '最大',
         action_swap: '兑换',
+        action_switch_tokens: '切换代币',
         msg_mainnet_only: 'you need to switch to Main Net',
         msg_invalid_amount: 'you need to enter a valid amount',
         msg_insufficient_balance: 'you need to lower the amount or select a wallet with balance',

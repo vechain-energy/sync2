@@ -64,6 +64,8 @@
                     color="primary"
                     icon="swap_vert"
                     :disable="!supported || tokens.length < 2"
+                    :aria-label="$t('swap.action_switch_tokens').toString()"
+                    :title="$t('swap.action_switch_tokens').toString()"
                     @click="swapTokens"
                 />
             </div>
