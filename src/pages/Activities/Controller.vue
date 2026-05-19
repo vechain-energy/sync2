@@ -29,6 +29,7 @@ import Vue from 'vue'
 import Item, { Entry } from './Item.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import { summarizeCertActivity } from './certificate'
 
 export default Vue.extend({
     components: {
@@ -105,13 +106,14 @@ export default Vue.extend({
             }
         },
         certComment(encoded: string) {
-            const cert: Connex.Vendor.CertMessage = JSON.parse(encoded)
+            const cert = summarizeCertActivity(encoded)
+            if (!cert.purpose) {
+                return this.$t('common.unknown').toString()
+            }
             return cert.purpose === 'identification' ? this.$t('common.identification').toString() : this.$t('common.agreement').toString()
         },
         certMessage(encoded: string) {
-            const cert: Connex.Vendor.CertMessage = JSON.parse(encoded)
-
-            return cert.payload.content
+            return summarizeCertActivity(encoded).content
         }
     }
 })
