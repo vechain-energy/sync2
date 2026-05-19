@@ -119,6 +119,20 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --ignore-scripts
 
+      - name: Patch dmg-builder for Python 3
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          core = Path("node_modules/dmg-builder/vendor/dmgbuild/core.py")
+          text = core.read_text()
+          text = text.replace(
+              "reload(sys)  # Reload is a hack\nsys.setdefaultencoding('UTF8')\n",
+              "try:\n  from importlib import reload\n  reload(sys)\n  getattr(sys, 'setdefaultencoding', lambda _encoding: None)('UTF8')\nexcept Exception:\n  pass\n"
+          )
+          core.write_text(text)
+          PY
+
       - name: Build Electron binaries
         run: npx quasar build -m electron
         env:
