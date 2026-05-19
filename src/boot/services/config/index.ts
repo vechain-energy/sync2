@@ -3,29 +3,7 @@ import { delegateTable } from '../utils'
 import { genesises } from 'src/consts'
 import { TokenRegistry } from './token-registry'
 import { unique } from 'src/utils/array'
-
-const presetNodes: M.Node[] = [
-    { // mainnet
-        genesis: genesises.main,
-        preset: true,
-        url: 'https://sync-mainnet.veblocks.net'
-    },
-    { // mainnet
-        genesis: genesises.main,
-        preset: true,
-        url: 'https://mainnet.vecha.in'
-    },
-    { // testnet
-        genesis: genesises.test,
-        preset: true,
-        url: 'https://sync-testnet.veblocks.net'
-    },
-    { // testnet
-        genesis: genesises.test,
-        preset: true,
-        url: 'https://testnet.vecha.in'
-    }
-]
+import { presetNodes } from './preset-nodes'
 
 export function build(storage: Storage) {
     const t = delegateTable<Storage.ConfigEntity, Storage.ConfigEntity>(
