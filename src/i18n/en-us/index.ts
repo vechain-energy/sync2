@@ -166,6 +166,7 @@ export default {
         label_source: 'Source',
         label_slippage: 'Slippage',
         label_custom_slippage: 'Custom slippage',
+        label_amount: 'Amount',
         label_balance: 'Balance',
         label_fee: 'Fee',
         label_min_received: 'Min received',

@@ -5,253 +5,179 @@
             :gid="selectedWallet && selectedWallet.gid"
         />
         <page-content
-            padding
-            class="col"
-            innerClass="q-gutter-md"
+            class="col no-wrap"
+            innerClass="q-gutter-y-sm"
         >
             <q-banner
                 v-if="!wallets.length"
-                class="bg-grey-3 text-grey-8"
+                class="q-mx-md bg-grey-3 text-grey-8"
             >
                 {{$t('common.no_wallet')}}
             </q-banner>
             <q-banner
                 v-else-if="wallets.length && mainWallets.length === 0"
-                class="bg-orange-1 text-deep-orange"
+                class="q-mx-md bg-orange-1 text-deep-orange"
             >
                 {{$t('swap.msg_mainnet_only')}}
             </q-banner>
 
-            <q-list
-                bordered
-                separator
-            >
-                <q-item-label header>{{$t('swap.label_from')}}</q-item-label>
-                <q-item>
-                    <q-item-section>
-                        <q-input
-                            dense
-                            outlined
-                            no-error-icon
-                            autocomplete="off"
-                            type="text"
-                            inputmode="decimal"
-                            placeholder="0"
-                            v-model="amount"
-                            :disable="!supported"
-                            :error="!!amountError"
-                            :error-message="amountError"
-                            @input="onAmountChanged"
-                        />
-                    </q-item-section>
-                    <q-item-section side>
-                        <q-select
-                            dense
-                            outlined
-                            emit-value
-                            map-options
-                            :disable="!supported || tokenOptions.length === 0"
-                            v-model="fromSymbol"
-                            :options="tokenOptions"
-                            @input="onFromTokenChanged"
-                        >
-                            <template v-slot:prepend>
-                                <token-avatar
-                                    v-if="fromToken"
-                                    size="sm"
-                                    :spec="fromToken"
-                                />
-                            </template>
-                        </q-select>
-                    </q-item-section>
-                </q-item>
-                <q-item>
-                    <q-item-section class="text-grey-7">
-                        <span v-if="fromToken">
-                            {{$t('swap.label_balance')}}:
-                            <amount-label
-                                :value="fromBalance"
-                                :decimals="fromToken.decimals"
-                                :fixed="4"
-                            >--</amount-label>
-                            {{fromToken.symbol}}
-                        </span>
-                    </q-item-section>
-                    <q-item-section side>
-                        <q-btn
-                            v-if="fromToken"
-                            dense
-                            flat
-                            color="primary"
-                            :label="$t('swap.action_max')"
-                            @click="setMaxAmount"
-                        />
-                    </q-item-section>
-                </q-item>
-            </q-list>
+            <q-item-label header>{{$t('swap.label_from')}}</q-item-label>
+            <TokenSelector
+                class="q-mx-md"
+                :tokens="tokens"
+                v-model="fromSymbol"
+                :address="selectedAddress"
+                @change="onFromTokenChanged"
+            />
+            <div class="row q-mx-md q-col-gutter-sm items-start">
+                <div class="col">
+                    <q-input
+                        dense
+                        outlined
+                        no-error-icon
+                        autocomplete="off"
+                        type="text"
+                        inputmode="decimal"
+                        placeholder="0.00"
+                        v-model="amount"
+                        :label="$t('swap.label_amount')"
+                        :disable="!supported"
+                        :error="!!amountError"
+                        :error-message="amountError"
+                        @input="onAmountChanged"
+                    />
+                </div>
+                <div class="col-auto q-pt-xs">
+                    <q-btn
+                        v-if="fromToken"
+                        dense
+                        flat
+                        color="primary"
+                        :disable="!supported"
+                        :label="$t('swap.action_max')"
+                        @click="setMaxAmount"
+                    />
+                </div>
+            </div>
 
-            <div class="text-center">
+            <div class="text-center q-py-sm">
                 <q-btn
                     round
                     outline
                     color="primary"
                     icon="swap_vert"
-                    :disable="!supported || tokenOptions.length < 2"
+                    :disable="!supported || tokens.length < 2"
                     @click="swapTokens"
                 />
             </div>
 
+            <q-item-label header>{{$t('swap.label_to')}}</q-item-label>
+            <TokenSelector
+                class="q-mx-md"
+                :tokens="tokens"
+                v-model="toSymbol"
+                :address="selectedAddress"
+                @change="onToTokenChanged"
+            />
+            <q-input
+                dense
+                outlined
+                readonly
+                class="q-mx-md"
+                :label="$t('swap.label_amount')"
+                :value="outputText"
+                :loading="quoteLoading"
+            />
+
+            <q-item-label header>{{$t('swap.label_source')}}</q-item-label>
+            <div class="row q-mx-md q-col-gutter-sm items-center">
+                <div class="col">
+                    <q-select
+                        dense
+                        outlined
+                        emit-value
+                        map-options
+                        :disable="quoteLoading || quoteOptions.length === 0"
+                        v-model="selectedAggregatorName"
+                        :options="quoteOptions"
+                    />
+                </div>
+                <div class="col-auto">
+                    <q-spinner
+                        v-if="quoteLoading"
+                        color="primary"
+                    />
+                </div>
+            </div>
             <q-list
-                bordered
-                separator
+                v-if="selectedQuote"
+                dense
+                class="q-mx-md"
             >
-                <q-item-label header>{{$t('swap.label_to')}}</q-item-label>
                 <q-item>
-                    <q-item-section>
-                        <q-item-label class="text-h5 ellipsis">
+                    <q-item-section>{{$t('swap.label_min_received')}}</q-item-section>
+                    <q-item-section side>
+                        <span v-if="toToken">
                             <amount-label
-                                v-if="toToken"
-                                :value="outputAmount"
+                                :value="selectedQuote.minimumOutputAmount"
                                 :decimals="toToken.decimals"
                                 :fixed="6"
-                            >0</amount-label>
-                            <span v-else>0</span>
-                        </q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                        <q-select
-                            dense
-                            outlined
-                            emit-value
-                            map-options
-                            :disable="!supported || tokenOptions.length === 0"
-                            v-model="toSymbol"
-                            :options="tokenOptions"
-                            @input="onToTokenChanged"
-                        >
-                            <template v-slot:prepend>
-                                <token-avatar
-                                    v-if="toToken"
-                                    size="sm"
-                                    :spec="toToken"
-                                />
-                            </template>
-                        </q-select>
+                            /> {{toToken.symbol}}
+                        </span>
                     </q-item-section>
                 </q-item>
-                <q-item v-if="toToken">
-                    <q-item-section class="text-grey-7">
-                        {{$t('swap.label_balance')}}:
-                        <amount-label
-                            :value="toBalance"
-                            :decimals="toToken.decimals"
-                            :fixed="4"
-                        >--</amount-label>
-                        {{toToken.symbol}}
-                    </q-item-section>
+                <q-item>
+                    <q-item-section>{{$t('swap.label_fee')}}</q-item-section>
+                    <q-item-section side>{{feeText}}</q-item-section>
                 </q-item>
             </q-list>
 
-            <q-list
-                bordered
-                separator
-            >
-                <q-item-label header>{{$t('swap.label_source')}}</q-item-label>
-                <q-item>
-                    <q-item-section>
-                        <q-select
-                            dense
-                            outlined
-                            emit-value
-                            map-options
-                            :disable="quoteLoading || quoteOptions.length === 0"
-                            v-model="selectedAggregatorName"
-                            :options="quoteOptions"
-                        />
-                    </q-item-section>
-                    <q-item-section side>
-                        <q-spinner
-                            v-if="quoteLoading"
+            <q-item-label header>{{$t('swap.label_slippage')}}</q-item-label>
+            <div class="q-mx-md q-gutter-y-sm">
+                <div class="row q-col-gutter-sm items-center">
+                    <div class="col">
+                        <q-btn
+                            class="full-width"
+                            :outline="slippageTolerance !== 1"
                             color="primary"
+                            label="Auto"
+                            @click="setSlippage(1)"
                         />
-                    </q-item-section>
-                </q-item>
-                <template v-if="selectedQuote">
-                    <q-item>
-                        <q-item-section>{{$t('swap.label_min_received')}}</q-item-section>
-                        <q-item-section side>
-                            <span v-if="toToken">
-                                <amount-label
-                                    :value="selectedQuote.minimumOutputAmount"
-                                    :decimals="toToken.decimals"
-                                    :fixed="6"
-                                /> {{toToken.symbol}}
-                            </span>
-                        </q-item-section>
-                    </q-item>
-                    <q-item>
-                        <q-item-section>{{$t('swap.label_fee')}}</q-item-section>
-                        <q-item-section side>{{feeText}}</q-item-section>
-                    </q-item>
-                </template>
-            </q-list>
-
-            <q-list
-                bordered
-                separator
-            >
-                <q-item-label header>{{$t('swap.label_slippage')}}</q-item-label>
-                <q-item>
-                    <q-item-section>
-                        <div class="row q-col-gutter-sm">
-                            <div class="col-4">
-                                <q-btn
-                                    class="full-width"
-                                    :outline="slippageTolerance !== 1"
-                                    color="primary"
-                                    label="Auto"
-                                    @click="setSlippage(1)"
-                                />
-                            </div>
-                            <div class="col-4">
-                                <q-btn
-                                    class="full-width"
-                                    :outline="slippageTolerance !== 0.5"
-                                    color="primary"
-                                    label="0.5%"
-                                    @click="setSlippage(0.5)"
-                                />
-                            </div>
-                            <div class="col-4">
-                                <q-btn
-                                    class="full-width"
-                                    :outline="slippageTolerance !== 3"
-                                    color="primary"
-                                    label="3%"
-                                    @click="setSlippage(3)"
-                                />
-                            </div>
-                        </div>
-                    </q-item-section>
-                    <q-item-section side>{{slippageTolerance}}%</q-item-section>
-                </q-item>
-                <q-item>
-                    <q-item-section>
-                        <q-input
-                            dense
-                            outlined
-                            suffix="%"
-                            inputmode="decimal"
-                            :label="$t('swap.label_custom_slippage')"
-                            v-model="customSlippage"
-                            @input="onCustomSlippageChanged"
+                    </div>
+                    <div class="col">
+                        <q-btn
+                            class="full-width"
+                            :outline="slippageTolerance !== 0.5"
+                            color="primary"
+                            label="0.5%"
+                            @click="setSlippage(0.5)"
                         />
-                    </q-item-section>
-                </q-item>
-            </q-list>
+                    </div>
+                    <div class="col">
+                        <q-btn
+                            class="full-width"
+                            :outline="slippageTolerance !== 3"
+                            color="primary"
+                            label="3%"
+                            @click="setSlippage(3)"
+                        />
+                    </div>
+                    <div class="col-auto text-grey-7">{{slippageTolerance}}%</div>
+                </div>
+                <q-input
+                    dense
+                    outlined
+                    suffix="%"
+                    inputmode="decimal"
+                    :label="$t('swap.label_custom_slippage')"
+                    v-model="customSlippage"
+                    @input="onCustomSlippageChanged"
+                />
+            </div>
 
             <q-banner
                 v-if="statusText"
+                class="q-mx-md"
                 :class="statusClass"
             >
                 {{statusText}}
@@ -289,8 +215,8 @@ import AmountLabel from 'src/components/AmountLabel.vue'
 import PageAction from 'src/components/PageAction.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageToolbar from 'src/components/PageToolbar.vue'
-import TokenAvatar from 'src/components/TokenAvatar.vue'
 import SignerSelector from 'src/pages/Sign/SignerSelector.vue'
+import TokenSelector from 'src/pages/Send/TokenSelector.vue'
 import { SignerGroup } from 'src/pages/Sign/models'
 import { buildSignerGroups } from 'src/pages/Sign/signer-groups'
 import { genesises } from 'src/consts'
@@ -359,7 +285,7 @@ export default Vue.extend({
         PageContent,
         PageToolbar,
         SignerSelector,
-        TokenAvatar
+        TokenSelector
     },
     data(): SwapData {
         return {
@@ -401,14 +327,6 @@ export default Vue.extend({
         supported(): boolean {
             return !!this.selectedWallet
         },
-        tokenOptions(): SelectOption<string>[] {
-            return this.tokens.map(token => {
-                return {
-                    label: `${token.symbol} - ${token.name}`,
-                    value: token.symbol
-                }
-            })
-        },
         fromToken(): M.TokenSpec | null {
             return this.tokens.find(token => token.symbol === this.fromSymbol) || null
         },
@@ -442,6 +360,9 @@ export default Vue.extend({
         },
         outputAmount(): string {
             return this.selectedQuote ? this.selectedQuote.outputAmount : '0'
+        },
+        outputText(): string {
+            return this.toToken ? shortRawAmount(this.outputAmount, this.toToken.decimals) : '0'
         },
         quoteOptions(): SelectOption<string>[] {
             return this.quotes.map(quote => {
@@ -566,14 +487,20 @@ export default Vue.extend({
             await this.loadBalances()
             this.scheduleQuote()
         },
-        onFromTokenChanged() {
+        onFromTokenChanged(symbol?: string) {
+            if (symbol) {
+                this.fromSymbol = symbol
+            }
             if (this.fromSymbol === this.toSymbol) {
                 const next = this.tokens.find(token => token.symbol !== this.fromSymbol)
                 this.toSymbol = next ? next.symbol : this.toSymbol
             }
             this.scheduleQuote()
         },
-        onToTokenChanged() {
+        onToTokenChanged(symbol?: string) {
+            if (symbol) {
+                this.toSymbol = symbol
+            }
             if (this.fromSymbol === this.toSymbol) {
                 const next = this.tokens.find(token => token.symbol !== this.toSymbol)
                 this.fromSymbol = next ? next.symbol : this.fromSymbol
