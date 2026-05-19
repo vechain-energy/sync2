@@ -78,6 +78,7 @@ export default {
         action_settings: 'Settings',
         action_activities: 'Activities',
         action_domains: 'Domains',
+        action_swap: 'Swap',
         action_create: 'Create Now',
         msg_upgrade: 'New version is ready :)',
         // request user to enter "ok" to confirm
@@ -157,6 +158,29 @@ export default {
         msg_invalid_address_checksum: 'Address checksum failed',
         msg_vet_domain_unresolved: 'you need to check the name or switch network',
         action_send: 'Send'
+    },
+    swap: {
+        title: 'Swap',
+        label_from: 'From',
+        label_to: 'To',
+        label_source: 'Source',
+        label_slippage: 'Slippage',
+        label_custom_slippage: 'Custom slippage',
+        label_balance: 'Balance',
+        label_wallet: 'Wallet',
+        label_address: 'Address',
+        label_fee: 'Fee',
+        label_min_received: 'Min received',
+        label_unavailable: 'Unavailable',
+        action_max: 'MAX',
+        action_swap: 'Swap',
+        msg_mainnet_only: 'you need to switch to Main Net',
+        msg_invalid_amount: 'you need to enter a valid amount',
+        msg_insufficient_balance: 'you need to lower the amount or select a wallet with balance',
+        msg_no_quote: 'you need to try another token pair or amount',
+        msg_routes_unavailable: 'you need to try another route, token pair, or amount',
+        msg_quote_ready: 'Quote ready',
+        comment_swap: 'Swap {fromAmount} {fromSymbol} to {toSymbol}'
     },
     domains: {
         title: 'Domains',

@@ -32,6 +32,7 @@ async function main() {
     await import('./vet-domain-registration.spec')
     await import('./vet-domain-wallet-name.spec')
     await import('./vet-domain-wallet-selection.spec')
+    await import('./swap.spec')
 
     for (const test of tests) {
         try {
