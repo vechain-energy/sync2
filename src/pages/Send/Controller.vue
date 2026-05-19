@@ -66,7 +66,7 @@ import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
 import { isVetDomainName } from 'src/utils/vet-domains'
-import { isCancelledDialogError } from 'src/utils/dialog-error'
+import { dialogErrorMessage } from 'src/utils/dialog-error'
 
 export default Vue.extend({
     components: {
@@ -230,12 +230,13 @@ export default Vue.extend({
                 }
                 this.$router.replace({ name: 'sign-success', query: { type: 'tx' } })
             } catch (err) {
-                if (isCancelledDialogError(err)) {
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (!message) {
                     return
                 }
                 this.$q.notify({
                     type: 'negative',
-                    message: err instanceof Error ? err.message : this.$t('common.something_wrong').toString()
+                    message
                 })
             }
         }
