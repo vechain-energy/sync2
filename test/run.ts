@@ -1,3 +1,11 @@
+import * as fs from 'fs'
+import * as Module from 'module'
+import * as path from 'path'
+
+type ModuleLoader = typeof Module & {
+    _initPaths: () => void
+}
+
 type TestCase = {
     name: string
     run: () => void | Promise<void>
@@ -22,23 +30,28 @@ globalScope.it = (name: string, run: () => void | Promise<void>) => {
     tests.push({ name, run })
 }
 
+function registerTestPaths() {
+    const rootPath = path.join(__dirname, '..')
+    const currentPaths = process.env.NODE_PATH
+        ? process.env.NODE_PATH.split(path.delimiter)
+        : []
+
+    if (!currentPaths.includes(rootPath)) {
+        process.env.NODE_PATH = [rootPath, ...currentPaths].join(path.delimiter)
+        ;(Module as ModuleLoader)._initPaths()
+    }
+}
+
 async function main() {
-    await import('./vet-domains.spec')
-    await import('./fee-market.spec')
-    await import('./generic-delegator.spec')
-    await import('./config-json.spec')
-    await import('./config-nodes.spec')
-    await import('./open-url.spec')
-    await import('./signer-groups.spec')
-    await import('./sign-models.spec')
-    await import('./private-key.spec')
-    await import('./vault-worker.spec')
-    await import('./directives.spec')
-    await import('./vet-domain-registration.spec')
-    await import('./vet-domain-profile.spec')
-    await import('./vet-domain-wallet-name.spec')
-    await import('./vet-domain-wallet-selection.spec')
-    await import('./swap.spec')
+    registerTestPaths()
+
+    const specFiles = fs.readdirSync(__dirname)
+        .filter(file => file.endsWith('.spec.ts'))
+        .sort()
+
+    for (const specFile of specFiles) {
+        await import(path.join(__dirname, specFile))
+    }
 
     for (const test of tests) {
         try {
