@@ -102,8 +102,7 @@ async function queryAbi(signature: string): Promise<abi.Function.Definition | nu
             const abis = response.data
             localStorage.setItem(signature, JSON.stringify(abis[0]))
             abi = abis[0]
-        } catch (error) {
-            console.error(error)
+        } catch {
             abi = null
         }
     }
@@ -154,7 +153,7 @@ export default Vue.extend({
             if (this.clause.abi) {
                 try {
                     return this.decodeDataToReadable(this.clause.abi as abi.Function.Definition, data)
-                } catch (e) { console.log(e) }
+                } catch { }
             }
 
             // double check
@@ -162,7 +161,7 @@ export default Vue.extend({
             if (abiItem) {
                 try {
                     return this.decodeDataToReadable(abiItem, data)
-                } catch (e) { console.log(e) }
+                } catch { }
             }
 
             return null
