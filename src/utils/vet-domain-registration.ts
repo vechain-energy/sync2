@@ -1,4 +1,4 @@
-import { abi } from 'thor-devkit'
+import { abi, keccak256 } from 'thor-devkit'
 import { BigNumber } from 'bignumber.js'
 import { genesises } from '../consts'
 
@@ -30,6 +30,7 @@ export type VetDomainCommitmentParams = {
     duration: number
     secret: string
     resolver: string
+    setAsPrimary: boolean
 }
 
 export const VET_DOMAIN_CONTRACTS_BY_GID: Record<string, VetDomainContracts> = {
@@ -151,6 +152,19 @@ export const vetDomainRegisterABI: abi.Function.Definition = {
     type: 'function'
 }
 
+export const vetDomainSetAddrABI: abi.Function.Definition = {
+    constant: false,
+    inputs: [
+        { name: 'node', type: 'bytes32' },
+        { name: 'a', type: 'address' }
+    ],
+    name: 'setAddr',
+    outputs: [],
+    payable: false,
+    stateMutability: 'nonpayable',
+    type: 'function'
+}
+
 export function getVetDomainContracts(gid: string): VetDomainContracts | null {
     return VET_DOMAIN_CONTRACTS_BY_GID[gid] || null
 }
@@ -158,6 +172,20 @@ export function getVetDomainContracts(gid: string): VetDomainContracts | null {
 export function normalizeRegistrationName(input: string): string {
     const name = input.trim().toLowerCase()
     return name.endsWith('.vet') ? name.slice(0, -4) : name
+}
+
+export function vetDomainFullName(name: string): string {
+    return `${normalizeRegistrationName(name)}.vet`
+}
+
+export function vetDomainNamehash(name: string): string {
+    const labels = name.split('.').filter(label => label)
+    let node = Buffer.alloc(32)
+
+    for (const label of labels.reverse()) {
+        node = keccak256(node, keccak256(label))
+    }
+    return `0x${node.toString('hex')}`
 }
 
 export function isBasicRegistrationName(input: string): boolean {
@@ -204,6 +232,14 @@ export function decodedVetDomainPrice(decoded: Record<string | number, unknown>)
     }
 }
 
+export function buildVetDomainResolverData(params: VetDomainCommitmentParams): string[] {
+    if (!params.setAsPrimary) {
+        return []
+    }
+    const func = new abi.Function(vetDomainSetAddrABI)
+    return [func.encode(vetDomainNamehash(vetDomainFullName(params.name)), params.owner)]
+}
+
 export function buildVetDomainCommitClause(contracts: VetDomainContracts, commitment: string): Connex.VM.Clause {
     const func = new abi.Function(vetDomainCommitABI)
     return {
@@ -219,13 +255,15 @@ export function buildVetDomainRegisterClause(
     price: VetDomainPrice
 ): Connex.VM.Clause {
     const func = new abi.Function(vetDomainRegisterABI)
+    const resolverData = buildVetDomainResolverData(params)
     return {
         to: contracts.controller,
         value: sumVetDomainPrice(price),
-        data: func.encode(params.name, params.owner, params.duration, params.secret, params.resolver, [], false, 0)
+        data: func.encode(params.name, params.owner, params.duration, params.secret, params.resolver, resolverData, params.setAsPrimary, 0)
     }
 }
 
 export function vetDomainCommitmentArgs(params: VetDomainCommitmentParams): unknown[] {
-    return [params.name, params.owner, params.duration, params.secret, params.resolver, [], false, 0]
+    const resolverData = buildVetDomainResolverData(params)
+    return [params.name, params.owner, params.duration, params.secret, params.resolver, resolverData, params.setAsPrimary, 0]
 }

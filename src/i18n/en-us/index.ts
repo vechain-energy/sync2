@@ -168,6 +168,7 @@ export default {
         label_unavailable: 'Unavailable',
         label_cost: 'Cost',
         label_network: 'Network',
+        label_set_primary: 'Set as primary name',
         label_wait: 'Wait',
         label_ready: 'Ready',
         label_expired: 'Expired',

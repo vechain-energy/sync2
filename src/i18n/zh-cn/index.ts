@@ -167,6 +167,7 @@ export default {
         label_unavailable: '不可用',
         label_cost: '费用',
         label_network: '网络',
+        label_set_primary: '设为主域名',
         label_wait: '等待',
         label_ready: '就绪',
         label_expired: '已过期',

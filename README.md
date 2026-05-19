@@ -9,7 +9,7 @@ Compared to Sync v1, the most significant change is that the built-in dApp brows
 ## Wallet Features
 
 - `.vet` and `.vet.domains` names can be entered as recipients and displayed for known addresses.
-- `.vet` names can be checked and registered with VET through the Domains menu.
+- `.vet` names can be checked and registered with VET through the Domains menu, with optional primary name setup.
 - Transactions use VeChain dynamic fee fields on Galactica-compatible nodes.
 - Wallets can import and export private keys with password-gated reveal.
 

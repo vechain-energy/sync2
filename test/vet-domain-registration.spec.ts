@@ -5,6 +5,7 @@ import { genesises } from '../src/consts'
 import {
     buildVetDomainCommitClause,
     buildVetDomainRegisterClause,
+    buildVetDomainResolverData,
     decodedBoolean,
     decodedNumber,
     decodedString,
@@ -14,7 +15,11 @@ import {
     normalizeRegistrationName,
     sumVetDomainPrice,
     vetDomainCommitABI,
+    vetDomainCommitmentArgs,
+    vetDomainFullName,
+    vetDomainNamehash,
     vetDomainRegisterABI,
+    vetDomainSetAddrABI,
     yearsToDuration
 } from '../src/utils/vet-domain-registration'
 
@@ -59,6 +64,26 @@ describe('vet domain registration helpers', () => {
         assert.deepStrictEqual(decodedVetDomainPrice({ 0: namedPrice }), { base: '100', premium: '7' })
     })
 
+    it('builds resolver data for primary name registration', () => {
+        const owner = '0x0000000000000000000000000000000000000001'
+        const contracts = getVetDomainContracts(genesises.main.id)!
+        const setAddrFunc = new abi.Function(vetDomainSetAddrABI)
+        const params = {
+            name: 'alice',
+            owner,
+            duration: yearsToDuration(1),
+            secret: `0x${'22'.repeat(32)}`,
+            resolver: contracts.resolver,
+            setAsPrimary: true
+        }
+        const resolverData = buildVetDomainResolverData(params)
+
+        assert.strictEqual(vetDomainFullName('Alice.VET'), 'alice.vet')
+        assert.strictEqual(resolverData.length, 1)
+        assert.strictEqual(resolverData[0], setAddrFunc.encode(vetDomainNamehash('alice.vet'), owner))
+        assert.deepStrictEqual(vetDomainCommitmentArgs(params).slice(5), [resolverData, true, 0])
+    })
+
     it('builds commit and register clauses', () => {
         const contracts = getVetDomainContracts(genesises.main.id)!
         const commitment = `0x${'11'.repeat(32)}`
@@ -76,7 +101,8 @@ describe('vet domain registration helpers', () => {
                 owner: '0x0000000000000000000000000000000000000001',
                 duration: yearsToDuration(1),
                 secret: `0x${'22'.repeat(32)}`,
-                resolver: contracts.resolver
+                resolver: contracts.resolver,
+                setAsPrimary: false
             },
             { base: '100', premium: '7' }
         )

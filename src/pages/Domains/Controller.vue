@@ -51,6 +51,12 @@
                 no-error-icon
                 @input="onInputChanged"
             />
+            <q-checkbox
+                v-model="setAsPrimary"
+                :disable="!!commitment"
+                :label="$t('domains.label_set_primary')"
+                @input="onPrimaryChanged"
+            />
             <q-banner
                 v-if="statusText"
                 :class="statusClass"
@@ -185,6 +191,7 @@ type DomainErrors = {
 type DomainData = {
     inputName: string
     years: number
+    setAsPrimary: boolean
     selectedAddress: string
     wallets: M.Wallet[]
     info: VetDomainRegistrationInfo | null
@@ -206,6 +213,7 @@ export default Vue.extend({
         return {
             inputName: '',
             years: 1,
+            setAsPrimary: true,
             selectedAddress: '',
             wallets: [] as M.Wallet[],
             info: null as null | VetDomainRegistrationInfo,
@@ -327,6 +335,9 @@ export default Vue.extend({
             this.errors.owner = ''
             this.scheduleCheck()
         },
+        onPrimaryChanged() {
+            this.commitState = null
+        },
         validateInputs(): boolean {
             this.errors.name = ''
             this.errors.years = ''
@@ -412,7 +423,8 @@ export default Vue.extend({
                     owner: this.selectedAddress,
                     duration: this.info.duration,
                     secret: '0x' + randomBytes(32).toString('hex'),
-                    resolver: this.contracts.resolver
+                    resolver: this.contracts.resolver,
+                    setAsPrimary: this.setAsPrimary
                 }
                 const commitment = await this.makeCommitment(params)
                 await this.$signTx(this.selectedWallet.gid, {
