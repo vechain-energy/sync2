@@ -87,7 +87,11 @@
     "@babel/parser": "7.7.5"
   },
   "overrides": {
-    "js-yaml": "4.1.1",
-    "tar-fs": "2.1.4"
+    "electron-updater": {
+      "js-yaml": "4.1.1"
+    },
+    "node-hid": {
+      "tar-fs": "2.1.4"
+    }
   }
 }
