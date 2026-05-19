@@ -245,7 +245,9 @@ export default {
         msg_password_mismatch: '密码不一致',
         msg_password_too_short: '密码过短(至少6位)',
         title_set_new_password: '设置新密码',
-        title_confirm_password: '确认您的密码'
+        title_confirm_password: '确认您的密码',
+        label_input_password: '输入新密码',
+        label_confirm_password: '再次输入相同密码'
     },
     backup: {
         title: '备份',

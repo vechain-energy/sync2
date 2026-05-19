@@ -9,6 +9,7 @@
             <prompt-dialog-toolbar>{{hint}}</prompt-dialog-toolbar>
             <q-form @submit="onSubmit()">
                 <q-card-section>
+                    <p class="text-center">{{inputLabel}}</p>
                     <!-- prevent chrome warning -->
                     <q-input
                         v-show="false"
@@ -69,6 +70,11 @@ export default Vue.extend({
             return this.password
                 ? this.$t('common.confirm').toString()
                 : this.$t('common.next').toString()
+        },
+        inputLabel(): string {
+            return this.password
+                ? this.$t('newPasswordDialog.label_confirm_password').toString()
+                : this.$t('newPasswordDialog.label_input_password').toString()
         }
     },
     watch: {

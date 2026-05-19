@@ -246,7 +246,9 @@ export default {
         msg_password_mismatch: 'Password mismatch',
         msg_password_too_short: 'Password too short (at least 6 characters)',
         title_set_new_password: 'Set New Password',
-        title_confirm_password: 'Confirm Your Password'
+        title_confirm_password: 'Confirm Your Password',
+        label_input_password: 'Enter a new password',
+        label_confirm_password: 'Enter the same password again'
     },
     backup: {
         title: 'Backup',
