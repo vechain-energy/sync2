@@ -72,8 +72,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '14'
           cache: 'npm'
+
+      - name: Upgrade npm
+        run: npm install -g npm@9
 
       - uses: actions/setup-python@v5
         with:
@@ -89,7 +92,6 @@ jobs:
       - name: Build Electron binaries
         run: npx quasar build -m electron
         env:
-          NODE_OPTIONS: --openssl-legacy-provider
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
 
@@ -133,8 +135,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '14'
           cache: 'npm'
+
+      - name: Upgrade npm
+        run: npm install -g npm@9
 
       - uses: actions/setup-python@v5
         with:
@@ -161,7 +166,6 @@ jobs:
       - name: Build Electron binaries
         run: npx quasar build -m electron
         env:
-          NODE_OPTIONS: --openssl-legacy-provider
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
