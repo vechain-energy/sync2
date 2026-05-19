@@ -2,7 +2,7 @@
 import Vue from 'vue'
 import { abis } from 'src/consts'
 import { abi } from 'thor-devkit'
-import { formatAmount } from 'src/utils/format'
+import { transferNotification } from 'src/utils/transfer-notification'
 
 export default Vue.extend({
     props: {
@@ -161,18 +161,16 @@ export default Vue.extend({
             return result
         },
         notify(dir: 'in' | 'out', amount: string, decimals: number, symbol: string, walletId: number, addressIndex: number) {
-            const parts = formatAmount(amount, { unit: decimals, fixed: 2, fullPrecision: true })!
-            amount = `${parts.int}${parts.sep}${parts.dec}`
-
-            const message = dir === 'in'
-                ? `${this.$t('common.received')} <strong>${amount}</strong> ${symbol}`
-                : `${this.$t('common.sent')} <strong>${amount}</strong> ${symbol}`
+            const notification = transferNotification(dir, amount, decimals, symbol, {
+                received: this.$t('common.received').toString(),
+                sent: this.$t('common.sent').toString()
+            })
 
             this.$q.notify({
                 color: 'secondary',
-                message,
+                message: notification.message,
                 position: 'top-right',
-                html: true,
+                html: notification.html,
                 timeout: 5 * 1000,
                 group: false,
                 classes: 'transfer-notify_w100',
