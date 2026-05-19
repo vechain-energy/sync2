@@ -165,6 +165,7 @@ export default {
         label_to: 'To',
         label_source: 'Source',
         label_slippage: 'Slippage',
+        label_details: 'Details',
         label_custom_slippage: 'Custom slippage',
         label_amount: 'Amount',
         label_balance: 'Balance',
@@ -178,7 +179,6 @@ export default {
         msg_insufficient_balance: 'you need to lower the amount or select a wallet with balance',
         msg_no_quote: 'you need to try another token pair or amount',
         msg_routes_unavailable: 'you need to try another route, token pair, or amount',
-        msg_quote_ready: 'Quote ready',
         comment_swap: 'Swap {fromAmount} {fromSymbol} to {toSymbol}'
     },
     domains: {

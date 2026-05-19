@@ -47,7 +47,7 @@
                         @input="onAmountChanged"
                     />
                 </div>
-                <div class="col-auto q-pt-xs">
+                <div class="col-auto swap-max">
                     <q-btn
                         v-if="fromToken"
                         dense
@@ -89,91 +89,132 @@
                 :loading="quoteLoading"
             />
 
-            <q-item-label header>{{$t('swap.label_source')}}</q-item-label>
-            <div class="row q-mx-md q-col-gutter-sm items-center">
-                <div class="col">
-                    <q-select
-                        dense
-                        outlined
-                        emit-value
-                        map-options
-                        :disable="quoteLoading || quoteOptions.length === 0"
-                        v-model="selectedAggregatorName"
-                        :options="quoteOptions"
-                    />
-                </div>
-                <div class="col-auto">
-                    <q-spinner
-                        v-if="quoteLoading"
-                        color="primary"
-                    />
-                </div>
-            </div>
-            <q-list
-                v-if="selectedQuote"
+            <q-expansion-item
                 dense
                 class="q-mx-md"
+                :label="$t('swap.label_details')"
+                :caption="detailsCaption"
             >
-                <q-item>
-                    <q-item-section>{{$t('swap.label_min_received')}}</q-item-section>
-                    <q-item-section side>
-                        <span v-if="toToken">
-                            <amount-label
-                                :value="selectedQuote.minimumOutputAmount"
-                                :decimals="toToken.decimals"
-                                :fixed="6"
-                            /> {{toToken.symbol}}
-                        </span>
-                    </q-item-section>
-                </q-item>
-                <q-item>
-                    <q-item-section>{{$t('swap.label_fee')}}</q-item-section>
-                    <q-item-section side>{{feeText}}</q-item-section>
-                </q-item>
-            </q-list>
-
-            <q-item-label header>{{$t('swap.label_slippage')}}</q-item-label>
-            <div class="q-mx-md q-gutter-y-sm">
+                <q-item-label header>{{$t('swap.label_source')}}</q-item-label>
                 <div class="row q-col-gutter-sm items-center">
                     <div class="col">
-                        <q-btn
-                            class="full-width"
-                            :outline="slippageTolerance !== 1"
+                        <q-select
+                            dense
+                            outlined
+                            emit-value
+                            map-options
+                            :disable="quoteLoading || quoteOptions.length === 0"
+                            v-model="selectedAggregatorName"
+                            :options="quoteOptions"
+                        >
+                            <template v-slot:selected-item="scope">
+                                <div class="row items-center no-wrap full-width">
+                                    <q-avatar
+                                        size="28px"
+                                        class="bg-grey-3 text-primary text-caption"
+                                    >
+                                        {{sourceMark(scope.opt.label)}}
+                                    </q-avatar>
+                                    <div class="col q-ml-sm ellipsis">
+                                        <div class="ellipsis">{{scope.opt.label}}</div>
+                                        <div class="text-caption text-grey-7 ellipsis">{{scope.opt.caption}}</div>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-slot:option="scope">
+                                <q-item
+                                    v-bind="scope.itemProps"
+                                    v-on="scope.itemEvents"
+                                >
+                                    <q-item-section avatar>
+                                        <q-avatar
+                                            size="md"
+                                            class="bg-grey-3 text-primary"
+                                        >
+                                            {{sourceMark(scope.opt.label)}}
+                                        </q-avatar>
+                                    </q-item-section>
+                                    <q-item-section>
+                                        <q-item-label>{{scope.opt.label}}</q-item-label>
+                                        <q-item-label caption>{{scope.opt.caption}}</q-item-label>
+                                    </q-item-section>
+                                </q-item>
+                            </template>
+                        </q-select>
+                    </div>
+                    <div class="col-auto">
+                        <q-spinner
+                            v-if="quoteLoading"
                             color="primary"
-                            label="Auto"
-                            @click="setSlippage(1)"
                         />
                     </div>
-                    <div class="col">
-                        <q-btn
-                            class="full-width"
-                            :outline="slippageTolerance !== 0.5"
-                            color="primary"
-                            label="0.5%"
-                            @click="setSlippage(0.5)"
-                        />
-                    </div>
-                    <div class="col">
-                        <q-btn
-                            class="full-width"
-                            :outline="slippageTolerance !== 3"
-                            color="primary"
-                            label="3%"
-                            @click="setSlippage(3)"
-                        />
-                    </div>
-                    <div class="col-auto text-grey-7">{{slippageTolerance}}%</div>
                 </div>
-                <q-input
+                <q-list
+                    v-if="selectedQuote"
                     dense
-                    outlined
-                    suffix="%"
-                    inputmode="decimal"
-                    :label="$t('swap.label_custom_slippage')"
-                    v-model="customSlippage"
-                    @input="onCustomSlippageChanged"
-                />
-            </div>
+                    class="q-mt-sm"
+                >
+                    <q-item>
+                        <q-item-section class="text-caption text-grey-7">{{$t('swap.label_min_received')}}</q-item-section>
+                        <q-item-section
+                            side
+                            class="text-caption text-grey-7"
+                        >
+                            <span v-if="toToken">{{minReceivedText}} {{toToken.symbol}}</span>
+                        </q-item-section>
+                    </q-item>
+                    <q-item>
+                        <q-item-section class="text-caption text-grey-7">{{$t('swap.label_fee')}}</q-item-section>
+                        <q-item-section
+                            side
+                            class="text-caption text-grey-7"
+                        >{{feeText}}</q-item-section>
+                    </q-item>
+                </q-list>
+
+                <q-item-label header>{{$t('swap.label_slippage')}}</q-item-label>
+                <div class="q-gutter-y-sm">
+                    <div class="row q-col-gutter-sm items-center">
+                        <div class="col">
+                            <q-btn
+                                class="full-width"
+                                :outline="slippageTolerance !== 1"
+                                color="primary"
+                                label="Auto"
+                                @click="setSlippage(1)"
+                            />
+                        </div>
+                        <div class="col">
+                            <q-btn
+                                class="full-width"
+                                :outline="slippageTolerance !== 0.5"
+                                color="primary"
+                                label="0.5%"
+                                @click="setSlippage(0.5)"
+                            />
+                        </div>
+                        <div class="col">
+                            <q-btn
+                                class="full-width"
+                                :outline="slippageTolerance !== 3"
+                                color="primary"
+                                label="3%"
+                                @click="setSlippage(3)"
+                            />
+                        </div>
+                        <div class="col-auto text-grey-7">{{slippageTolerance}}%</div>
+                    </div>
+                    <q-input
+                        dense
+                        outlined
+                        suffix="%"
+                        inputmode="decimal"
+                        :label="$t('swap.label_custom_slippage')"
+                        v-model="customSlippage"
+                        @input="onCustomSlippageChanged"
+                    />
+                </div>
+            </q-expansion-item>
 
             <q-banner
                 v-if="statusText"
@@ -211,7 +252,6 @@
 <script lang="ts">
 import Vue from 'vue'
 import { BigNumber } from 'bignumber.js'
-import AmountLabel from 'src/components/AmountLabel.vue'
 import PageAction from 'src/components/PageAction.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageToolbar from 'src/components/PageToolbar.vue'
@@ -239,6 +279,7 @@ const QUOTE_DELAY = 650
 type SelectOption<T> = {
     label: string
     value: T
+    caption?: string
     disable?: boolean
 }
 
@@ -270,6 +311,24 @@ function shortRawAmount(raw: string, decimals: number): string {
     return value.toFixed(decimals).replace(/\.?0+$/, '')
 }
 
+function trimFormattedDecimal(value: string): string {
+    return value.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '')
+}
+
+function formatDisplayAmount(raw: string, decimals: number, maxDecimals = 6): string {
+    const value = new BigNumber(raw || 0).div(`1${'0'.repeat(decimals)}`)
+    if (!value.isFinite() || value.isZero()) {
+        return '0'
+    }
+
+    const places = Math.min(decimals, value.isGreaterThanOrEqualTo(1) ? maxDecimals : maxDecimals + 2)
+    const rounded = value.decimalPlaces(places, BigNumber.ROUND_HALF_UP)
+    if (rounded.isZero()) {
+        return `<${trimFormattedDecimal(new BigNumber(1).div(`1${'0'.repeat(places)}`).toFormat(places))}`
+    }
+    return trimFormattedDecimal(rounded.toFormat(places))
+}
+
 function amountHasValidShape(amount: string, decimals: number): boolean {
     if (!/^\d*\.?\d*$/.test(amount) || amount === '' || amount === '.') {
         return false
@@ -280,7 +339,6 @@ function amountHasValidShape(amount: string, decimals: number): boolean {
 
 export default Vue.extend({
     components: {
-        AmountLabel,
         PageAction,
         PageContent,
         PageToolbar,
@@ -362,14 +420,27 @@ export default Vue.extend({
             return this.selectedQuote ? this.selectedQuote.outputAmount : '0'
         },
         outputText(): string {
-            return this.toToken ? shortRawAmount(this.outputAmount, this.toToken.decimals) : '0'
+            return this.toToken ? formatDisplayAmount(this.outputAmount, this.toToken.decimals) : '0'
+        },
+        minReceivedText(): string {
+            return this.selectedQuote && this.toToken
+                ? formatDisplayAmount(this.selectedQuote.minimumOutputAmount, this.toToken.decimals)
+                : '0'
+        },
+        detailsCaption(): string {
+            if (!this.selectedQuote || !this.toToken) {
+                return ''
+            }
+            return `${this.selectedQuote.aggregatorName} - ${this.outputText} ${this.toToken.symbol}`
         },
         quoteOptions(): SelectOption<string>[] {
             return this.quotes.map(quote => {
-                const output = this.toToken ? shortRawAmount(quote.outputAmount, this.toToken.decimals) : quote.outputAmount
-                const suffix = quote.reverted ? ` - ${this.$t('swap.label_unavailable')}` : ` - ${output} ${this.toToken ? this.toToken.symbol : ''}`
+                const output = this.toToken ? formatDisplayAmount(quote.outputAmount, this.toToken.decimals) : quote.outputAmount
                 return {
-                    label: `${quote.aggregatorName}${suffix}`,
+                    label: quote.aggregatorName,
+                    caption: quote.reverted
+                        ? this.$t('swap.label_unavailable').toString()
+                        : `${output} ${this.toToken ? this.toToken.symbol : ''}`,
                     value: quote.aggregatorName,
                     disable: quote.reverted
                 }
@@ -589,8 +660,8 @@ export default Vue.extend({
                 this.quotes = result.quotes
                 this.selectedAggregatorName = result.bestQuote ? result.bestQuote.aggregatorName : ''
                 if (result.bestQuote) {
-                    this.statusText = this.$t('swap.msg_quote_ready').toString()
-                    this.statusClass = 'bg-green-1 text-positive'
+                    this.statusText = ''
+                    this.statusClass = ''
                 } else if (result.quotes.length > 0) {
                     this.statusText = this.$t('swap.msg_routes_unavailable').toString()
                     this.statusClass = 'bg-red-1 text-negative'
@@ -636,7 +707,14 @@ export default Vue.extend({
             } finally {
                 this.swapping = false
             }
+        },
+        sourceMark(name: string): string {
+            return name.slice(0, 1).toUpperCase()
         }
     }
 })
 </script>
+<style scoped lang="sass">
+.swap-max
+  padding-top: 10px
+</style>

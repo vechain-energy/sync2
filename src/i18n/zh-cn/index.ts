@@ -164,6 +164,7 @@ export default {
         label_to: '获得',
         label_source: '来源',
         label_slippage: '滑点',
+        label_details: '详情',
         label_custom_slippage: '自定义滑点',
         label_amount: '数额',
         label_balance: '余额',
@@ -177,7 +178,6 @@ export default {
         msg_insufficient_balance: 'you need to lower the amount or select a wallet with balance',
         msg_no_quote: 'you need to try another token pair or amount',
         msg_routes_unavailable: 'you need to try another route, token pair, or amount',
-        msg_quote_ready: '报价就绪',
         comment_swap: '兑换 {fromAmount} {fromSymbol} 到 {toSymbol}'
     },
     domains: {
