@@ -11,7 +11,7 @@
         </q-item-section>
         <q-item-section>
             <q-item-label>
-                <address-label :addr="address" />
+                <address-label :addr="address" :gid="gid" />
             </q-item-label>
             <q-item-label
                 caption
@@ -43,6 +43,7 @@ export default Vue.extend({
     },
     props: {
         address: String,
+        gid: String,
         name: String
     },
     methods: {

@@ -38,7 +38,7 @@
             </q-item-section>
             <q-item-section avatar>
                 <q-item-label class="ellipsis">
-                    <address-label :addr="op.to">
+                    <address-label :addr="op.to" :gid="gid">
                         New Contract
                     </address-label>
                 </q-item-label>
@@ -64,7 +64,8 @@ export type OpTransfer = {
 export default Vue.extend({
     components: { TokenAvatar, AddressLabel, AmountLabel, AddressAvatar },
     props: {
-        op: Object as () => OpTransfer
+        op: Object as () => OpTransfer,
+        gid: String
     }
 })
 </script>

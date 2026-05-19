@@ -19,10 +19,12 @@
             <transfer-item
                 v-if="op.type==='transfer'"
                 :op="op"
+                :gid="gid"
             />
             <call-item
                 v-if="op.type==='call'"
                 :op="op"
+                :gid="gid"
             />
             <create-item
                 v-if="op.type==='create'"
@@ -44,6 +46,7 @@ export default Vue.extend({
     props: {
         index: Number,
         clause: Object as () => Connex.Vendor.TxMessage[0],
+        gid: String,
         tokens: Array as () => M.TokenSpec[]
     },
     computed: {

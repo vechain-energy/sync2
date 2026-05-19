@@ -12,7 +12,7 @@
                 >{{ entry.walletName || $t('common.unknown') }}</q-item-label>
                 <q-item-label caption>
                     ┗
-                    <address-label :addr="entry.signer" />
+                    <address-label :addr="entry.signer" :gid="entry.gid" />
                 </q-item-label>
                 <q-item-label caption>
                     {{formatDate(entry.time)}}

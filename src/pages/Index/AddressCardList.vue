@@ -35,6 +35,7 @@
                                 :style="cardStyles"
                                 :index="i"
                                 :address="address"
+                                :gid="wallet.gid"
                                 :account="data"
                                 @click="onClickCard(i)"
                             />

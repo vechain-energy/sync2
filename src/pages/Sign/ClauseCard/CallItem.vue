@@ -20,7 +20,7 @@
             </q-item-section>
             <q-item-section avatar>
                 <q-item-label class="ellipsis">
-                    <address-label :addr="op.to" />
+                    <address-label :addr="op.to" :gid="gid" />
                 </q-item-label>
             </q-item-section>
         </q-item>
@@ -39,7 +39,8 @@ export type OpCall = {
 export default Vue.extend({
     components: { AddressLabel, AddressAvatar },
     props: {
-        op: Object as () => OpCall
+        op: Object as () => OpCall,
+        gid: String
     }
 })
 </script>

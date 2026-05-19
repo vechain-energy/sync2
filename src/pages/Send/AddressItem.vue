@@ -7,7 +7,7 @@
             <address-avatar size="md" :addr="address" />
         </q-item-section>
         <q-item-section>
-            <address-label :addr="address"/>
+            <address-label :addr="address" :gid="gid" />
         </q-item-section>
     </q-item>
 </template>
@@ -21,7 +21,8 @@ export default Vue.extend({
         AddressLabel
     },
     props: {
-        address: String
+        address: String,
+        gid: String
     }
 })
 </script>

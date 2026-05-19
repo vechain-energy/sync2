@@ -12,7 +12,7 @@
         </q-item-section>
         <q-item-section no-wrap>
             <q-item-label class="ellipsis">
-                <address-label :addr="text" />
+                <address-label :addr="text" :gid="gid" />
             </q-item-label>
             <q-item-label
                 class="ellipsis"
@@ -41,6 +41,7 @@ export default Vue.extend({
     components: { AddressAvatar, AddressLabel },
     props: {
         text: String,
+        gid: String,
         caption: String,
         sideIcon: String
     },

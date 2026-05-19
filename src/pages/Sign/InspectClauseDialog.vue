@@ -24,6 +24,7 @@
                         <q-item-label style="word-break:break-all">
                             <address-label
                                 :addr="clause.to"
+                                :gid="gid"
                                 full
                             >null</address-label>
                         </q-item-label>
@@ -114,6 +115,7 @@ export default Vue.extend({
     components: { AddressLabel, AmountLabel },
     props: {
         index: Number,
+        gid: String,
         clause: Object as () => Connex.Vendor.TxMessage[0]
     },
     data() {
