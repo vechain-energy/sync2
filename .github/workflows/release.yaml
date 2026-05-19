@@ -75,9 +75,6 @@ jobs:
           node-version: '14'
           cache: 'npm'
 
-      - name: Upgrade npm
-        run: npm install -g npm@9
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -87,7 +84,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npx -p npm@9 npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Build Electron binaries
         run: npx quasar build -m electron
@@ -138,15 +135,12 @@ jobs:
           node-version: '14'
           cache: 'npm'
 
-      - name: Upgrade npm
-        run: npm install -g npm@9
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npx -p npm@9 npm ci --legacy-peer-deps --ignore-scripts
 
       - name: Setup macOS notarization env
         shell: bash
