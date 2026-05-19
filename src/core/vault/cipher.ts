@@ -9,13 +9,42 @@ type WorkerConstructor = new () => Worker
 
 let worker: Worker | null = null
 
+function isWorkerConstructor(value: unknown): value is WorkerConstructor {
+    return typeof value === 'function'
+}
+
+export function resolveWorkerConstructor(moduleValue: unknown): WorkerConstructor {
+    if (isWorkerConstructor(moduleValue)) {
+        return moduleValue
+    }
+
+    if (moduleValue && typeof moduleValue === 'object' && 'default' in moduleValue) {
+        const defaultExport = (moduleValue as { default?: unknown }).default
+        if (isWorkerConstructor(defaultExport)) {
+            return defaultExport
+        }
+    }
+
+    throw new Error('vault worker unavailable')
+}
+
+function rejectPending(err: Error) {
+    queue.forEach(r => r.reject(err))
+    queue.clear()
+    worker = null
+}
+
 function getWorker(): Worker {
     if (!worker) {
-        const WorkerClass = require('worker-loader!./worker').default as WorkerConstructor
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const WorkerClass = resolveWorkerConstructor(require('worker-loader!./worker'))
         worker = new WorkerClass()
         worker.onmessage = ev => {
             const [seq, result, err] = ev.data
-            const r = queue.get(seq)!
+            const r = queue.get(seq)
+            if (!r) {
+                return
+            }
             queue.delete(seq)
 
             if (err) {
@@ -23,6 +52,9 @@ function getWorker(): Worker {
             } else {
                 r.resolve(result)
             }
+        }
+        worker.onerror = ev => {
+            rejectPending(new Error(ev.message || 'vault worker error'))
         }
     }
     return worker
@@ -37,10 +69,15 @@ let nextSeq = 0
  */
 function call<R>(cmd: CommandName, ...args: unknown[]): Promise<R> {
     const seq = ++nextSeq
-    // args are passed in tuple
-    getWorker().postMessage([seq, cmd, args])
     const r = new Deferred<unknown>()
     queue.set(seq, r)
+    try {
+        // args are passed in tuple
+        getWorker().postMessage([seq, cmd, args])
+    } catch (err) {
+        queue.delete(seq)
+        r.reject(err)
+    }
     return r as Promise<R>
 }
 

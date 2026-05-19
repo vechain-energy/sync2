@@ -12,6 +12,7 @@ import NodesSetting from 'pages/NodesSetting'
 import Sign from 'pages/Sign'
 import SignSuccess from 'pages/SignSuccess.vue'
 import Activities from 'pages/Activities'
+import Domains from 'pages/Domains'
 
 const routes: RouteConfig[] = [
     {
@@ -66,6 +67,10 @@ const routes: RouteConfig[] = [
             path: 'activities',
             name: 'activities',
             component: Activities
+        }, {
+            path: 'domains',
+            name: 'domains',
+            component: Domains
         }]
     }
 ]

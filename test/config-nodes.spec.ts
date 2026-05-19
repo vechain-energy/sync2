@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
 import { presetNodes } from '../src/boot/services/config/preset-nodes'
-import { genesises } from '../src/consts'
+import { genesises, urls } from '../src/consts'
 
 describe('config node presets', () => {
     it('uses only official VeChain public nodes', () => {
@@ -13,5 +13,10 @@ describe('config node presets', () => {
             ]
         )
         assert.strictEqual(presetNodes.every(node => node.preset), true)
+    })
+
+    it('uses VeChainStats as mainnet transaction explorer', () => {
+        assert.strictEqual(`${urls.explorerMain}transactions/{txid}`, 'https://vechainstats.com/transactions/{txid}')
+        assert.strictEqual(urls.explorerTest, 'https://explore-testnet.vechain.org/')
     })
 })

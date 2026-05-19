@@ -8,9 +8,13 @@ Compared to Sync v1, the most significant change is that the built-in dApp brows
 
 ## Wallet Features
 
-- `.vet` and `.vet.domains` names can be entered as recipients and displayed for known addresses.
-- Transactions use VeChain dynamic fee fields on Galactica-compatible nodes.
-- Wallets can import and export private keys with password-gated reveal.
+- Name support: `.vet` and `.vet.domains` names can be entered on the send screen and displayed for known addresses. Reverse names are network-aware and fall back to the raw address when no name is set.
+- Domains: the Domains menu lets users check `.vet` availability, see the VET cost, select the paying wallet/address, register the name, and view a confirmation screen after success.
+- Primary name: registration can also set the new name as the owner's primary name. Wallet lists refresh the primary name immediately after the transaction is signed.
+- Fees: transactions use VeChain dynamic fee fields on Galactica-compatible nodes. Sync2 shows the current estimated fee and max fee cap, and blocks signing when the connected node does not expose fee market data.
+- Private keys: wallets can import a single private key and export one address key at a time. Export is hidden for Ledger wallets, password-gated, and requires an explicit reveal and copy action.
+- Networks: built-in public nodes are limited to `mainnet.vechain.org` and `testnet.vechain.org`.
+- Explorer: mainnet links use VeChainStats, including `/transactions/` transaction URLs.
 
 ## Supported Platforms
 
