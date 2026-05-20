@@ -39,8 +39,20 @@ You can easily port your dApp by integrating [Connex v2](https://github.com/vech
 
 ### Requirements
 
-- Node.js 24 LTS
+- Node.js 24 LTS recommended. Node.js 22.12+ and npm 10+ are supported by `package.json`.
 - npm 10+
+
+### Toolchain
+
+- Quasar CLI: `@quasar/app-webpack` 4
+- UI runtime: Quasar 2 and Vue 3 compat mode
+- Desktop runtime: Electron 42 and electron-builder 26
+- TypeScript: 6
+- Lint: ESLint 9 flat config
+
+ESLint 10 is not used yet because `@quasar/app-webpack` 4 declares peer support for ESLint 8 and 9 only.
+
+`npm audit --omit=dev` must be clean. The full dev audit still reports low severity `elliptic` advisories through VeChain/browser crypto packages; `npm audit fix --force` downgrades Connex and is not a safe production fix.
 
 ### Install the dependencies
 ```bash
@@ -83,7 +95,17 @@ npm test
 
 ### Build the app for production
 ```bash
-npx quasar build
+npm run build
+```
+
+### Build the PWA
+```bash
+npm run build:pwa
+```
+
+### Build macOS desktop packages
+```bash
+npm run build:electron:mac
 ```
 
 ## Version release flow
