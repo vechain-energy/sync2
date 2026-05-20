@@ -269,6 +269,7 @@ import { SignerGroup } from 'src/pages/Sign/models'
 import { buildSignerGroups } from 'src/pages/Sign/signer-groups'
 import { genesises } from 'src/consts'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
+import { sanitizeDecimalInput } from 'src/utils/decimal-input'
 import { toWei } from 'src/utils/format'
 import {
     BuiltSwapQuote,
@@ -583,9 +584,7 @@ export default defineComponent({
             this.scheduleQuote()
         },
         onAmountChanged() {
-            if (!/^\d*\.?\d*$/.test(this.amount)) {
-                this.amount = this.amount.replace(/[^\d.]/g, '')
-            }
+            this.amount = sanitizeDecimalInput(this.amount, this.fromToken ? this.fromToken.decimals : undefined)
             this.scheduleQuote()
         },
         setMaxAmount() {
@@ -607,9 +606,7 @@ export default defineComponent({
             this.scheduleQuote()
         },
         onCustomSlippageChanged() {
-            if (!/^\d*\.?\d*$/.test(this.customSlippage)) {
-                this.customSlippage = this.customSlippage.replace(/[^\d.]/g, '')
-            }
+            this.customSlippage = sanitizeDecimalInput(this.customSlippage, 2)
             const value = Number(this.customSlippage)
             if (Number.isFinite(value) && value >= 0 && value <= 100) {
                 this.slippageTolerance = value
