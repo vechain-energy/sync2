@@ -25,7 +25,7 @@ describe('release workflow guards', () => {
         const workflow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/release.yaml'), 'utf8')
         const explicitPublishCommands = workflow.match(/npx quasar build -m electron --publish onTagOrDraft/g) || []
 
-        assert.strictEqual(explicitPublishCommands.length, 2)
+        assert.strictEqual(explicitPublishCommands.length, 3)
         assert.ok(workflow.includes('Create draft GitHub Release'))
         assert.ok(workflow.includes('GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}'))
         assert.ok(workflow.includes('ELECTRON_RELEASE_OWNER: ${{ github.repository_owner }}'))
@@ -43,6 +43,9 @@ describe('release workflow guards', () => {
         assert.ok(workflow.includes('APPLE_API_KEY_BASE64'))
         assert.ok(workflow.includes('macOS auto-update needs a signed and notarized release'))
         assert.ok(workflow.includes('Continuing with unsigned macOS assets for manual download'))
+        assert.ok(workflow.includes("if: steps.mac_signing.outputs.available != 'true'"))
+        assert.ok(workflow.includes('CSC_IDENTITY_AUTO_DISCOVERY: false'))
+        assert.ok(workflow.includes("if: steps.mac_signing.outputs.available == 'true'"))
         assert.strictEqual(workflow.includes('exit "$missing"'), false)
     })
 })

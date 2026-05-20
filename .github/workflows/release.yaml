@@ -166,6 +166,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Report macOS signing secrets
+        id: mac_signing
         shell: bash
         env:
           MACOS_CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -184,8 +185,21 @@ jobs:
           if [ "$missing" -eq 1 ]; then
             echo "Continuing with unsigned macOS assets for manual download. Do not rely on auto-update for these assets." >&2
           fi
+          echo "available=$([ "$missing" -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-      - name: Build Electron binaries
+      - name: Build unsigned Electron binaries
+        if: steps.mac_signing.outputs.available != 'true'
+        run: npx quasar build -m electron --publish onTagOrDraft
+        env:
+          ELECTRON_BUILD_ARCHES: x64,arm64
+          ELECTRON_RELEASE_OWNER: ${{ github.repository_owner }}
+          ELECTRON_RELEASE_REPO: ${{ github.event.repository.name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHON_PATH: python3
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Build signed Electron binaries
+        if: steps.mac_signing.outputs.available == 'true'
         run: npx quasar build -m electron --publish onTagOrDraft
         env:
           ELECTRON_BUILD_ARCHES: x64,arm64
