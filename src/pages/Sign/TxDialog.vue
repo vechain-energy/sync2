@@ -71,7 +71,10 @@
                                     />
                                     <span>{{feeModeLabel}}</span>
                                 </div>
-                                <q-popup-proxy position="bottom">
+                                <q-popup-proxy
+                                    position="bottom"
+                                    :breakpoint="0"
+                                >
                                     <q-card>
                                         <q-list
                                             padding

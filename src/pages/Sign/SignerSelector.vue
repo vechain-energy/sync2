@@ -11,6 +11,7 @@
             v-if="count > 1"
             position="bottom"
             fit
+            :breakpoint="0"
             @show="onPopupShow()"
         >
             <q-card>
@@ -47,11 +48,15 @@ import { count } from 'src/utils/array'
 import { SignerGroup } from './models'
 
 export default defineComponent({
+    emits: ['select'],
     components: { SignerItem },
     props: {
         signer: String,
         gid: String,
-        groups: Array as () => SignerGroup[]
+        groups: {
+            type: Array as () => SignerGroup[],
+            default: () => []
+        }
     },
     computed: {
         group(): SignerGroup | null {

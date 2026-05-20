@@ -12,7 +12,11 @@
                 :selectIcon="true"
             />
         </async-resolve>
-        <q-popup-proxy position="bottom" fit>
+        <q-popup-proxy
+            position="bottom"
+            fit
+            :breakpoint="0"
+        >
             <q-card>
                 <q-list
                     padding
@@ -42,13 +46,17 @@ import TokenItem from './TokenItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
 
 export default defineComponent({
+    emits: ['update:modelValue', 'change'],
     components: {
         TokenItem,
         AsyncResolve
     },
     props: {
         address: String,
-        tokens: Array as () => M.TokenSpec[],
+        tokens: {
+            type: Array as () => M.TokenSpec[],
+            default: () => []
+        },
         modelValue: String
     },
     computed: {

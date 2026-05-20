@@ -17,6 +17,7 @@
         <q-popup-proxy
             v-if="calcFee"
             position="bottom"
+            :breakpoint="0"
         >
             <q-card>
                 <q-list padding>
@@ -79,6 +80,7 @@ type Level = {
 }
 
 export default defineComponent({
+    emits: ['update:modelValue', 'change'],
     components: { AmountLabel },
     props: {
         modelValue: Number,

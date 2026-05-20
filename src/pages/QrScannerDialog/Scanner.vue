@@ -20,6 +20,7 @@ import { defineComponent } from 'vue'
 import { QrScanner } from 'src/utils/qr-scanner'
 
 export default defineComponent({
+    emits: ['input', 'error'],
     data: () => {
         return {
             size: { w: 0, h: 0 }
