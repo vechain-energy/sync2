@@ -83,7 +83,7 @@
                 readonly
                 class="q-mx-md"
                 :label="$t('swap.label_amount')"
-                :value="outputText"
+                :model-value="outputText"
                 :loading="quoteLoading"
             />
 
@@ -128,7 +128,6 @@
                             <template v-slot:option="scope">
                                 <q-item
                                     v-bind="scope.itemProps"
-                                    v-on="scope.itemEvents"
                                 >
                                     <q-item-section avatar>
                                         <q-avatar

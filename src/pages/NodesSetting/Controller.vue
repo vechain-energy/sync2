@@ -131,7 +131,10 @@ export default defineComponent({
             if (!this.activeMap) {
                 return
             }
-            this.$set(this.activeMap, val.genesis.id, val.url)
+            this.activeMap = {
+                ...this.activeMap,
+                [val.genesis.id]: val.url
+            }
         },
         async onAdd() {
             let node: M.Node

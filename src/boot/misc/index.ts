@@ -4,6 +4,7 @@ import * as State from './state'
 import * as Plugins from './plugins'
 import * as Modals from './modals'
 import { genesises } from 'src/consts'
+import { i18n } from 'src/boot/i18n'
 
 const beforeUnmountCleanups = new WeakMap<ComponentPublicInstance, Array<() => void>>()
 
@@ -53,13 +54,12 @@ export default defineBoot(({ app }) => {
         },
         $netDisplayName: {
             get(): ComponentPublicInstance['$netDisplayName'] {
-                const vm = this as ComponentPublicInstance
                 return gid => {
                     switch (gid) {
-                        case genesises.main.id: return vm.$t('common.mainnet').toString()
-                        case genesises.test.id: return vm.$t('common.testnet').toString()
+                        case genesises.main.id: return i18n.global.t('common.mainnet').toString()
+                        case genesises.test.id: return i18n.global.t('common.testnet').toString()
                         default: {
-                            const name = vm.$t('common.private').toString()
+                            const name = i18n.global.t('common.private').toString()
                             const suffix = gid ? `-${gid.slice(-6)}` : ''
                             return name + suffix
                         }
