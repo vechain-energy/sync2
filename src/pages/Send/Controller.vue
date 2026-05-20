@@ -164,7 +164,7 @@ export default defineComponent({
             return parseRouteInteger(this.i)
         },
         canSend(): boolean {
-            return !!this.wallet && !!this.address && this.tokenList.length > 0
+            return !!this.wallet && !!this.address && this.tokenList.length > 0 && !!this.currentToken
         },
         invalidContextMessage(): string {
             if (!this.wallet || !this.address) {
@@ -197,15 +197,41 @@ export default defineComponent({
             return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
         }
     },
+    watch: {
+        tokenList(): void {
+            this.ensureSelectedToken()
+        },
+        symbol(value?: string): void {
+            this.sym = value || 'VET'
+            this.ensureSelectedToken()
+        }
+    },
     methods: {
         isAddress: address.test,
+        fallbackToken(): M.TokenSpec | undefined {
+            return this.tokenList.find(token => token.symbol === 'VET') || this.tokenList[0]
+        },
+        ensureSelectedToken(): void {
+            if (this.currentToken || this.tokenList.length === 0) {
+                return
+            }
+            const token = this.fallbackToken()
+            if (!token) {
+                return
+            }
+            this.sym = token.symbol
+        },
         checkSumAddress(v: string): boolean {
             return !(v !== v.toLowerCase() && address.toChecksumed(v) !== v)
         },
         balanceCheck(v: string): boolean {
+            const token = this.currentToken
+            if (!token) {
+                return false
+            }
             let pattern = '^(([1-9]{1}\\d*)|(0{1}))'
-            if (this.currentToken!.decimals > 0) {
-                pattern += `(\\.\\d{1,${this.currentToken!.decimals}})?$`
+            if (token.decimals > 0) {
+                pattern += `(\\.\\d{1,${token.decimals}})?$`
             } else {
                 pattern += '$'
             }
@@ -230,28 +256,33 @@ export default defineComponent({
             if (!this.validate()) {
                 return
             }
+            const token = this.currentToken
+            const wallet = this.wallet
+            if (!token || !wallet) {
+                return
+            }
             let msgItem!: Connex.Vendor.TxMessage[0]
             let comment = ''
             if (this.sym === 'VET') {
                 comment = `${this.$t('send.title')} ${this.amount} VET`
                 msgItem = {
                     to: this.to,
-                    value: toWei(this.amount, this.currentToken!.decimals),
+                    value: toWei(this.amount, token.decimals),
                     comment
                 }
             } else {
                 const func = new abi.Function(abis.transfer)
                 comment = `${this.$t('send.title')} ${this.amount} ${this.sym}`
-                const data = func.encode(this.to, toWei(this.amount, this.currentToken!.decimals))
+                const data = func.encode(this.to, toWei(this.amount, token.decimals))
                 msgItem = {
-                    to: this.currentToken!.address,
+                    to: token.address,
                     value: 0,
                     data: data,
                     comment
                 }
             }
             try {
-                await this.$signTx(this.wallet!.gid, {
+                await this.$signTx(wallet.gid, {
                     message: [msgItem],
                     options: {
                         signer: this.from,

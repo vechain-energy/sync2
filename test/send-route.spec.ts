@@ -26,4 +26,14 @@ describe('send route guards', () => {
         assert.ok(source.includes('addressIndexNumber'))
         assert.ok(source.includes('return id === null ? Promise.resolve(null) : this.$svc.wallet.get(id)'))
     })
+
+    it('recovers from stale route token symbols before sending', () => {
+        const source = sourceFile('src/pages/Send/Controller.vue')
+
+        assert.ok(source.includes('ensureSelectedToken()'))
+        assert.ok(source.includes("this.tokenList.find(token => token.symbol === 'VET') || this.tokenList[0]"))
+        assert.ok(source.includes('this.tokenList.length > 0 && !!this.currentToken'))
+        assert.ok(source.includes('const token = this.currentToken'))
+        assert.strictEqual(source.includes('this.currentToken!.decimals'), false)
+    })
 })
