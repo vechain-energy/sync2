@@ -128,6 +128,9 @@ APPLE_API_ISSUER
 APPLE_API_KEY_BASE64
 ```
 
+If the macOS secrets are missing, the release workflow still builds macOS assets
+for manual download, but those assets are not suitable for auto-update.
+
 ## Version release flow
 
 <details>

@@ -32,15 +32,17 @@ describe('release workflow guards', () => {
         assert.ok(workflow.includes('ELECTRON_RELEASE_REPO: ${{ github.event.repository.name }}'))
     })
 
-    it('requires signed and notarized macOS releases for auto-update', () => {
+    it('warns when macOS signing secrets are missing but still builds manual assets', () => {
         const workflow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/release.yaml'), 'utf8')
 
-        assert.ok(workflow.includes('Verify macOS signing secrets'))
+        assert.ok(workflow.includes('Report macOS signing secrets'))
         assert.ok(workflow.includes('MACOS_CSC_LINK'))
         assert.ok(workflow.includes('MACOS_CSC_KEY_PASSWORD'))
         assert.ok(workflow.includes('APPLE_API_KEY_ID'))
         assert.ok(workflow.includes('APPLE_API_ISSUER'))
         assert.ok(workflow.includes('APPLE_API_KEY_BASE64'))
         assert.ok(workflow.includes('macOS auto-update needs a signed and notarized release'))
+        assert.ok(workflow.includes('Continuing with unsigned macOS assets for manual download'))
+        assert.strictEqual(workflow.includes('exit "$missing"'), false)
     })
 })

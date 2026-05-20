@@ -165,7 +165,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Verify macOS signing secrets
+      - name: Report macOS signing secrets
         shell: bash
         env:
           MACOS_CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
@@ -181,7 +181,9 @@ jobs:
               missing=1
             fi
           done
-          exit "$missing"
+          if [ "$missing" -eq 1 ]; then
+            echo "Continuing with unsigned macOS assets for manual download. Do not rely on auto-update for these assets." >&2
+          fi
 
       - name: Build Electron binaries
         run: npx quasar build -m electron --publish onTagOrDraft
