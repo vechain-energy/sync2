@@ -9,10 +9,37 @@ function sourceFile(file: string) {
 
 describe('UI regression guards', () => {
     it('renders exported private keys through the Vue 3 model prop', () => {
-        const source = sourceFile('src/pages/Address/PrivateKeyDialog.vue')
+        const dialog = sourceFile('src/pages/Address/PrivateKeyDialog.vue')
+        const page = sourceFile('src/pages/Backup/PrivateKey.vue')
 
-        assert.ok(source.includes(':model-value="privateKey"'))
-        assert.strictEqual(source.includes(':value="privateKey"'), false)
+        for (const source of [dialog, page]) {
+            assert.ok(source.includes(':model-value="privateKey"'))
+            assert.strictEqual(source.includes(':value="privateKey"'), false)
+        }
+    })
+
+    it('backs up private keys through a warning page instead of an EXPORT prompt', () => {
+        const address = sourceFile('src/pages/Address/Controller.vue')
+        const backup = sourceFile('src/pages/Backup/Controller.vue')
+        const panel = sourceFile('src/pages/Backup/BackupPanel.vue')
+        const notice = sourceFile('src/pages/Backup/Notice.vue')
+        const optionMenu = sourceFile('src/pages/Index/OptionMenu.vue')
+        const en = sourceFile('src/i18n/en-us/index.ts')
+        const zh = sourceFile('src/i18n/zh-cn/index.ts')
+
+        assert.strictEqual(address.includes('PromptDialog'), false)
+        assert.strictEqual(address.includes('EXPORT'), false)
+        assert.ok(address.includes("query: { privateKey: '1', i: addressIndex.toString() }"))
+        assert.ok(backup.includes("type BackupMode = 'mnemonic' | 'private-key'"))
+        assert.ok(backup.includes("panel: 'notice' as BackupPanelName"))
+        assert.ok(backup.includes("this.panel = 'private-key'"))
+        assert.ok(panel.includes('name="private-key"'))
+        assert.ok(panel.includes('copyPrivateKey'))
+        assert.ok(panel.includes("this.mode === 'private-key' && this.meta.type !== 'private-key'"))
+        assert.ok(notice.includes('label_private_key_backup_tips'))
+        assert.ok(optionMenu.includes("hidden: this.wallet.meta.type === 'ledger'"))
+        assert.strictEqual(en.includes('Type EXPORT'), false)
+        assert.strictEqual(zh.includes('EXPORT'), false)
     })
 
     it('renders readonly Quasar input values through the Vue 3 model prop', () => {

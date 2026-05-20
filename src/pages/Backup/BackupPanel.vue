@@ -14,7 +14,7 @@
                 class="col"
                 innerClass="fit column justify-evenly"
             >
-                <notice />
+                <notice :mode="mode" />
             </page-content>
             <page-action>
                 <q-btn
@@ -22,6 +22,32 @@
                     unelevated
                     color="primary"
                     @click="$emit('start')"
+                />
+            </page-action>
+        </q-tab-panel>
+        <q-tab-panel
+            name="private-key"
+            class="column q-pa-none no-wrap"
+        >
+            <page-content class="col q-pa-sm">
+                <PrivateKey
+                    :private-key="privateKey"
+                    :address="address"
+                />
+            </page-content>
+            <page-action>
+                <q-btn
+                    outline
+                    color="primary"
+                    icon="content_copy"
+                    :label="$t('common.copy')"
+                    @click="copyPrivateKey"
+                />
+                <q-btn
+                    :label="$t('common.finish')"
+                    unelevated
+                    @click="onFinish"
+                    color="primary"
                 />
             </page-action>
         </q-tab-panel>
@@ -103,16 +129,30 @@ import { defineComponent } from 'vue'
 import Words from './Words.vue'
 import CheckWords from './CheckWords.vue'
 import Notice from './Notice.vue'
+import PrivateKey from './PrivateKey.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageAction from 'src/components/PageAction.vue'
+import { copyText } from 'src/utils/clipboard'
 export default defineComponent({
     emits: ['start', 'next', 'done'],
     props: {
         panel: String,
+        mode: {
+            type: String as () => 'mnemonic' | 'private-key',
+            default: 'mnemonic'
+        },
         walletId: Number,
         words: {
             type: Array as () => string[],
             default: () => []
+        },
+        privateKey: {
+            type: String,
+            default: ''
+        },
+        address: {
+            type: String,
+            default: ''
         },
         meta: {
             type: Object as () => M.Wallet.Meta,
@@ -123,6 +163,7 @@ export default defineComponent({
         Words,
         CheckWords,
         Notice,
+        PrivateKey,
         PageContent,
         PageAction
     },
@@ -130,7 +171,23 @@ export default defineComponent({
         return {}
     },
     methods: {
+        async copyPrivateKey() {
+            try {
+                await copyText(this.privateKey)
+                this.$q.notify(this.$t('common.copied').toString())
+            } catch {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('common.copy_failed').toString()
+                })
+            }
+        },
         async onFinish() {
+            if (this.mode === 'private-key' && this.meta.type !== 'private-key') {
+                this.$emit('done')
+                return
+            }
+
             const m: M.Wallet.Meta = {
                 ...this.meta as M.Wallet.Meta,
                 backedUp: true

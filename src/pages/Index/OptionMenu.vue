@@ -24,7 +24,7 @@ export default defineComponent({
             {
                 label: this.$t('index.action_backup').toString(),
                 action: () => this.$router.push({ name: 'backup', params: { walletId: this.wallet.id.toString() } }),
-                hidden: this.wallet.meta.type !== 'hd'
+                hidden: this.wallet.meta.type === 'ledger'
             },
             {
                 label: this.$t('index.action_rename').toString(),

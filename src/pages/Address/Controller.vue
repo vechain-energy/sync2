@@ -116,11 +116,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import PopSheets, { Sheet } from 'components/PopSheets.vue'
-import PromptDialog, { PromptOptions } from 'pages/Index/PromptDialog.vue'
-import PrivateKeyDialog from './PrivateKeyDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
-import { Vault } from 'src/core/vault'
-import { formatPrivateKey } from 'src/utils/private-key'
 import { supportsVetDomainProfile } from 'src/utils/vet-domain-profile'
 import { parseRouteInteger } from 'src/utils/route'
 
@@ -222,47 +218,18 @@ export default defineComponent({
                 })
             } catch { }
         },
-        async onExportPrivateKey() {
+        onExportPrivateKey() {
             const wallet = this.wallet
             const addressIndex = this.addressIndexNumber
             if (!wallet || addressIndex === null || !this.address || wallet.meta.type === 'ledger') {
                 return
             }
 
-            try {
-                const opts: PromptOptions = {
-                    title: this.$t('address.action_export_private_key').toString(),
-                    message: this.$t('address.msg_export_private_key_warning').toString(),
-                    model: '',
-                    action: {
-                        label: this.$t('common.continue').toString(),
-                        color: 'negative'
-                    },
-                    validate: input => input.trim() === 'EXPORT' ? '' : this.$t('common.invalid_input').toString()
-                }
-                await this.$dialog<string>({
-                    component: PromptDialog,
-                    opts
-                })
-
-                const umk = await this.$authenticate()
-                let privateKey = ''
-                await this.$loading(() => {
-                    const vault = Vault.decode(wallet.vault)
-                    const key = vault.derive(addressIndex).unlock(umk)
-                    try {
-                        privateKey = formatPrivateKey(key)
-                    } finally {
-                        key.fill(0)
-                    }
-                    return Promise.resolve()
-                })
-
-                await this.$dialog({
-                    component: PrivateKeyDialog,
-                    privateKey
-                })
-            } catch { }
+            this.$router.push({
+                name: 'backup',
+                params: { walletId: wallet.id.toString() },
+                query: { privateKey: '1', i: addressIndex.toString() }
+            })
         }
     }
 })
