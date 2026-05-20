@@ -46,7 +46,8 @@ export default defineComponent({
     props: {
         address: String,
         gid: String,
-        name: String
+        name: String,
+        primaryName: String
     },
     methods: {
         showQR() {
@@ -54,6 +55,7 @@ export default defineComponent({
             this.$qrcode({
                 title: this.$t('address.action_receive').toString(),
                 content,
+                caption: this.primaryName,
                 message: content,
                 messageClass: 'text-center'
             })

@@ -21,6 +21,7 @@
                     :address="address"
                     :gid="wallet.gid"
                     :name="wallet.meta.name"
+                    :primary-name="primaryName"
                 />
                 <q-item dense>
                     <q-item-section>

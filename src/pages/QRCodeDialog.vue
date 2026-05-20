@@ -18,6 +18,10 @@
                     <q-r-code class="full-width">{{req.content}}</q-r-code>
                 </q-responsive>
                 <div
+                    v-if="req.caption"
+                    class="qr-code-caption text-center"
+                >{{req.caption}}</div>
+                <div
                     v-if="req.message"
                     :class="[req.messageClass, 'break-all']"
                 >{{req.message}}</div>
@@ -69,6 +73,12 @@ export default defineComponent({
 <style scoped>
 .qr-code-frame {
     max-width: 240px;
+}
+
+.qr-code-caption {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 16px;
 }
 
 .break-all {
