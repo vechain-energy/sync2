@@ -113,4 +113,26 @@ describe('Vue compat migration guards', () => {
         assert.ok(asyncComputed.includes("!force && typeof entry !== 'function' && entry.shouldUpdate"))
         assert.ok(asyncComputed.includes('resolveAsyncComputed(vm, key, entry, runId, true)'))
     })
+
+    it('does not call removed Vue 2 instance mutation helpers', () => {
+        const source = fs.readFileSync(path.join(__dirname, '..', 'src/pages/NodesSetting/Controller.vue'), 'utf8')
+
+        assert.strictEqual(source.includes('this.$set('), false)
+        assert.ok(source.includes('this.activeMap = {'))
+    })
+
+    it('does not bind removed Quasar 1 slot event bags', () => {
+        const source = fs.readFileSync(path.join(__dirname, '..', 'src/pages/Swap/Controller.vue'), 'utf8')
+
+        assert.strictEqual(source.includes('scope.itemEvents'), false)
+        assert.ok(source.includes('v-bind="scope.itemProps"'))
+    })
+
+    it('does not depend on component instance i18n inside network display helper closures', () => {
+        const source = fs.readFileSync(path.join(__dirname, '..', 'src/boot/misc/index.ts'), 'utf8')
+
+        assert.ok(source.includes("import { i18n } from 'src/boot/i18n'"))
+        assert.ok(source.includes("i18n.global.t('common.mainnet')"))
+        assert.strictEqual(source.includes("vm.$t('common.mainnet')"), false)
+    })
 })

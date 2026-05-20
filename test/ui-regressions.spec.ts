@@ -15,6 +15,16 @@ describe('UI regression guards', () => {
         assert.strictEqual(source.includes(':value="privateKey"'), false)
     })
 
+    it('renders readonly Quasar input values through the Vue 3 model prop', () => {
+        const swap = sourceFile('src/pages/Swap/Controller.vue')
+        const inspectClause = sourceFile('src/pages/Sign/InspectClauseDialog.vue')
+
+        assert.ok(swap.includes(':model-value="outputText"'))
+        assert.strictEqual(swap.includes(':value="outputText"'), false)
+        assert.ok(inspectClause.includes(':model-value="clause.data"'))
+        assert.strictEqual(inspectClause.includes(':value="clause.data"'), false)
+    })
+
     it('extracts QR code content from Vue 3 slot children', () => {
         const source = sourceFile('src/components/QRCode.vue')
 
@@ -40,6 +50,37 @@ describe('UI regression guards', () => {
         assert.ok(source.includes('flex-wrap: wrap'))
         assert.ok(source.includes('@media (max-width: 420px)'))
         assert.ok(source.includes('padding-left: 92px'))
+    })
+
+    it('keeps generic fee token selection compact and status-aware', () => {
+        const source = sourceFile('src/pages/Sign/TxDialog.vue')
+
+        assert.ok(source.includes('class="fee-token-menu"'))
+        assert.ok(source.includes('class="fee-token-option-line"'))
+        assert.ok(source.includes('<q-item-label class="fee-token-option-title">VTHO</q-item-label>'))
+        assert.ok(source.includes('{{option.token}} · {{option.status}}'))
+        assert.ok(source.includes("'text-negative': option.balanceLow"))
+        assert.ok(source.includes('@click.stop="feeTokenMenuOpen = true"'))
+        assert.ok(source.includes('v-model="feeTokenMenuOpen"'))
+        assert.ok(source.includes('anchor="bottom right"'))
+        assert.ok(source.includes('self="top right"'))
+        assert.ok(source.includes('width: min(304px, calc(100vw - 24px))'))
+        assert.ok(source.includes('padding-right: 8px'))
+    })
+
+    it('keeps domain availability results single-source and network row non-empty', () => {
+        const source = sourceFile('src/pages/Domains/Controller.vue')
+
+        assert.ok(source.includes('networkDisplayName(): string'))
+        assert.ok(source.includes('v-if="checking || info"'))
+        assert.ok(source.includes('<transition name="domain-result-fade">'))
+        assert.ok(source.includes('.domain-result-fade-enter-active'))
+        assert.ok(source.includes('v-if="checking && !info"'))
+        assert.ok(source.includes('v-else-if="info"'))
+        assert.ok(source.includes('<q-item v-if="info && networkDisplayName">'))
+        assert.ok(source.includes('{{networkDisplayName}}'))
+        assert.ok(source.includes("this.statusText = this.info.available ? '' : this.$t('domains.msg_unavailable').toString()"))
+        assert.strictEqual(source.includes("this.$t('domains.msg_available').toString()"), false)
     })
 
     it('parses transaction block references as hex for activity expiration checks', () => {
@@ -109,5 +150,16 @@ describe('UI regression guards', () => {
         assert.ok(domains.includes('if (!selectedWallet || !this.selectedAddress)'))
         assert.ok(domains.includes('wallet.gid === selectedWallet.gid'))
         assert.strictEqual(domains.includes('this.selectedWallet!.gid'), false)
+    })
+
+    it('passes clause dialog props through Quasar componentProps', () => {
+        const txDialog = sourceFile('src/pages/Sign/TxDialog.vue')
+        const inspectClause = sourceFile('src/pages/Sign/InspectClauseDialog.vue')
+
+        assert.ok(txDialog.includes('component: InspectClauseDialog'))
+        assert.ok(txDialog.includes('componentProps: {\n                    index,\n                    clause,\n                    gid: this.gid\n                }'))
+        assert.ok(inspectClause.includes('Clause · {{clauseNumber}}'))
+        assert.ok(inspectClause.includes('clauseNumber(): number'))
+        assert.strictEqual(inspectClause.includes('Clause · {{index+1}}'), false)
     })
 })
