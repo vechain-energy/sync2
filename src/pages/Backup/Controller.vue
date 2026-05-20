@@ -2,6 +2,7 @@
     <div class="column fit">
         <page-toolbar :title="$t('backup.title')" />
         <backup-panel
+            v-if="canStartBackup"
             :wallet-id="id"
             :panel="panel"
             :words="words"
@@ -10,13 +11,32 @@
             @done="onDone"
             @next="next"
         />
+        <template v-else>
+            <page-content class="col">
+                <q-item-label header>
+                    {{invalidContextMessage}}
+                </q-item-label>
+            </page-content>
+            <page-action>
+                <q-btn
+                    unelevated
+                    class="col-6 col-sm-auto"
+                    color="primary"
+                    :label="$t('common.back')"
+                    @click="$backOrHome()"
+                />
+            </page-action>
+        </template>
     </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { Vault } from 'src/core/vault'
 import PageToolbar from 'src/components/PageToolbar.vue'
+import PageContent from 'src/components/PageContent.vue'
+import PageAction from 'src/components/PageAction.vue'
 import BackupPanel from './BackupPanel.vue'
+import { parseRouteInteger } from 'src/utils/route'
 
 export default defineComponent({
     props: {
@@ -24,6 +44,8 @@ export default defineComponent({
     },
     components: {
         PageToolbar,
+        PageContent,
+        PageAction,
         BackupPanel
     },
     data() {
@@ -32,6 +54,25 @@ export default defineComponent({
             panel: 'notice' as 'notice' | 'words' | 'check' | 'done',
             meta: {} as M.Wallet.Meta,
             words: [] as string[]
+        }
+    },
+    asyncComputed: {
+        wallet(): Promise<M.Wallet | null> {
+            const id = this.walletIdNumber
+            return id === null ? Promise.resolve(null) : this.$svc.wallet.get(id)
+        }
+    },
+    computed: {
+        walletIdNumber(): number | null {
+            return parseRouteInteger(this.walletId)
+        },
+        canStartBackup(): boolean {
+            return !!this.wallet && this.wallet.meta.type === 'hd'
+        },
+        invalidContextMessage(): string {
+            return this.wallet
+                ? this.$t('backup.msg_mnemonic_backup_only').toString()
+                : this.$t('backup.msg_wallet_not_found').toString()
         }
     },
     methods: {
@@ -49,7 +90,7 @@ export default defineComponent({
             }
         },
         async onStart() {
-            const wallet = await this.$svc.wallet.get(parseInt(this.walletId, 10))
+            const wallet = this.wallet
             if (!wallet) {
                 this.$q.notify(this.$t('backup.msg_wallet_not_found'))
                 this.$backOrHome()
