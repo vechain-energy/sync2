@@ -56,7 +56,11 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-const GroupSize = 3
+import {
+    MNEMONIC_GROUP_SIZE,
+    buildMnemonicChoiceIndexes
+} from './check-words'
+
 export default defineComponent({
     emits: ['checked'],
     props: {
@@ -74,46 +78,28 @@ export default defineComponent({
     },
     computed: {
         groupSize(): number {
-            return GroupSize
+            return MNEMONIC_GROUP_SIZE
         },
         nextGroupIndex(): number[] {
-            const start = this.verifyRowNum * GroupSize
-            const indexs = [...this.words.keys()]
-            indexs.splice(start, GroupSize)
-
-            const randomIndex = []
-            for (let i = 0; i < GroupSize; i++) {
-                randomIndex.push(indexs[Math.floor(Math.random() * (this.words.length - GroupSize))])
-            }
-
-            return [...this.words.map(
-                (word, index) => { return index }
-            ).slice(start, start + GroupSize), ...randomIndex].map(wordIndex => {
-                return {
-                    wordIndex,
-                    order: Math.random()
-                }
-            }).sort((item, nItem) => { return item.order - nItem.order }).map(item => {
-                return item.wordIndex
-            })
+            return buildMnemonicChoiceIndexes(this.words, this.verifyRowNum)
         }
     },
     methods: {
         onCheck(index: number) {
-            if (!this.verifyingItems || this.verifyingItems.length === GroupSize) {
+            if (!this.verifyingItems || this.verifyingItems.length === MNEMONIC_GROUP_SIZE) {
                 this.verifyingItems = []
                 this.isError = false
             }
             this.verifyingItems.push(index)
 
-            if (this.verifyingItems.length === GroupSize) {
+            if (this.verifyingItems.length === MNEMONIC_GROUP_SIZE) {
                 const items = this.verifyingItems.map(item => this.words[item]).join('')
-                const startIndex = GroupSize * this.verifyRowNum
-                const words = this.words.slice(startIndex, GroupSize + startIndex).join('')
+                const startIndex = MNEMONIC_GROUP_SIZE * this.verifyRowNum
+                const words = this.words.slice(startIndex, MNEMONIC_GROUP_SIZE + startIndex).join('')
                 if (items === words) {
                     this.verifyRowNum++
                     this.verifyingItems = []
-                    this.verifyRowNum === (this.words.length / GroupSize) && this.$emit('checked')
+                    this.verifyRowNum === (this.words.length / MNEMONIC_GROUP_SIZE) && this.$emit('checked')
                 } else {
                     this.isError = true
                 }
