@@ -5,17 +5,20 @@ import {
     webContents,
     dialog
 } from 'electron'
+import * as remoteMain from '@electron/remote/main'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { setupMenu } from './menu'
 import { newUpdater } from './updater'
-require('@electron/remote/main').initialize()
 
-app.allowRendererProcessReuse = false
+remoteMain.initialize()
+
+const currentDir = fileURLToPath(new URL('.', import.meta.url))
 
 let mainWindow: BrowserWindow | null
 
-function createWindow() {
-    const quasarNodeIntegration = process.env.QUASAR_NODE_INTEGRATION as unknown as boolean
-
+async function createWindow() {
     /**
      * Initial window options
      */
@@ -26,20 +29,19 @@ function createWindow() {
         height: 640,
         useContentSize: true,
         webPreferences: {
-            // Change from /quasar.conf.js > electron > nodeIntegration;
-            // More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
-            nodeIntegration: quasarNodeIntegration,
-            nodeIntegrationInWorker: quasarNodeIntegration,
-            enableRemoteModule: true,
+            nodeIntegration: true,
+            nodeIntegrationInWorker: true,
             contextIsolation: false
-
-            // More info: /quasar-cli/developing-electron-apps/electron-preload-script
-            // preload: path.resolve(__dirname, 'electron-preload.js')
         }
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    mainWindow.loadURL(process.env.APP_URL!)
+    remoteMain.enable(mainWindow.webContents)
+
+    if (process.env.DEV) {
+        await mainWindow.loadURL(process.env.APP_URL!)
+    } else {
+        await mainWindow.loadFile('index.html')
+    }
 
     mainWindow.on('closed', () => {
         mainWindow = null
@@ -75,6 +77,22 @@ function setupOpenUrlEmitter(): (url: string) => void {
     }
 }
 
+async function setupDevelopmentTools() {
+    if (!process.env.DEV) {
+        return
+    }
+
+    const { default: electronDebug } = await import('electron-debug')
+    electronDebug({ showDevTools: true })
+
+    try {
+        const { default: installExtension, VUEJS_DEVTOOLS } = await import('electron-devtools-installer')
+        await installExtension(VUEJS_DEVTOOLS)
+    } catch (err) {
+        console.log('Unable to install `vue-devtools`: \n', err)
+    }
+}
+
 (() => {
     if (process.env.PROD) {
         if (!app.requestSingleInstanceLock()) {
@@ -87,16 +105,16 @@ function setupOpenUrlEmitter(): (url: string) => void {
 
     try {
         if (process.platform === 'win32' && nativeTheme.shouldUseDarkColors === true) {
-            require('fs').unlinkSync(require('path').join(app.getPath('userData'), 'DevTools Extensions'))
+            fs.unlinkSync(path.join(app.getPath('userData'), 'DevTools Extensions'))
         }
-    } catch (_) { }
+    } catch { }
 
     /**
      * Set `__statics` path to static files in production;
      * The reason we are setting it here is that the path needs to be evaluated at runtime
      */
     if (process.env.PROD) {
-        global.__statics = require('path').join(__dirname, 'statics').replace(/\\/g, '\\\\')
+        globalThis.__statics = path.join(currentDir, 'statics').replace(/\\/g, '\\\\')
     }
 
     app.updater = newUpdater()
@@ -106,21 +124,22 @@ function setupOpenUrlEmitter(): (url: string) => void {
             ev.preventDefault()
             emitUrl(url)
             if (app.isReady()) {
-                mainWindow || createWindow()
+                mainWindow || void createWindow()
             }
         }
     }).on('second-instance', (ev, argv) => {
         const url = extractConnexUrl(argv)
         url && emitUrl(url)
-        mainWindow || createWindow()
+        mainWindow || void createWindow()
         mainWindow && mainWindow.focus()
     }).on('window-all-closed', () => {
         if (process.platform !== 'darwin') {
             app.quit()
         }
     }).on('activate', () => {
-        mainWindow || createWindow()
-    }).on('ready', () => {
+        mainWindow || void createWindow()
+    }).on('ready', async () => {
+        await setupDevelopmentTools()
         setupMenu()
         if (process.env.PROD) {
             if (process.platform === 'darwin') {
@@ -137,15 +156,15 @@ function setupOpenUrlEmitter(): (url: string) => void {
                     }
                 }
             }
-            app.updater.check()
+            void app.updater.check()
             setInterval(() => {
-                app.updater.check()
+                void app.updater.check()
             }, 24 * 3600 * 1000)
 
             const initUrl = extractConnexUrl(process.argv)
             initUrl && emitUrl(initUrl)
         }
 
-        createWindow()
+        await createWindow()
     })
 })()
