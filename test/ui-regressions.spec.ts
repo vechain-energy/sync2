@@ -61,6 +61,19 @@ describe('UI regression guards', () => {
         assert.ok(notifier.includes('mounted() {\n        this.$asyncComputed.events.update()'))
     })
 
+    it('keeps malformed stored wallet and activity JSON from crashing startup views', () => {
+        const wallet = sourceFile('src/boot/services/wallet.ts')
+        const activity = sourceFile('src/boot/services/activity.ts')
+        const updater = sourceFile('src/pages/ActivityStatusUpdater/Entry.ts')
+
+        assert.ok(wallet.includes('parseStoredRecord(value)'))
+        assert.ok(wallet.includes('parseWalletMeta(e.meta, e.id)'))
+        assert.strictEqual(wallet.includes('JSON.parse(e.meta)'), false)
+        assert.ok(activity.includes('parseStoredRecord(value)'))
+        assert.strictEqual(activity.includes('JSON.parse(e.glob)'), false)
+        assert.ok(updater.includes('!/^0x[0-9a-f]+$/i.test(a.glob.encoded)'))
+    })
+
     it('uses the checked-in macOS icon explicitly', () => {
         const source = sourceFile('quasar.config.cjs')
 

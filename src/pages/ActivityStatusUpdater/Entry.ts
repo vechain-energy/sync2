@@ -18,6 +18,10 @@ export default defineComponent({
                 if (a.type !== 'tx') {
                     return
                 }
+                if (!/^0x[0-9a-f]+$/i.test(a.glob.encoded)) {
+                    await this.$svc.activity.update(a.id, { status: 'completed' })
+                    return
+                }
 
                 const tx = Transaction.decode(Buffer.from(a.glob.encoded.slice(2), 'hex'))
                 const headNum = this.headNumber
