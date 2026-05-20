@@ -135,4 +135,21 @@ describe('Vue compat migration guards', () => {
         assert.ok(source.includes("i18n.global.t('common.mainnet')"))
         assert.strictEqual(source.includes("vm.$t('common.mainnet')"), false)
     })
+
+    it('keeps loading modal app context access compatible with minified Vue 3 production builds', () => {
+        const source = fs.readFileSync(path.join(__dirname, '..', 'src/boot/misc/modals.ts'), 'utf8')
+
+        assert.ok(source.includes('const appContext = app._context'))
+        assert.ok(source.includes('vnode.appContext = appContext'))
+        assert.ok(source.includes('return loadingFunc(appContext, task)'))
+        assert.strictEqual(source.includes('vnode.appContext = root.$.appContext'), false)
+        assert.strictEqual(source.includes('root.$.appContext'), false)
+    })
+
+    it('does not inject core-js import polyfills into generated Quasar entry files', () => {
+        const babelConfig = fs.readFileSync(path.join(__dirname, '..', 'babel.config.js'), 'utf8')
+
+        assert.ok(babelConfig.includes("'@quasar/babel-preset-app'"))
+        assert.ok(babelConfig.includes('useBuiltIns: false'))
+    })
 })

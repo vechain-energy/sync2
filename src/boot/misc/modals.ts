@@ -1,4 +1,4 @@
-import { App, ComponentPublicInstance, createVNode, render, VNode } from 'vue'
+import { App, AppContext, ComponentPublicInstance, createVNode, render, VNode } from 'vue'
 import AuthenticationDialog from 'pages/AuthenticationDialog'
 import ModalLoading from 'components/ModalLoading.vue'
 import QRCodeDialog from 'pages/QRCodeDialog.vue'
@@ -57,14 +57,14 @@ const loadingFunc = (() => {
     let counter = 0
     let vnode: VNode | undefined
     let node: HTMLDivElement | undefined
-    return async <T>(root: ComponentPublicInstance, task: () => Promise<T>) => {
+    return async <T>(appContext: AppContext, task: () => Promise<T>) => {
         try {
             if (counter++ === 0) {
                 // set 0 delay to block mouse/touch event
                 node = document.createElement('div')
                 document.body.appendChild(node)
                 vnode = createVNode(ModalLoading)
-                vnode.appContext = root.$.appContext
+                vnode.appContext = appContext
                 render(vnode, node)
             }
             return await task()
@@ -145,6 +145,8 @@ function dialog<T>(vm: ComponentPublicInstance, options: LegacyDialogOptions) {
 }
 
 export function boot(app: App) {
+    const appContext = app._context
+
     Object.defineProperties(app.config.globalProperties, {
         $dialog: {
             get(): ComponentPublicInstance['$dialog'] {
@@ -156,9 +158,8 @@ export function boot(app: App) {
         },
         $loading: {
             get(): ComponentPublicInstance['$loading'] {
-                const vm = this as ComponentPublicInstance
                 return async (task) => {
-                    return loadingFunc(vm, task)
+                    return loadingFunc(appContext, task)
                 }
             }
         },
