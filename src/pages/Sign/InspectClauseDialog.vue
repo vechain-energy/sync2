@@ -6,7 +6,7 @@
     >
         <q-card class="full-width">
             <q-toolbar>
-                <q-toolbar-title class="text-center">Clause · {{index+1}}</q-toolbar-title>
+                <q-toolbar-title class="text-center">Clause · {{clauseNumber}}</q-toolbar-title>
             </q-toolbar>
             <q-list padding>
                 <template v-if="clause.comment">
@@ -60,7 +60,7 @@
                                     type="textarea"
                                     standout
                                     readonly
-                                    :value="clause.data"
+                                    :model-value="clause.data"
                                 />
                                 <template v-else>N/A</template>
                             </q-tab-panel>
@@ -118,9 +118,15 @@ export default defineComponent({
     emits: ['hide'],
     components: { AddressLabel, AmountLabel },
     props: {
-        index: Number,
+        index: {
+            type: Number,
+            default: 0
+        },
         gid: String,
-        clause: Object as () => Connex.Vendor.TxMessage[0]
+        clause: {
+            type: Object as () => Connex.Vendor.TxMessage[0],
+            required: true
+        }
     },
     data() {
         return {
@@ -173,6 +179,9 @@ export default defineComponent({
         }
     },
     computed: {
+        clauseNumber(): number {
+            return Number.isFinite(this.index) ? this.index + 1 : 1
+        },
         decodedString() {
             if (!this.clause.data || this.clause.data.length <= 2) {
                 return null

@@ -52,11 +52,14 @@
                             <q-btn
                                 v-if="showGenericFeeOptions"
                                 class="fee-token-btn"
+                                aria-label="Fee token"
                                 size="sm"
                                 color="secondary"
                                 outline
                                 rounded
+                                no-caps
                                 :loading="$asyncComputed.genericDelegatorEstimates.updating && isGenericFeeMode"
+                                @click.stop="feeTokenMenuOpen = true"
                             >
                                 <div class="fee-token-btn-content">
                                     <token-avatar
@@ -70,91 +73,133 @@
                                         size="20px"
                                     />
                                     <span>{{feeModeLabel}}</span>
+                                    <q-icon
+                                        name="expand_more"
+                                        size="16px"
+                                        class="fee-token-btn-caret"
+                                    />
                                 </div>
-                                <q-popup-proxy
-                                    position="bottom"
-                                    :breakpoint="0"
+                                <q-menu
+                                    v-model="feeTokenMenuOpen"
+                                    anchor="bottom right"
+                                    self="top right"
+                                    :offset="[0, 8]"
                                 >
-                                    <q-card>
-                                        <q-list
-                                            padding
-                                            dense
-                                        >
-                                            <q-item-label header>
-                                                {{$t('sign.label_fee_token')}}
-                                            </q-item-label>
+                                    <q-card class="fee-token-menu">
+                                        <div class="fee-token-menu-header">
+                                            {{$t('sign.label_fee_token')}}
+                                        </div>
+                                        <q-list separator>
                                             <q-item
+                                                class="fee-token-option"
                                                 clickable
                                                 v-close-popup
                                                 :active="feeMode === standardFeeMode"
                                                 @click="selectFeeMode(standardFeeMode)"
                                             >
-                                                <q-item-section avatar>
+                                                <q-item-section
+                                                    avatar
+                                                    class="fee-token-option-avatar"
+                                                >
                                                     <token-avatar
                                                         v-if="vthoToken"
                                                         :spec="vthoToken"
                                                         size="sm"
                                                     />
                                                 </q-item-section>
-                                                <q-item-section>
-                                                    <q-item-label>{{$t('sign.label_fee_token_standard')}}</q-item-label>
-                                                    <q-item-label caption>VTHO</q-item-label>
-                                                </q-item-section>
-                                                <q-item-section side>
-                                                    <q-item-label>
-                                                        <amount-label
-                                                            v-if="fee"
-                                                            :value="fee"
-                                                            :decimals="18"
-                                                        />
+                                                <q-item-section class="fee-token-option-body">
+                                                    <div class="fee-token-option-line">
+                                                        <q-item-label class="fee-token-option-title">VTHO</q-item-label>
+                                                    </div>
+                                                    <q-item-label
+                                                        caption
+                                                        class="fee-token-option-status"
+                                                    >
+                                                        <template v-if="fee">
+                                                            <amount-label
+                                                                :value="fee"
+                                                                :decimals="18"
+                                                            />
+                                                            {{$t('sign.label_fee_token_standard')}}
+                                                        </template>
                                                         <q-spinner-dots
                                                             v-else
                                                             color="primary"
                                                         />
                                                     </q-item-label>
                                                 </q-item-section>
+                                                <q-item-section
+                                                    side
+                                                    class="fee-token-option-check"
+                                                >
+                                                    <q-icon
+                                                        v-if="feeMode === standardFeeMode"
+                                                        name="check"
+                                                        color="primary"
+                                                        size="18px"
+                                                    />
+                                                </q-item-section>
                                             </q-item>
-                                            <q-separator />
                                             <q-item
                                                 v-for="option in genericFeeOptions"
                                                 :key="option.token"
+                                                class="fee-token-option"
                                                 clickable
                                                 v-close-popup
                                                 :active="feeMode === option.mode"
                                                 @click="selectFeeMode(option.mode)"
                                             >
-                                                <q-item-section avatar>
+                                                <q-item-section
+                                                    avatar
+                                                    class="fee-token-option-avatar"
+                                                >
                                                     <token-avatar
                                                         :spec="option.tokenSpec"
                                                         size="sm"
                                                     />
                                                 </q-item-section>
-                                                <q-item-section>
-                                                    <q-item-label>{{option.token}}</q-item-label>
-                                                    <q-item-label caption>{{option.status}}</q-item-label>
-                                                </q-item-section>
-                                                <q-item-section side>
-                                                    <q-item-label>
-                                                        <amount-label
-                                                            v-if="option.estimate"
-                                                            :value="option.estimate.amountWei"
-                                                            :decimals="option.tokenSpec.decimals"
-                                                        />
+                                                <q-item-section class="fee-token-option-body">
+                                                    <div class="fee-token-option-line">
+                                                        <q-item-label class="fee-token-option-title">{{option.token}}</q-item-label>
+                                                    </div>
+                                                    <q-item-label
+                                                        caption
+                                                        :class="[
+                                                            'fee-token-option-status',
+                                                            { 'text-negative': option.balanceLow }
+                                                        ]"
+                                                    >
+                                                        <template v-if="option.estimate">
+                                                            <amount-label
+                                                                :value="option.estimate.amountWei"
+                                                                :decimals="option.tokenSpec.decimals"
+                                                            />
+                                                            {{option.token}} · {{option.status}}
+                                                        </template>
                                                         <q-spinner-dots
                                                             v-else-if="$asyncComputed.genericDelegatorEstimates.updating"
                                                             color="primary"
                                                         />
-                                                        <q-icon
-                                                            v-else
-                                                            name="error_outline"
-                                                            color="negative"
-                                                        />
+                                                        <template v-else>
+                                                            {{option.status}}
+                                                        </template>
                                                     </q-item-label>
+                                                </q-item-section>
+                                                <q-item-section
+                                                    side
+                                                    class="fee-token-option-check"
+                                                >
+                                                    <q-icon
+                                                        v-if="feeMode === option.mode"
+                                                        name="check"
+                                                        color="primary"
+                                                        size="18px"
+                                                    />
                                                 </q-item-section>
                                             </q-item>
                                         </q-list>
                                     </q-card>
-                                </q-popup-proxy>
+                                </q-menu>
                             </q-btn>
                             <priority-selector
                                 v-model="feePriority"
@@ -250,6 +295,7 @@ type GenericFeeOption = {
     tokenSpec: M.TokenSpec
     estimate: GenericDelegatorEstimate | null
     status: string
+    balanceLow: boolean
 }
 
 type AsyncComputedState = {
@@ -271,6 +317,7 @@ type AsyncComputedState = {
 type TxDialogState = Vue & {
     feePriority: number
     feeMode: GenericFeeMode
+    feeTokenMenuOpen: boolean
 }
 
 export default defineComponent({
@@ -280,10 +327,11 @@ export default defineComponent({
     props: {
         req: Object as () => M.TxRequest
     },
-    data(): { feePriority: number; feeMode: GenericFeeMode } {
+    data(): { feePriority: number; feeMode: GenericFeeMode; feeTokenMenuOpen: boolean } {
         return {
             feePriority: FeePriority.Regular,
-            feeMode: STANDARD_FEE_MODE
+            feeMode: STANDARD_FEE_MODE,
+            feeTokenMenuOpen: false
         }
     },
     computed: {
@@ -411,9 +459,11 @@ export default defineComponent({
                 const estimate = this.genericDelegatorEstimates[token] || null
                 const balance = this.genericGasTokenBalances[token]
                 let status = this.$t('sign.msg_generic_fee_unavailable').toString()
+                let balanceLow = false
                 if (estimate && balance) {
                     const required = calcGenericGasTokenRequiredBalance(this.req.message, token, tokenSpec, estimate.amountWei)
-                    status = new BigNumber(balance).isLessThan(required)
+                    balanceLow = new BigNumber(balance).isLessThan(required)
+                    status = balanceLow
                         ? this.$t('sign.msg_generic_fee_balance_low').toString()
                         : this.$t('sign.msg_generic_fee_balance_ok').toString()
                 } else if (estimate) {
@@ -424,7 +474,8 @@ export default defineComponent({
                     mode: genericFeeModeFor(token),
                     tokenSpec,
                     estimate,
-                    status
+                    status,
+                    balanceLow
                 })
                 return items
             }, [])
@@ -630,9 +681,10 @@ export default defineComponent({
         showWarnings() {
             this.$q.dialog({
                 component: WarningListDialog,
-                parent: this,
-                warnings: this.warnings,
-                noAction: true
+                componentProps: {
+                    warnings: this.warnings,
+                    noAction: true
+                }
             })
         },
         selectFeeMode(mode: GenericFeeMode) {
@@ -772,11 +824,12 @@ export default defineComponent({
         },
         onClickClause(index: number, clause: Connex.Vendor.TxMessage[0]) {
             this.$q.dialog({
-                parent: this,
                 component: InspectClauseDialog,
-                index,
-                clause,
-                gid: this.gid
+                componentProps: {
+                    index,
+                    clause,
+                    gid: this.gid
+                }
             })
         }
     }
@@ -792,5 +845,75 @@ export default defineComponent({
     align-items: center;
     gap: 8px;
     font-weight: 600;
+}
+
+.fee-token-btn-caret {
+    margin-left: -2px;
+}
+
+.fee-token-menu {
+    width: min(304px, calc(100vw - 24px));
+    border-radius: 6px;
+}
+
+.fee-token-menu-header {
+    padding: 12px 14px 8px;
+    color: var(--q-primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.fee-token-option {
+    min-height: 60px;
+    padding: 8px 10px 8px 12px;
+    border-left: 3px solid transparent;
+}
+
+.fee-token-option.q-item--active {
+    border-left-color: var(--q-primary);
+    background: rgba(25, 118, 210, 0.08);
+    color: inherit;
+}
+
+.fee-token-option-avatar {
+    min-width: 44px;
+    padding-right: 10px;
+}
+
+.fee-token-option-body {
+    min-width: 0;
+}
+
+.fee-token-option-line {
+    display: flex;
+    align-items: baseline;
+}
+
+.fee-token-option-title {
+    overflow: hidden;
+    color: #111;
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fee-token-option-status {
+    margin-top: 2px;
+    overflow: hidden;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fee-token-option-check {
+    min-width: 30px;
+    padding-left: 10px;
+    padding-right: 8px;
 }
 </style>
