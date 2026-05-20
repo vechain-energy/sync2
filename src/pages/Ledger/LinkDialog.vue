@@ -51,7 +51,8 @@ export default defineComponent({
         return {
             status: null as Status | null,
             account: null as Ledger.Account | null,
-            error: null as Error | null
+            error: null as Error | null,
+            signal: null as Deferred<never> | null
         }
     },
     computed: {
@@ -78,9 +79,7 @@ export default defineComponent({
     },
     async mounted() {
         const signal = new Deferred<never>()
-        this.$once('hook:beforeUnmount', () => {
-            signal.reject(new Error('interrupted'))
-        })
+        this.signal = signal
 
         for (; ;) {
             let tr
@@ -121,6 +120,9 @@ export default defineComponent({
             }
             break
         }
+    },
+    beforeUnmount() {
+        this.signal?.reject(new Error('interrupted'))
     },
     methods: {
         // method is REQUIRED by $q.dialog

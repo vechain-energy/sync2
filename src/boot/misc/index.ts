@@ -26,6 +26,8 @@ type ComponentInternals = {
     }
 }
 
+const beforeUnmountCleanups = new WeakMap<ComponentPublicInstance, Array<() => void>>()
+
 function disableLegacyVModel(component: CompatComponent | undefined) {
     if (!component) {
         return
@@ -58,6 +60,12 @@ function legacyListeners(vm: ComponentPublicInstance) {
     }
 
     return listeners
+}
+
+function addBeforeUnmountCleanup(vm: ComponentPublicInstance, cleanup: () => void) {
+    const cleanups = beforeUnmountCleanups.get(vm) || []
+    cleanups.push(cleanup)
+    beforeUnmountCleanups.set(vm, cleanups)
 }
 
 declare module 'vue' {
@@ -95,6 +103,17 @@ export default defineBoot(({ app }) => {
     Plugins.boot(app)
     Modals.boot(app)
 
+    app.mixin({
+        beforeUnmount() {
+            const vm = this as ComponentPublicInstance
+            const cleanups = beforeUnmountCleanups.get(vm) || []
+            beforeUnmountCleanups.delete(vm)
+            for (const cleanup of cleanups) {
+                cleanup()
+            }
+        }
+    })
+
     Object.defineProperties(app.config.globalProperties, {
         $backOrHome: {
             get() {
@@ -126,7 +145,7 @@ export default defineBoot(({ app }) => {
             get(): ComponentPublicInstance['$onWindowEvent'] {
                 const vm = this as ComponentPublicInstance
                 return (event, listener) => {
-                    vm.$once('hook:beforeUnmount', () => {
+                    addBeforeUnmountCleanup(vm, () => {
                         window.removeEventListener(event, listener)
                     })
                     window.addEventListener(event, listener)

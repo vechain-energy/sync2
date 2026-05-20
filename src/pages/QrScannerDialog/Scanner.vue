@@ -23,6 +23,9 @@ export default defineComponent({
     emits: ['input', 'error'],
     data: () => {
         return {
+            appElem: null as HTMLElement | null,
+            destroyed: false,
+            scanner: null as QrScanner | null,
             size: { w: 0, h: 0 }
         }
     },
@@ -43,13 +46,7 @@ export default defineComponent({
     mounted() {
         if (this.isCordova) {
             const appElem = document.getElementById('q-app')!
-            let destroyed = false
-            this.$once('hook:beforeUnmount', () => {
-                destroyed = true
-                appElem.style.opacity = ''
-                window.QRScanner.hide()
-                window.QRScanner.destroy()
-            })
+            this.appElem = appElem
             window.QRScanner.prepare((err, status) => {
                 if (err) {
                     return this.$emit('error', err)
@@ -57,7 +54,7 @@ export default defineComponent({
                 if (!status.authorized) {
                     return this.$emit('error', new Error('permission denied'))
                 }
-                if (!destroyed) {
+                if (!this.destroyed) {
                     appElem.style.opacity = '0';
                     (this.$el as HTMLElement).classList.remove('bg-black')
                     window.QRScanner.show()
@@ -87,9 +84,18 @@ export default defineComponent({
                 this.$emit('error', err)
             })
 
-            this.$once('hook:beforeUnmount', () => {
-                scanner.destroy()
-            })
+            this.scanner = scanner
+        }
+    },
+    beforeUnmount() {
+        this.destroyed = true
+        if (this.appElem) {
+            this.appElem.style.opacity = ''
+            window.QRScanner.hide()
+            window.QRScanner.destroy()
+        }
+        if (this.scanner) {
+            this.scanner.destroy()
         }
     }
 })

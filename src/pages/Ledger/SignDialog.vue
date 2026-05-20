@@ -50,7 +50,8 @@ export default defineComponent({
     data() {
         return {
             status: null as Status | null,
-            error: null as Error | null
+            error: null as Error | null,
+            signal: null as Deferred<never> | null
         }
     },
     computed: {
@@ -82,9 +83,7 @@ export default defineComponent({
     },
     async mounted() {
         const signal = new Deferred<never>()
-        this.$once('hook:beforeUnmount', () => {
-            signal.reject(new Error('interrupted'))
-        })
+        this.signal = signal
 
         const { index, signer, tx, cert } = { ...this.arg }
 
@@ -164,6 +163,9 @@ export default defineComponent({
             }
             break
         }
+    },
+    beforeUnmount() {
+        this.signal?.reject(new Error('interrupted'))
     },
     methods: {
         // method is REQUIRED by $q.dialog

@@ -12,14 +12,19 @@ export default defineComponent({
     },
     data: () => {
         return {
+            timer: null as ReturnType<typeof setTimeout> | null,
             timeUp: false
         }
     },
     created() {
-        const timer = setTimeout(() => {
+        this.timer = setTimeout(() => {
             this.timeUp = true
         }, this.t)
-        this.$once('hook:beforeUnmount', () => clearTimeout(timer))
+    },
+    beforeUnmount() {
+        if (this.timer) {
+            clearTimeout(this.timer)
+        }
     },
     render(h) {
         if (this.timeUp) {

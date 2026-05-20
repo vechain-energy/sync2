@@ -37,6 +37,11 @@ function parseConnexURL(urlStr: string) {
 }
 
 export default defineComponent({
+    data() {
+        return {
+            externalSignHandlerDestroyed: false
+        }
+    },
     asyncComputed: {
         lang(): Promise<string> {
             return this.$svc.config.getLanguage()
@@ -56,13 +61,8 @@ export default defineComponent({
     },
     methods: {
         async externalSignHandlerLoop() {
-            let destroyed = false
-            this.$once('hook:beforeUnmount', () => {
-                destroyed = true
-            })
-
             // eslint-disable-next-line no-unmodified-loop-condition
-            while (!destroyed) {
+            while (!this.externalSignHandlerDestroyed) {
                 const src = parseConnexURL(await listen())
                 if (src) {
                     if (this.$route.name === 'sign') {
@@ -73,6 +73,9 @@ export default defineComponent({
                 }
             }
         }
+    },
+    beforeUnmount() {
+        this.externalSignHandlerDestroyed = true
     },
     created() {
         console.log(`[Sync2] v${process.env.APP_VERSION} (${process.env.APP_BUILD})`)
