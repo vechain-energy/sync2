@@ -45,7 +45,7 @@ You can easily port your dApp by integrating [Connex v2](https://github.com/vech
 ### Toolchain
 
 - Quasar CLI: `@quasar/app-webpack` 4
-- UI runtime: Quasar 2 and Vue 3 compat mode
+- UI runtime: Quasar 2 and Vue 3
 - Desktop runtime: Electron 42 and electron-builder 26
 - TypeScript: 6
 - Lint: ESLint 9 flat config
