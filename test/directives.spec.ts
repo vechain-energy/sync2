@@ -3,8 +3,8 @@ import * as assert from 'assert'
 import { scrollDivider } from '../src/boot/directives'
 
 type TestDirective = {
-    inserted: (el: HTMLElement, binding: { modifiers: Record<string, boolean> }) => void
-    unbind: (el: HTMLElement) => void
+    mounted: (el: HTMLElement, binding: { modifiers: Record<string, boolean> }) => void
+    unmounted: (el: HTMLElement) => void
 }
 
 type GlobalWithWindow = {
@@ -75,14 +75,14 @@ describe('scroll divider directive', () => {
         try {
             const first = new FakeScrollElement()
             const second = new FakeScrollElement()
-            directive.inserted(first as unknown as HTMLElement, { modifiers: {} })
-            directive.inserted(second as unknown as HTMLElement, { modifiers: { both: true } })
+            directive.mounted(first as unknown as HTMLElement, { modifiers: {} })
+            directive.mounted(second as unknown as HTMLElement, { modifiers: { both: true } })
 
             assert.strictEqual(windowListeners.count('resize'), 2)
             assert.strictEqual(first.listenerStore.count('scroll'), 1)
             assert.strictEqual(second.listenerStore.count('scroll'), 1)
 
-            directive.unbind(first as unknown as HTMLElement)
+            directive.unmounted(first as unknown as HTMLElement)
 
             assert.strictEqual(windowListeners.count('resize'), 1)
             assert.strictEqual(first.listenerStore.count('scroll'), 0)

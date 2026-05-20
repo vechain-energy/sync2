@@ -27,7 +27,7 @@ export function commitTx(nodeUrl: string, raw: string) {
                             timeout: 15 * 1000
                         })
                         return
-                    } catch (err) {
+                    } catch {
                         await new Promise(resolve => setTimeout(resolve, 10000))
                     }
                 }

@@ -62,11 +62,11 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import TokenAvatar from 'src/components/TokenAvatar.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { AmountLabel, TokenAvatar },
     props: {
         fee: String,
@@ -119,5 +119,36 @@ export default Vue.extend({
 
 .gas-fee-actions {
     display: block;
+}
+
+.gas-fee-actions :deep(.row) {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 6px;
+}
+
+@media (max-width: 420px) {
+    .gas-fee-item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .gas-fee-label-section {
+        flex: 0 0 82px;
+    }
+
+    .gas-fee-value-section {
+        flex: 1 1 calc(100% - 92px);
+    }
+
+    .gas-fee-action-section {
+        flex: 0 0 100%;
+        padding-left: 92px;
+        padding-top: 8px;
+    }
+
+    .gas-fee-actions :deep(.row) {
+        justify-content: flex-start;
+    }
 }
 </style>

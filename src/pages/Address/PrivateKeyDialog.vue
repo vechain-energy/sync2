@@ -17,7 +17,7 @@
                     type="textarea"
                     input-class="monospace"
                     :label="$t('address.label_private_key')"
-                    :value="privateKey"
+                    :model-value="privateKey"
                 />
             </q-card-section>
             <q-card-actions align="between">
@@ -39,12 +39,13 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { copyText } from 'src/utils/clipboard'
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['hide'],
     components: { PromptDialogToolbar },
     props: {
         privateKey: String

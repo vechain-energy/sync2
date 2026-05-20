@@ -1,6 +1,6 @@
 import { Framework } from '@vechain/connex-framework'
 import { DriverNoVendor, SimpleNet } from '@vechain/connex-driver'
-import Vue from 'vue'
+import { reactive } from 'vue'
 
 export function createPool(resolveNode: (gid: string) => M.Node) {
     type Instance = {
@@ -10,8 +10,8 @@ export function createPool(resolveNode: (gid: string) => M.Node) {
     }
     const pool = new Map<string, Instance>() // maps node sig to instance
 
-    const nodeReactor = Vue.observable<Record<string, string>>({}) // maps gid to node sig
-    const tickReactor = Vue.observable<Record<string, string>>({}) // maps sig to head
+    const nodeReactor = reactive<Record<string, string>>({}) // maps gid to node sig
+    const tickReactor = reactive<Record<string, string>>({}) // maps sig to head
 
     return {
         get(gid: string) {
@@ -35,21 +35,23 @@ export function createPool(resolveNode: (gid: string) => M.Node) {
                     driver,
                     lastAccessTime: Date.now()
                 })
-                Vue.set(tickReactor, sig, '')
+                tickReactor[sig] = ''
                 let closed = false
                 void (async () => {
                     const ticker = framework.thor.ticker()
 
                     // eslint-disable-next-line no-unmodified-loop-condition
                     while (!closed) {
-                        let timer
-                        const head = await Promise.race([
+                        let timer: ReturnType<typeof setTimeout> | undefined
+                        const head = await Promise.race<string>([
                             ticker.next().then(r => r.id),
-                            new Promise(resolve => {
+                            new Promise<string>(resolve => {
                                 timer = setTimeout(() => resolve(Date.now().toString()), 30 * 1000)
                             })])
-                        clearTimeout(timer)
-                        Vue.set(tickReactor, sig, head)
+                        if (timer) {
+                            clearTimeout(timer)
+                        }
+                        tickReactor[sig] = head
                     }
                 })()
                 const cleaner = setInterval(() => {
@@ -62,7 +64,7 @@ export function createPool(resolveNode: (gid: string) => M.Node) {
                     }
                 }, 30 * 1000)
             }
-            Vue.set(nodeReactor, gid, sig)
+            nodeReactor[gid] = sig
 
             // touch to be reactive on node change / blockchain ticks
             void (nodeReactor[gid], tickReactor[sig])

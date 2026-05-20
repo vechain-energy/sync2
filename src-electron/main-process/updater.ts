@@ -1,5 +1,11 @@
-import { autoUpdater, UpdateInfo } from 'electron-updater'
+import electronUpdater from 'electron-updater'
+import type { UpdateInfo } from 'electron-updater'
+import { app } from 'electron'
+import fs from 'fs'
 import Deferred from '../../src/utils/deferred'
+import { shouldCheckForUpdates } from './update-config'
+
+const { autoUpdater } = electronUpdater
 
 export function newUpdater() {
     let downloadProgress = 0
@@ -46,9 +52,21 @@ export function newUpdater() {
         get downloaded() { return downloaded },
 
         async check() {
+            if (!shouldCheckForUpdates(process.resourcesPath, app.isPackaged, fs.existsSync)) {
+                status = 'none'
+                error = null
+                return null
+            }
             const result = await autoUpdater.checkForUpdates()
             return result ? result.updateInfo : null
         },
-        quitAndInstall() { autoUpdater.quitAndInstall() }
+        quitAndInstall() {
+            if (status !== 'downloaded') {
+                throw new Error('you need to wait until the update is downloaded before installing it.')
+            }
+
+            autoUpdater.quitAndInstall()
+            return true
+        }
     }
 }

@@ -2,7 +2,6 @@
     <q-card
         flat
         class="q-py-sm"
-        v-on="$listeners"
     >
         <div
             v-for="(op, i) in ops"
@@ -34,14 +33,14 @@
     </q-card>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import TransferItem, { OpTransfer } from './TransferItem.vue'
 import CallItem, { OpCall } from './CallItem.vue'
 import CreateItem, { OpCreate } from './CreateItem.vue'
 import BigNumber from 'bignumber.js'
 import { decodeAsTokenTransferClause } from '../helper'
 
-export default Vue.extend({
+export default defineComponent({
     components: { TransferItem, CallItem, CreateItem },
     props: {
         index: Number,

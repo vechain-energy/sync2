@@ -1,15 +1,13 @@
-import Vue from 'vue'
-import AsyncComputed from 'vue-async-computed'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Fragment = require('vue-fragment')
-import VueGtag from 'vue-gtag'
+import { App } from 'vue'
+import { createGtag } from 'vue-gtag'
+import { AsyncComputed } from './async-computed'
 
-export function boot() {
-    Vue.use(AsyncComputed)
-    Vue.use(Fragment.Plugin)
-    Vue.use(VueGtag, {
-        config: { id: 'G-6QEHC6TLQV' },
-        enabled: process.env.PROD,
-        disableScriptLoad: !process.env.PROD
-    })
+export function boot(app: App) {
+    app.use(AsyncComputed)
+
+    if (process.env.PROD) {
+        app.use(createGtag({
+            tagId: 'G-6QEHC6TLQV'
+        }))
+    }
 }

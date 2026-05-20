@@ -2,7 +2,7 @@
     <div
         @mousedown.capture="testTouchPan"
         @touchstart.capture="testTouchPan"
-        v-touch-pan.right.mouse.prevent="shouldHandlePan? handleTouchPan: undefined"
+        v-touch-pan.right.prevent="shouldHandlePan? handleTouchPan: undefined"
         :class="{'stack--disable-pointer-events': transiting}"
     >
         <div
@@ -12,11 +12,16 @@
             class="absolute-full bg-white"
             :class="viewClasses(i)"
         >
-            <component
-                class="stack-page"
-                :is="entry.component"
-                v-bind="entryToBinds(entry)"
-            />
+            <router-view
+                :route="entry"
+                v-slot="{ Component }"
+            >
+                <component
+                    class="stack-page"
+                    :is="Component"
+                    v-bind="entryToBinds(entry)"
+                />
+            </router-view>
         </div>
         <div
             ref="backdrop"
@@ -27,11 +32,26 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
-import { ScopedEntry } from 'vue-router-stack'
+import { defineComponent } from 'vue'
+import { ScopedEntry } from 'src/router/stack'
 import { newVelometer, newPipeline, transitionEnd } from 'src/utils/transit'
 
-export default Vue.extend({
+type TouchPanEvent = {
+    isFirst?: boolean;
+    isFinal?: boolean;
+    offset: { x: number };
+    delta: { x: number };
+    duration: number;
+}
+
+function startClientX(event: MouseEvent | TouchEvent): number | null {
+    if ('targetTouches' in event) {
+        return event.targetTouches[0]?.clientX ?? null
+    }
+    return event.clientX
+}
+
+export default defineComponent({
     data: () => {
         return {
             stack: [] as ScopedEntry[],
@@ -105,15 +125,19 @@ export default Vue.extend({
             }
             return classes
         },
-        testTouchPan(ev: TouchEvent & MouseEvent) {
+        testTouchPan(ev: MouseEvent | TouchEvent) {
+            const clientX = startClientX(ev)
+            if (clientX === null) {
+                this.shouldHandlePan = false
+                return
+            }
             const rect = this.$el.getBoundingClientRect()
-            const x = (ev.targetTouches ? ev.targetTouches[0].clientX : ev.clientX) - rect.x
+            const x = clientX - rect.x
             const stack = this.stack
             this.shouldHandlePan = x >= 0 && x < rect.width /* / 2 */ &&
                 (stack.length > 1 || (stack[0] && stack[0].depth > 0))
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        handleTouchPan(ev: any) {
+        handleTouchPan(ev: TouchPanEvent) {
             if (ev.isFirst) {
                 document.body.classList.add('stack-body--prevent-scroll')
                 this.panning = true
@@ -230,7 +254,9 @@ export default Vue.extend({
     );
 }
 .stack-transition {
-    transition: all calc(0.35s * var(--stack-transition-mul));
+    transition:
+        transform calc(0.35s * var(--stack-transition-mul)),
+        opacity calc(0.35s * var(--stack-transition-mul));
 }
 .stack-body--prevent-scroll {
     position: fixed !important;

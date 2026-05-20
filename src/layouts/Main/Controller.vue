@@ -27,7 +27,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import Wizard from 'pages/Wizard'
 import StackedRouterView from 'components/StackedRouterView.vue'
 import ActivityStatusUpdater from 'pages/ActivityStatusUpdater'
@@ -35,7 +35,7 @@ import TransferNotifier from 'pages/TransferNotifier.vue'
 import { unique } from 'src/utils/array'
 import Disclaimer from './Disclaimer'
 
-export default Vue.extend({
+export default defineComponent({
     components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer },
     data() {
         return {

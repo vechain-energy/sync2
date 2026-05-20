@@ -9,6 +9,7 @@ import {
     convertVetDomainProfileUriToUrl,
     emptyVetDomainProfile,
     normalizeVetDomainProfile,
+    parseIpfsPinningResponse,
     vetDomainSetTextABI
 } from '../src/utils/vet-domain-profile'
 
@@ -76,5 +77,11 @@ describe('vet domain profile helpers', () => {
             'https://example.com/a.png'
         )
         assert.strictEqual(convertVetDomainProfileUriToUrl('bad', genesises.main.id), '')
+    })
+
+    it('parses IPFS pinning responses with stable upload errors', () => {
+        assert.strictEqual(parseIpfsPinningResponse('{"IpfsHash":"QmHash"}'), 'ipfs://QmHash')
+        assert.throws(() => parseIpfsPinningResponse('not-json'), /IPFS upload did not return a hash/)
+        assert.throws(() => parseIpfsPinningResponse('{"Hash":"QmHash"}'), /IPFS upload did not return a hash/)
     })
 })

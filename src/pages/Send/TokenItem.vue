@@ -1,6 +1,5 @@
 <template>
     <q-item
-        v-on="$listeners"
         v-bind="$attrs"
     >
         <q-item-section avatar>
@@ -29,11 +28,11 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import TokenAvatar from 'components/TokenAvatar.vue'
 import AmountLabel from 'components/AmountLabel.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         TokenAvatar,
         AmountLabel

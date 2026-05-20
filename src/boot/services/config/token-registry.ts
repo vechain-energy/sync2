@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { isRecord, parseStoredArray } from 'src/utils/json'
 
 export type TokenRegistry = {
     updated: number
@@ -25,7 +26,7 @@ export namespace TokenRegistry {
             address: '',
             decimals: 18,
             icon: '',
-            iconSrc: require('assets/vet.svg')
+            get iconSrc() { return require('assets/vet.svg') as string }
         },
         {
             symbol: 'VTHO',
@@ -33,15 +34,41 @@ export namespace TokenRegistry {
             address: '0x0000000000000000000000000000456e65726779',
             decimals: 18,
             icon: '',
-            iconSrc: require('assets/vtho.svg')
+            get iconSrc() { return require('assets/vtho.svg') as string }
         }
     ]
+
+    function isEntity(value: unknown): value is Entity {
+        if (!isRecord(value)) {
+            return false
+        }
+        return typeof value.name === 'string' &&
+            typeof value.symbol === 'string' &&
+            typeof value.address === 'string' &&
+            typeof value.icon === 'string' &&
+            Number.isFinite(value.decimals) &&
+            (value.iconSrc === undefined || typeof value.iconSrc === 'string')
+    }
+
+    export function normalize(value: unknown): TokenRegistry {
+        if (!isRecord(value)) {
+            return { updated: 0, main: [], test: [] }
+        }
+
+        return {
+            updated: Number.isFinite(value.updated) ? value.updated as number : 0,
+            main: Array.isArray(value.main) ? value.main.filter(isEntity) : [],
+            test: Array.isArray(value.test) ? value.test.filter(isEntity) : []
+        }
+    }
 
     export async function fetch(): Promise<TokenRegistry> {
         const nets = ['main', 'test']
         const result = await Promise.all(nets.map(async net => {
             const resp = await axios.get(`${url}${net}.json`, { transformResponse: data => data, timeout: 30 * 1000 })
-            return (JSON.parse(resp.data) as TokenRegistry.Entity[]).filter(t => t.symbol !== 'VTHO')
+            return parseStoredArray<unknown>(resp.data)
+                .filter(isEntity)
+                .filter(t => t.symbol !== 'VTHO')
         }))
         return {
             updated: Date.now(),

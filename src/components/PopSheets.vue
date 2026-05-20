@@ -1,7 +1,6 @@
 <template>
     <q-popup-proxy
         v-bind="$attrs"
-        v-on="$listeners"
         position="bottom"
         v-model="opened"
     >
@@ -10,15 +9,16 @@
                 padding
                 :separator="separator"
             >
-                <template v-for="(sheet,i) in sheets">
+                <template
+                    v-for="(sheet,i) in sheets"
+                    :key="i"
+                >
                     <q-separator
                         v-if="sheet.separator"
                         v-show="!sheet.hidden"
-                        :key="`s-${i}`"
                     />
                     <q-item
                         v-show="!sheet.hidden"
-                        :key="i"
                         :clickable="!!sheet.action"
                         :dense="sheet.header && !sheet.action"
                         @click="opened=false; sheet.action && sheet.action()"
@@ -40,7 +40,7 @@
     </q-popup-proxy>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 
 export type Sheet<T = never> = {
     label: string
@@ -52,7 +52,7 @@ export type Sheet<T = never> = {
     hidden?: boolean
 }
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         sheets: Array as () => Sheet[],
         separator: Boolean

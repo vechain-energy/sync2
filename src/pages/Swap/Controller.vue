@@ -42,7 +42,7 @@
                 :disable="!supported"
                 :error="!!amountError"
                 :error-message="amountError"
-                @input="onAmountChanged"
+                @update:model-value="onAmountChanged"
             >
                 <template v-slot:append>
                     <q-btn
@@ -83,7 +83,7 @@
                 readonly
                 class="q-mx-md"
                 :label="$t('swap.label_amount')"
-                :value="outputText"
+                :model-value="outputText"
                 :loading="quoteLoading"
             />
 
@@ -128,7 +128,6 @@
                             <template v-slot:option="scope">
                                 <q-item
                                     v-bind="scope.itemProps"
-                                    v-on="scope.itemEvents"
                                 >
                                     <q-item-section avatar>
                                         <q-avatar
@@ -218,7 +217,7 @@
                         inputmode="decimal"
                         :label="$t('swap.label_custom_slippage')"
                         v-model="customSlippage"
-                        @input="onCustomSlippageChanged"
+                        @update:model-value="onCustomSlippageChanged"
                     />
                 </div>
             </q-expansion-item>
@@ -257,7 +256,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { BigNumber } from 'bignumber.js'
 import AggregatorLogo from './AggregatorLogo.vue'
 import PageAction from 'src/components/PageAction.vue'
@@ -269,6 +268,7 @@ import { SignerGroup } from 'src/pages/Sign/models'
 import { buildSignerGroups } from 'src/pages/Sign/signer-groups'
 import { genesises } from 'src/consts'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
+import { sanitizeDecimalInput } from 'src/utils/decimal-input'
 import { toWei } from 'src/utils/format'
 import {
     BuiltSwapQuote,
@@ -346,7 +346,7 @@ function amountHasValidShape(amount: string, decimals: number): boolean {
     return !parts[1] || parts[1].length <= decimals
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         AggregatorLogo,
         PageAction,
@@ -480,7 +480,7 @@ export default Vue.extend({
         await this.loadBalances()
         this.scheduleQuote()
     },
-    beforeDestroy() {
+    beforeUnmount() {
         window.clearTimeout(this.quoteTimer)
     },
     methods: {
@@ -583,9 +583,7 @@ export default Vue.extend({
             this.scheduleQuote()
         },
         onAmountChanged() {
-            if (!/^\d*\.?\d*$/.test(this.amount)) {
-                this.amount = this.amount.replace(/[^\d.]/g, '')
-            }
+            this.amount = sanitizeDecimalInput(this.amount, this.fromToken ? this.fromToken.decimals : undefined)
             this.scheduleQuote()
         },
         setMaxAmount() {
@@ -607,9 +605,7 @@ export default Vue.extend({
             this.scheduleQuote()
         },
         onCustomSlippageChanged() {
-            if (!/^\d*\.?\d*$/.test(this.customSlippage)) {
-                this.customSlippage = this.customSlippage.replace(/[^\d.]/g, '')
-            }
+            this.customSlippage = sanitizeDecimalInput(this.customSlippage, 2)
             const value = Number(this.customSlippage)
             if (Number.isFinite(value) && value >= 0 && value <= 100) {
                 this.slippageTolerance = value

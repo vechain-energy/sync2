@@ -1,15 +1,17 @@
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { abis } from 'src/consts'
 import { abi } from 'thor-devkit'
 import { transferNotification } from 'src/utils/transfer-notification'
+import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         gid: String
     },
     computed: {
         thor(): Connex.Thor { return this.$svc.bc(this.gid).thor },
+        headNumber(): number { return this.thor.status.head.number },
         addresses(): string[] {
             if (!this.wallets) {
                 return []
@@ -97,7 +99,7 @@ export default Vue.extend({
         }
     },
     watch: {
-        thor() {
+        headNumber() {
             this.$asyncComputed.events.update()
             this.$asyncComputed.transfers.update()
         },
@@ -140,6 +142,10 @@ export default Vue.extend({
             })
         }
     },
+    mounted() {
+        this.$asyncComputed.events.update()
+        this.$asyncComputed.transfers.update()
+    },
     methods: {
         // provides stored range for the query
         async guardRange<T extends Connex.Thor.Filter.WithMeta>(kind: string, query: (range: Connex.Thor.Filter.Range) => Promise<T[]>): Promise<T[]> {
@@ -147,7 +153,8 @@ export default Vue.extend({
 
             const headNum = this.thor.status.head.number
             const savedRange = localStorage.getItem(key)
-            const rangeStart = Math.max(parseInt(savedRange!, 10) || headNum, headNum - 8640) // span no longer than a day
+            const storedRangeStart = parseStoredNonNegativeInteger(savedRange, headNum)
+            const rangeStart = Math.max(storedRangeStart, headNum - 8640) // span no longer than a day
             if (rangeStart === 0) {
                 return []
             }
@@ -192,8 +199,8 @@ export default Vue.extend({
             })
         }
     },
-    render(h) {
-        return h()
+    render(): null {
+        return null
     }
 })
 </script>

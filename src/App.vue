@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { listen } from 'src/utils/external-url'
 import dayjs from 'dayjs'
 // import more locales here
@@ -36,7 +36,12 @@ function parseConnexURL(urlStr: string) {
     return null
 }
 
-export default Vue.extend({
+export default defineComponent({
+    data() {
+        return {
+            externalSignHandlerDestroyed: false
+        }
+    },
     asyncComputed: {
         lang(): Promise<string> {
             return this.$svc.config.getLanguage()
@@ -56,13 +61,8 @@ export default Vue.extend({
     },
     methods: {
         async externalSignHandlerLoop() {
-            let destroyed = false
-            this.$once('hook:beforeDestroy', () => {
-                destroyed = true
-            })
-
             // eslint-disable-next-line no-unmodified-loop-condition
-            while (!destroyed) {
+            while (!this.externalSignHandlerDestroyed) {
                 const src = parseConnexURL(await listen())
                 if (src) {
                     if (this.$route.name === 'sign') {
@@ -73,6 +73,9 @@ export default Vue.extend({
                 }
             }
         }
+    },
+    beforeUnmount() {
+        this.externalSignHandlerDestroyed = true
     },
     created() {
         console.log(`[Sync2] v${process.env.APP_VERSION} (${process.env.APP_BUILD})`)

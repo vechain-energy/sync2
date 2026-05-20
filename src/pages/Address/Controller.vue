@@ -5,7 +5,7 @@
             :gid="wallet && wallet.gid"
         >
             <q-btn
-                v-if="visibleOptionSheets.length > 0"
+                v-if="canShowAddress && visibleOptionSheets.length > 0"
                 flat
                 round
                 icon="more_horiz"
@@ -15,12 +15,13 @@
                 <pop-sheets :sheets="optionSheets" />
             </q-btn>
         </page-toolbar>
-        <template v-if="wallet">
+        <template v-if="canShowAddress">
             <page-content>
                 <head-item
                     :address="address"
                     :gid="wallet.gid"
                     :name="wallet.meta.name"
+                    :primary-name="primaryName"
                 />
                 <q-item dense>
                     <q-item-section>
@@ -88,30 +89,45 @@
                 </q-list>
             </page-content>
         </template>
+        <template v-else>
+            <page-content class="col">
+                <q-item-label header>
+                    {{invalidContextMessage}}
+                </q-item-label>
+            </page-content>
+            <page-action>
+                <q-btn
+                    unelevated
+                    class="col-6 col-sm-auto"
+                    color="primary"
+                    :label="$t('common.back')"
+                    @click="$backOrHome()"
+                />
+            </page-action>
+        </template>
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import TokenItem from './TokenItem.vue'
 import HeadItem from './HeadItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import PageAction from 'components/PageAction.vue'
 import PopSheets, { Sheet } from 'components/PopSheets.vue'
-import PromptDialog, { PromptOptions } from 'pages/Index/PromptDialog.vue'
-import PrivateKeyDialog from './PrivateKeyDialog.vue'
 import ProfileDialog from './ProfileDialog.vue'
-import { Vault } from 'src/core/vault'
-import { formatPrivateKey } from 'src/utils/private-key'
 import { supportsVetDomainProfile } from 'src/utils/vet-domain-profile'
+import { parseRouteInteger } from 'src/utils/route'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         TokenItem,
         HeadItem,
         AsyncResolve,
         PageToolbar,
         PageContent,
+        PageAction,
         PopSheets
     },
     props: {
@@ -120,7 +136,8 @@ export default Vue.extend({
     },
     asyncComputed: {
         wallet(): Promise<M.Wallet | null> {
-            return this.$svc.wallet.get(parseInt(this.walletId, 10))
+            const id = this.walletIdNumber
+            return id === null ? Promise.resolve(null) : this.$svc.wallet.get(id)
         },
         tokenList: {
             async get(): Promise<M.TokenSpec[]> {
@@ -134,7 +151,7 @@ export default Vue.extend({
                 ])
                 return tokens.filter(token => token.gid === wallet.gid && (activeSymbols.includes(token.symbol) || token.permanent))
             },
-            default: []
+            default: () => []
         },
         primaryName: {
             async get(): Promise<string> {
@@ -150,11 +167,23 @@ export default Vue.extend({
         }
     },
     computed: {
-        addressIndexNumber(): number {
-            return parseInt(this.addressIndex, 10)
+        walletIdNumber(): number | null {
+            return parseRouteInteger(this.walletId)
+        },
+        addressIndexNumber(): number | null {
+            return parseRouteInteger(this.addressIndex)
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[this.addressIndexNumber] : ''
+            const index = this.addressIndexNumber
+            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
+        },
+        canShowAddress(): boolean {
+            return !!this.wallet && !!this.address
+        },
+        invalidContextMessage(): string {
+            return this.wallet
+                ? this.$t('address.msg_address_not_found').toString()
+                : this.$t('address.msg_wallet_not_found').toString()
         },
         canExportPrivateKey(): boolean {
             return !!this.wallet && this.wallet.meta.type !== 'ledger'
@@ -189,46 +218,18 @@ export default Vue.extend({
                 })
             } catch { }
         },
-        async onExportPrivateKey() {
+        onExportPrivateKey() {
             const wallet = this.wallet
-            if (!wallet || wallet.meta.type === 'ledger') {
+            const addressIndex = this.addressIndexNumber
+            if (!wallet || addressIndex === null || !this.address || wallet.meta.type === 'ledger') {
                 return
             }
 
-            try {
-                const opts: PromptOptions = {
-                    title: this.$t('address.action_export_private_key').toString(),
-                    message: this.$t('address.msg_export_private_key_warning').toString(),
-                    model: '',
-                    action: {
-                        label: this.$t('common.continue').toString(),
-                        color: 'negative'
-                    },
-                    validate: input => input.trim() === 'EXPORT' ? '' : this.$t('common.invalid_input').toString()
-                }
-                await this.$dialog<string>({
-                    component: PromptDialog,
-                    opts
-                })
-
-                const umk = await this.$authenticate()
-                let privateKey = ''
-                await this.$loading(() => {
-                    const vault = Vault.decode(wallet.vault)
-                    const key = vault.derive(this.addressIndexNumber).unlock(umk)
-                    try {
-                        privateKey = formatPrivateKey(key)
-                    } finally {
-                        key.fill(0)
-                    }
-                    return Promise.resolve()
-                })
-
-                await this.$dialog({
-                    component: PrivateKeyDialog,
-                    privateKey
-                })
-            } catch { }
+            this.$router.push({
+                name: 'backup',
+                params: { walletId: wallet.id.toString() },
+                query: { privateKey: '1', i: addressIndex.toString() }
+            })
         }
     }
 })

@@ -1,7 +1,6 @@
 <template>
     <div
         class="column fit"
-        v-touch-pan.right.mouse.prevent="handleDrawerTouchPan"
     >
         <!-- ensure wallets is loaded -->
         <template v-if="wallets">
@@ -10,7 +9,7 @@
                 icon="menu"
                 :nav-label="$t('index.label_wallets').toString()"
                 :gid="wallet && wallet.gid"
-                @action="drawerOpen=true"
+                :action="openDrawer"
             >
                 <q-btn
                     v-if="wallet"
@@ -24,35 +23,40 @@
                     <option-menu :wallet="wallet" />
                 </q-btn>
             </page-toolbar>
-            <!-- tips -->
-            <div class="narrow-page q-mx-auto">
-                <upgrade-tip v-if="$state.app.updateAvailable" />
-                <backup-tip
-                    v-for="w in wallets"
-                    :key="w.id"
-                    @backup="$router.push({name: 'backup', params: {walletId: w.id.toString()}})"
-                    v-show="w.id === selectedWalletId && !w.meta.backedUp"
-                />
-            </div>
-            <!-- address list -->
-            <address-card-list
-                v-if="wallet"
-                ref="list"
-                :wallet="wallet"
-                class="col address-list"
-            />
             <div
-                v-else
-                class="narrow-page q-my-auto text-center self-center"
+                class="drawer-pan-region column col"
+                v-touch-pan.right.prevent="handleDrawerTouchPan"
             >
-                <p class="text-grey text-h5 text-center col-12">{{$t('common.no_wallet')}}</p>
-                <q-btn
-                    unelevated
-                    color="primary"
-                    class="w40"
-                    :label="$t('index.action_create')"
-                    :to="{name: 'new-wallet'}"
+                <!-- tips -->
+                <div class="narrow-page q-mx-auto">
+                    <upgrade-tip v-if="$state.app.updateAvailable" />
+                    <backup-tip
+                        v-for="w in wallets"
+                        :key="w.id"
+                        @backup="$router.push({name: 'backup', params: {walletId: w.id.toString()}})"
+                        v-show="w.id === selectedWalletId && !w.meta.backedUp"
+                    />
+                </div>
+                <!-- address list -->
+                <address-card-list
+                    v-if="wallet"
+                    ref="list"
+                    :wallet="wallet"
+                    class="col address-list"
                 />
+                <div
+                    v-else
+                    class="narrow-page q-my-auto text-center self-center"
+                >
+                    <p class="text-grey text-h5 text-center col-12">{{$t('common.no_wallet')}}</p>
+                    <q-btn
+                        unelevated
+                        color="primary"
+                        class="w40"
+                        :label="$t('index.action_create')"
+                        :to="{name: 'new-wallet'}"
+                    />
+                </div>
             </div>
             <!-- the drawer -->
             <side-drawer
@@ -71,7 +75,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import BackupTip from './BackupTip.vue'
 import UpgradeTip from './UpgradeTip.vue'
 import DrawerPanel from './DrawerPanel.vue'
@@ -84,8 +88,12 @@ import { scroll } from 'quasar'
 import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
 const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
+type DrawerHandle = Vue & {
+    handleTouchPanExternal(ev: Record<string, unknown>): void;
+    setOpened(opened: boolean): void;
+}
 
-export default Vue.extend({
+export default defineComponent({
     components: { BackupTip, UpgradeTip, DrawerPanel, WalletList, AddressCardList, OptionMenu, SideDrawer, PageToolbar },
     data: () => {
         return {
@@ -139,15 +147,30 @@ export default Vue.extend({
                     }
                 }
             }
+        },
+        '$route.name'(name: string) {
+            if (name !== 'index') {
+                this.closeDrawer()
+            }
         }
     },
     methods: {
+        drawerHandle() {
+            return this.$refs.drawer as DrawerHandle | undefined
+        },
+        openDrawer() {
+            this.drawerOpen = true
+            this.drawerHandle()?.setOpened(true)
+        },
+        closeDrawer() {
+            this.drawerOpen = false
+            this.drawerHandle()?.setOpened(false)
+        },
         handleDrawerTouchPan(ev: Record<string, unknown>) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this.$refs.drawer as any).handleTouchPanExternal(ev)
+            this.drawerHandle()?.handleTouchPanExternal(ev)
         },
         onSelectWallet(id: number) {
-            this.drawerOpen = false
+            this.closeDrawer()
             this.selectedWalletId = id
         }
     }

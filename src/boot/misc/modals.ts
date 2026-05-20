@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { App, AppContext, ComponentPublicInstance, createVNode, render, VNode } from 'vue'
 import AuthenticationDialog from 'pages/AuthenticationDialog'
 import ModalLoading from 'components/ModalLoading.vue'
 import QRCodeDialog from 'pages/QRCodeDialog.vue'
@@ -6,9 +6,11 @@ import { CertDialog, TxDialog } from 'pages/Sign'
 import { QDialogOptions } from 'quasar'
 import { BioPass } from 'src/utils/bio-pass'
 
-declare module 'vue/types/vue' {
-    interface Vue {
-        $dialog<T>(options: QDialogOptions): Promise<T>
+type LegacyDialogOptions = QDialogOptions & Record<string, unknown>
+
+declare module 'vue' {
+    interface ComponentCustomProperties {
+        $dialog<T>(options: LegacyDialogOptions): Promise<T>
 
         /**
          * pop up the authentication dialog to ask user entering password
@@ -53,53 +55,117 @@ declare module 'vue/types/vue' {
 
 const loadingFunc = (() => {
     let counter = 0
-    let vm: Vue
-    return async <T>(task: () => Promise<T>) => {
+    let vnode: VNode | undefined
+    let node: HTMLDivElement | undefined
+    return async <T>(appContext: AppContext, task: () => Promise<T>) => {
         try {
             if (counter++ === 0) {
                 // set 0 delay to block mouse/touch event
-                const node = document.createElement('div')
+                node = document.createElement('div')
                 document.body.appendChild(node)
-                vm = new ModalLoading({ el: node })
+                vnode = createVNode(ModalLoading)
+                vnode.appContext = appContext
+                render(vnode, node)
             }
             return await task()
         } finally {
             if (--counter === 0) {
-                vm!.$destroy()
-                vm!.$el.remove()
+                node && render(null, node)
+                node && node.remove()
+                vnode = undefined
+                node = undefined
             }
         }
     }
 })()
 
-function dialog<T>(vm: Vue, options: QDialogOptions) {
+const dialogOptionKeys = new Set([
+    'class',
+    'style',
+    'title',
+    'message',
+    'html',
+    'position',
+    'prompt',
+    'options',
+    'progress',
+    'ok',
+    'cancel',
+    'focus',
+    'stackButtons',
+    'color',
+    'dark',
+    'persistent',
+    'noEscDismiss',
+    'noBackdropDismiss',
+    'noRouteDismiss',
+    'seamless',
+    'maximized',
+    'fullWidth',
+    'fullHeight',
+    'transitionShow',
+    'transitionHide',
+    'component',
+    'componentProps'
+])
+
+function normalizeDialogOptions(options: LegacyDialogOptions): QDialogOptions {
+    const normalized: LegacyDialogOptions = { ...options }
+    delete normalized.parent
+
+    if (!normalized.component) {
+        return normalized
+    }
+
+    const props: Record<string, unknown> = {}
+    const componentProps = normalized.componentProps
+    if (componentProps && typeof componentProps === 'object' && !Array.isArray(componentProps)) {
+        Object.assign(props, componentProps as Record<string, unknown>)
+    }
+
+    for (const key of Object.keys(normalized)) {
+        if (!dialogOptionKeys.has(key)) {
+            props[key] = normalized[key]
+            delete normalized[key]
+        }
+    }
+
+    if (Object.keys(props).length > 0) {
+        normalized.componentProps = props
+    }
+    return normalized
+}
+
+function dialog<T>(vm: ComponentPublicInstance, options: LegacyDialogOptions) {
     return new Promise<T>((resolve, reject) => {
-        vm.$q.dialog({ ...options, parent: options.parent || vm /* set parent if missing */ })
+        vm.$q.dialog(normalizeDialogOptions(options))
             .onOk(resolve)
-            .onCancel((err: unknown) => reject(err || new Error('cancelled')))
+            .onCancel(() => reject(new Error('cancelled')))
     })
 }
 
-export function boot() {
-    Object.defineProperties(Vue.prototype, {
+export function boot(app: App) {
+    const appContext = app._context
+
+    Object.defineProperties(app.config.globalProperties, {
         $dialog: {
-            get(): Vue['$dialog'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$dialog'] {
+                const vm = this as ComponentPublicInstance
                 return (options) => {
                     return dialog(vm, options)
                 }
             }
         },
         $loading: {
-            get(): Vue['$loading'] {
+            get(): ComponentPublicInstance['$loading'] {
                 return async (task) => {
-                    return loadingFunc(task)
+                    return loadingFunc(appContext, task)
                 }
             }
         },
         $authenticate: {
-            get(): Vue['$authenticate'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$authenticate'] {
+                const vm = this as ComponentPublicInstance
                 return async () => {
                     try {
                         const bioPass = await BioPass.open()
@@ -119,8 +185,8 @@ export function boot() {
             }
         },
         $signTx: {
-            get(): Vue['$signTx'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$signTx'] {
+                const vm = this as ComponentPublicInstance
                 return (gid, req) => {
                     return dialog(vm, {
                         component: TxDialog,
@@ -131,8 +197,8 @@ export function boot() {
             }
         },
         $signCert: {
-            get(): Vue['$signCert'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$signCert'] {
+                const vm = this as ComponentPublicInstance
                 return (gid, req) => {
                     return dialog(vm, {
                         component: CertDialog,
@@ -143,8 +209,8 @@ export function boot() {
             }
         },
         $qrcode: {
-            get(): Vue['$qrcode'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$qrcode'] {
+                const vm = this as ComponentPublicInstance
                 return (req) => {
                     return dialog(vm, {
                         component: QRCodeDialog,

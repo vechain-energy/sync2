@@ -1,4 +1,4 @@
-import Dexie from 'dexie'
+import Dexie, { type IndexableType, type UpdateSpec } from 'dexie'
 import type { Storage } from './index'
 import { newObservable } from './observable'
 
@@ -16,10 +16,11 @@ function wrapTable<T extends Storage.Entity>(table: Dexie.Table<T, number>): Sto
             return id
         },
         update: async (cond, values) => {
+            const changes = values as UpdateSpec<T>
             if (Object.keys(cond).length > 0) {
-                await table.where(cond as {}).modify(values)
+                await table.where(cond as {}).modify(changes)
             } else {
-                await table.toCollection().modify(values)
+                await table.toCollection().modify(changes)
             }
             ob.notify()
         },
@@ -71,9 +72,8 @@ function wrapTable<T extends Storage.Entity>(table: Dexie.Table<T, number>): Sto
                         const cond = opt.notEqual
                         const keys = Object.keys(cond)
                         if (!c && keys.length === 1) {
-                            const key = keys[0]
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            c = table.where(key).notEqual((cond as any)[key])
+                            const key = keys[0] as keyof T & string
+                            c = table.where(key).notEqual(cond[key] as IndexableType)
                         } else {
                             c = c || table.toCollection()
                             c = c.filter(i => {

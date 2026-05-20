@@ -2,14 +2,14 @@
     <pop-sheets :sheets="sheets" />
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { Vault } from 'core/vault'
 import PopSheets, { Sheet } from 'src/components/PopSheets.vue'
 import PromptDialog, { PromptOptions } from './PromptDialog.vue'
 
 const MAX_ADDRESS = 10
 
-export default Vue.extend({
+export default defineComponent({
     components: { PopSheets },
     props: {
         wallet: Object as () => M.Wallet
@@ -24,7 +24,7 @@ export default Vue.extend({
             {
                 label: this.$t('index.action_backup').toString(),
                 action: () => this.$router.push({ name: 'backup', params: { walletId: this.wallet.id.toString() } }),
-                hidden: this.wallet.meta.type !== 'hd'
+                hidden: this.wallet.meta.type === 'ledger'
             },
             {
                 label: this.$t('index.action_rename').toString(),

@@ -1,7 +1,6 @@
 <template>
     <q-item
         v-bind="$attrs"
-        v-on="$listeners"
         :class="classes"
         :dark="!invert"
     >
@@ -19,9 +18,9 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         type: String as () => 'error' | 'warning',
         error: Object as () => Error,

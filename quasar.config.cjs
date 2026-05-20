@@ -8,9 +8,11 @@
 // Configuration for your app
 // https://quasar.dev/quasar-cli/quasar-conf-js
 
-const { configure } = require('quasar/wrappers')
+const { defineConfig } = require('@quasar/app-webpack/wrappers')
 const path = require('path')
 const { execSync } = require('child_process')
+const webpack = require('webpack')
+const { getElectronReleaseRepo } = require('./build/release-config.cjs')
 
 const appVersion = require('./package.json').version
 const appBuild = execSync('git --no-pager log -n 1 --date=short --pretty="%ad.%h"')
@@ -22,8 +24,9 @@ const electronBuildArches = (process.env.ELECTRON_BUILD_ARCHES || 'x64,arm64')
   .map(arch => arch.trim())
   .filter(Boolean)
 const electronMacTarget = process.env.ELECTRON_MAC_TARGET || 'default'
+const electronReleaseRepo = getElectronReleaseRepo(process.env)
 
-module.exports = configure(function (ctx) {
+module.exports = defineConfig(function (ctx) {
   return {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
@@ -58,7 +61,7 @@ module.exports = configure(function (ctx) {
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-framework
     framework: {
       iconSet: 'material-icons', // Quasar icon set
-      lang: 'en-us', // Quasar language pack
+      lang: 'en-US', // Quasar language pack
       config: {
         loadingBar: {
             skipHijack: true
@@ -126,26 +129,19 @@ module.exports = configure(function (ctx) {
       ]
     },
 
-    // https://quasar.dev/quasar-cli/cli-documentation/supporting-ie
-    supportIE: false,
-
-    // https://quasar.dev/quasar-cli/cli-documentation/supporting-ts
-    supportTS: {
-      tsCheckerConfig: {
-        eslint: {
-          files: './src/**/*.{ts,js,vue}'
-        }
-      }
-    },
-
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
       env: {
-          APP_VERSION: JSON.stringify(appVersion),
-          APP_BUILD: JSON.stringify(appBuild),
-          DIST_TAG: JSON.stringify(process.env.DIST_TAG)
+          APP_VERSION: appVersion,
+          APP_BUILD: appBuild,
+          DIST_TAG: process.env.DIST_TAG || ''
       },
       vueRouterMode: 'hash', // available values: 'hash', 'history'
+      vueOptionsAPI: true,
+      typescript: {
+        strict: false,
+        vueShim: true
+      },
 
       // rtl: false, // https://quasar.dev/options/rtl-support
       // showProgress: false,
@@ -172,10 +168,8 @@ module.exports = configure(function (ctx) {
         }
       },
 
-      modern: true,
-
       // https://quasar.dev/quasar-cli/cli-documentation/handling-webpack
-      extendWebpack (cfg) {
+      extendWebpack(cfg) {
         const CopyWebpackPlugin = require('copy-webpack-plugin')
 
         cfg.output = cfg.output || {}
@@ -187,11 +181,22 @@ module.exports = configure(function (ctx) {
           'thor-devkit$': path.resolve(__dirname, './node_modules/thor-devkit/dist/index.js'),
           '@noble/curves/secp256k1$': path.resolve(__dirname, './node_modules/@noble/curves/esm/secp256k1.js')
         }
+        cfg.resolve.fallback = {
+          ...cfg.resolve.fallback,
+          buffer: require.resolve('buffer/'),
+          crypto: require.resolve('crypto-browserify'),
+          fs: false,
+          http: require.resolve('stream-http'),
+          https: require.resolve('https-browserify'),
+          process: require.resolve('process/browser'),
+          stream: require.resolve('stream-browserify'),
+          url: require.resolve('url/'),
+          vm: false
+        }
 
         cfg.module.rules.push({
           test: /\.js$/,
           include: [
-            path.resolve(__dirname, './node_modules/ethers'),
             path.resolve(__dirname, './node_modules/@noble/curves/esm')
           ],
           use: {
@@ -203,9 +208,16 @@ module.exports = configure(function (ctx) {
           }
         })
 
-        if(cfg.target === 'electron-renderer') {
+        if (ctx.mode.electron) {
           cfg.externals = cfg.externals || {}
-          cfg.externals['node-hid'] = 'commonjs node-hid'
+          for (const pkg of [
+            '@electron/remote',
+            '@ledgerhq/hw-transport-node-hid-noevents',
+            'electron',
+            'node-hid'
+          ]) {
+            cfg.externals[pkg] = `commonjs ${pkg}`
+          }
         }
 
         const copyPatterns = [{
@@ -213,32 +225,13 @@ module.exports = configure(function (ctx) {
           to: 'statics',
           noErrorOnMissing: true
         }]
-        if (ctx.modeName === 'pwa') {
-          copyPatterns.push({
-            from: path.join(__dirname, 'public'),
-            to: '',
-            noErrorOnMissing: true
-          })
-        }
-        const copyPlugin = cfg.plugins.find(p => p instanceof CopyWebpackPlugin)
-        if (copyPlugin) {
-          copyPlugin.patterns.push(...copyPatterns)
-        } else {
-          cfg.plugins.push(new CopyWebpackPlugin({ patterns: copyPatterns }))
-        }
-
-        if (process.env.NODE_ENV === 'production') {
-          // linting is slow in TS projects, we execute it only for production builds
-          cfg.module.rules.push({
-            enforce: 'pre',
-            test: /\.(js|vue)$/,
-            loader: 'eslint-loader',
-            exclude: /node_modules/,
-            options: {
-              formatter: require('eslint').CLIEngine.getFormatter('stylish')
-            }
-          })
-        }
+        cfg.plugins.push(
+          new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+            process: ['process']
+          }),
+          new CopyWebpackPlugin({ patterns: copyPatterns })
+        )
       }
     },
 
@@ -260,62 +253,25 @@ module.exports = configure(function (ctx) {
 
     // https://quasar.dev/quasar-cli/developing-pwa/configuring-pwa
     pwa: {
-      workboxPluginMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
-      workboxOptions: {
-        skipWaiting: true,
-        clientsClaim: true,
-        runtimeCaching: [{
-          urlPattern: /^https:\/\/vechain.github.io\/token-registry\/assets\//,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'token-icons',
-            cacheableResponse: {statuses: [0, 200]}
-          }
-        }]
-      }, // only for GenerateSW
-      manifest: {
-        name: 'Sync2',
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        short_name: 'Sync2',
-        description: 'VeChain Sync2',
-        display: 'standalone',
-        orientation: 'portrait',
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        background_color: '#ffffff',
-        // eslint-disable-next-line @typescript-eslint/camelcase
-        theme_color: '#027be3',
-        icons: [
-          {
-            src: 'statics/icons/icon-128x128.png',
-            sizes: '128x128',
-            type: 'image/png'
-          },
-          {
-            src: 'statics/icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'statics/icons/icon-256x256.png',
-            sizes: '256x256',
-            type: 'image/png'
-          },
-          {
-            src: 'statics/icons/icon-384x384.png',
-            sizes: '384x384',
-            type: 'image/png'
-          },
-          {
-            src: 'statics/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+      workboxMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
+      extendGenerateSWOptions(config) {
+        Object.assign(config, {
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+          skipWaiting: true,
+          clientsClaim: true,
+          runtimeCaching: [{
+            urlPattern: /^https:\/\/vechain.github.io\/token-registry\/assets\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'token-icons',
+              cacheableResponse: {statuses: [0, 200]}
+            }
+          }]
+        })
       }
     },
     sourceFiles : {
-      electronMainProd: 'src-electron/main-process/electron-main.ts',
-      electronMainDev: 'src-electron/main-process/electron-main.dev.ts'
+      electronMain: 'src-electron/main-process/electron-main'
     },
 
     // Full list of options: https://quasar.dev/quasar-cli/developing-cordova-apps/configuring-cordova
@@ -329,28 +285,21 @@ module.exports = configure(function (ctx) {
       hideSplashscreen: true
     },
 
-    // Full list of options: https://quasar.dev/quasar-cli/developing-electron-apps/configuring-electron
-    electron: {
-      bundler: 'builder', // 'packager' or 'builder'
+	    // Full list of options: https://quasar.dev/quasar-cli/developing-electron-apps/configuring-electron
+	    electron: {
+	      bundler: 'builder', // 'packager' or 'builder'
+	      preloadScripts: [],
 
-      packager: {
-        // https://github.com/electron-userland/electron-packager/blob/master/docs/api.md#options
-
-        // OS X / Mac App Store
-        // appBundleId: '',
-        // appCategoryType: '',
-        // osxSign: '',
-        // protocol: 'myapp://path',
-
-        // Windows only
-        // win32metadata: { ... }
-      },
-
-      builder: {
+	      builder: {
         // https://www.electron.build/configuration/configuration
         productName: 'Sync2',
         appId: 'org.vechain.sync2',
         artifactName: '${productName}-${os}-${arch}-${version}.${ext}',
+        publish: [{
+          provider: 'github',
+          owner: electronReleaseRepo.owner,
+          repo: electronReleaseRepo.repo
+        }],
         protocols: {
             name: 'VeChain Connex',
             schemes: ['connex']
@@ -369,6 +318,7 @@ module.exports = configure(function (ctx) {
         },
         afterSign: "build/notarize.js",
         mac: {
+          icon: 'src-electron/icons/icon.icns',
           hardenedRuntime: true,
           entitlements: "build/entitlements.mac.plist",
           entitlementsInherit: "build/entitlements.mac.plist",
@@ -379,31 +329,7 @@ module.exports = configure(function (ctx) {
         }
       },
 
-       // Requires: @quasar/app v1.4.2+
-      // Specify additional parameters when yarn/npm installing
-      // the UnPackaged folder, right before bundling with either
-      // electron packager or electron builder;
-      // Example: [ '--ignore-optional', '--some-other-param' ]
-      unPackagedInstallParams: [],
-
-      // More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
-      nodeIntegration: true,
-
-      extendWebpack (cfg) {
-        // do something with Electron main process Webpack cfg
-        // chainWebpack also available besides this extendWebpack
-
-        cfg.resolve.extensions.push('.ts')
-        cfg.module.rules.push({
-          test: /\.ts$/,
-          use :{
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true
-            }
-          }
-        })
-      }
+      unPackagedInstallParams: []
     }
   }
 })

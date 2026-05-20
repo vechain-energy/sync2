@@ -1,16 +1,21 @@
-import { boot } from 'quasar/wrappers'
-import { VueConstructor } from 'vue'
+import { defineBoot } from '@quasar/app-webpack/wrappers'
+import { ComponentPublicInstance } from 'vue'
 import * as State from './state'
 import * as Plugins from './plugins'
 import * as Modals from './modals'
 import { genesises } from 'src/consts'
+import { i18n } from 'src/boot/i18n'
 
-type BootParams = {
-    Vue: VueConstructor
+const beforeUnmountCleanups = new WeakMap<ComponentPublicInstance, Array<() => void>>()
+
+function addBeforeUnmountCleanup(vm: ComponentPublicInstance, cleanup: () => void) {
+    const cleanups = beforeUnmountCleanups.get(vm) || []
+    cleanups.push(cleanup)
+    beforeUnmountCleanups.set(vm, cleanups)
 }
 
-declare module 'vue/types/vue' {
-    interface Vue {
+declare module 'vue' {
+    interface ComponentCustomProperties {
         /** navigate back or go to home(/) if stack empty */
         $backOrHome(): void
         /** returns the display name of network identified by gid */
@@ -20,15 +25,26 @@ declare module 'vue/types/vue' {
     }
 }
 
-export default boot(({ Vue }: BootParams) => {
-    State.boot()
-    Plugins.boot()
-    Modals.boot()
+export default defineBoot(({ app }) => {
+    State.boot(app)
+    Plugins.boot(app)
+    Modals.boot(app)
 
-    Object.defineProperties(Vue.prototype, {
+    app.mixin({
+        beforeUnmount() {
+            const vm = this as ComponentPublicInstance
+            const cleanups = beforeUnmountCleanups.get(vm) || []
+            beforeUnmountCleanups.delete(vm)
+            for (const cleanup of cleanups) {
+                cleanup()
+            }
+        }
+    })
+
+    Object.defineProperties(app.config.globalProperties, {
         $backOrHome: {
             get() {
-                const vm = this as Vue
+                const vm = this as ComponentPublicInstance
                 return () => {
                     vm.$stack.canGoBack
                         ? vm.$router.back()
@@ -37,14 +53,13 @@ export default boot(({ Vue }: BootParams) => {
             }
         },
         $netDisplayName: {
-            get(): Vue['$netDisplayName'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$netDisplayName'] {
                 return gid => {
                     switch (gid) {
-                        case genesises.main.id: return vm.$t('common.mainnet').toString()
-                        case genesises.test.id: return vm.$t('common.testnet').toString()
+                        case genesises.main.id: return i18n.global.t('common.mainnet').toString()
+                        case genesises.test.id: return i18n.global.t('common.testnet').toString()
                         default: {
-                            const name = vm.$t('common.private').toString()
+                            const name = i18n.global.t('common.private').toString()
                             const suffix = gid ? `-${gid.slice(-6)}` : ''
                             return name + suffix
                         }
@@ -53,10 +68,10 @@ export default boot(({ Vue }: BootParams) => {
             }
         },
         $onWindowEvent: {
-            get(): Vue['$onWindowEvent'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$onWindowEvent'] {
+                const vm = this as ComponentPublicInstance
                 return (event, listener) => {
-                    vm.$once('hook:beforeDestroy', () => {
+                    addBeforeUnmountCleanup(vm, () => {
                         window.removeEventListener(event, listener)
                     })
                     window.addEventListener(event, listener)

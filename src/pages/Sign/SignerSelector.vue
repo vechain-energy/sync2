@@ -11,15 +11,18 @@
             v-if="count > 1"
             position="bottom"
             fit
+            :breakpoint="0"
             @show="onPopupShow()"
         >
             <q-card>
                 <q-list padding>
-                    <template v-for="(g, gi) in groups">
+                    <template
+                        v-for="(g, gi) in groups"
+                        :key="gi"
+                    >
                         <q-item-label
                             header
                             class="ellipsis"
-                            :key="`g-${gi}`"
                         >{{g.name}}</q-item-label>
                         <signer-item
                             :ref="addr"
@@ -39,17 +42,21 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import SignerItem from './SignerItem.vue'
 import { count } from 'src/utils/array'
 import { SignerGroup } from './models'
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['select'],
     components: { SignerItem },
     props: {
         signer: String,
         gid: String,
-        groups: Array as () => SignerGroup[]
+        groups: {
+            type: Array as () => SignerGroup[],
+            default: () => []
+        }
     },
     computed: {
         group(): SignerGroup | null {

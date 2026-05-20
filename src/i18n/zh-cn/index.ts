@@ -1,7 +1,6 @@
 // This is just an example,
 // so you can safely delete all default props below
 
-/* eslint-disable @typescript-eslint/camelcase */
 export default {
     common: {
         ok: '确定',
@@ -18,6 +17,7 @@ export default {
         copy_failed: '请手动复制。无法访问剪贴板。',
         close: '关闭',
         back: '返回',
+        address: '地址',
         more: '更多',
         open_link: '打开链接',
         view_on_explorer: '在浏览器中查看',
@@ -88,6 +88,7 @@ export default {
         action_swap: '兑换',
         action_create: '现在创建',
         msg_upgrade: '新版本已经就绪',
+        msg_upgrade_failed: 'you need to install the signed release manually. Auto-upgrade could not start.',
         msg_delete: '请输入"ok"继续。请确认此钱包已经备份，该操作无法撤销。',
         msg_backup: '钱包尚未备份！备份钱包以保障资产安全。',
         label_wallets: '钱包'
@@ -144,18 +145,18 @@ export default {
         title: '地址',
         label_assets: '资产',
         action_receive: '接收',
-        action_export_private_key: '导出私钥',
+        action_export_private_key: '备份私钥',
         action_edit_vns_profile: '编辑 VNS 资料',
         action_vns_profile_avatar: '头像',
         action_vns_profile_remove_avatar: '移除',
-        title_export_private_key: '私钥',
+        title_export_private_key: '备份私钥',
         label_private_key: '私钥',
         label_vns_profile_display: '显示名称',
         label_vns_profile_description: '描述',
         label_vns_profile_email: '邮箱',
         label_vns_profile_url: '网站',
         label_vns_profile_x: 'X 账号',
-        msg_export_private_key_warning: '任何人拿到此私钥都能转走该地址资产。Sync2 永远不会要求您分享私钥。输入 EXPORT 继续。',
+        msg_export_private_key_warning: '任何人拿到此私钥都能转走该地址资产。Sync2 永远不会要求您分享私钥。',
         msg_private_key_reveal_warning: '离线保存此私钥。不要分享。',
         msg_vns_profile_warning: '资料会写入 {name} 的链上记录。',
         msg_vns_profile_load_error: 'you need to try again. 无法加载资料记录。',
@@ -164,14 +165,17 @@ export default {
         msg_vns_profile_updated: 'VNS 资料更新已提交',
         msg_vns_profile_display_error: 'you need to use 25 characters or less',
         msg_vns_profile_description_error: 'you need to use 100 characters or less',
-        msg_vns_profile_url_error: 'you need to enter a http or https URL'
+        msg_vns_profile_url_error: 'you need to enter a http or https URL',
+        msg_wallet_not_found: '请选择已有钱包',
+        msg_address_not_found: '请选择已有地址'
     },
     asset: {
         title: '资产',
         label_history: '转账记录',
         msg_no_history: '无记录',
         msg_no_more: '- 完 - ',
-        msg_history_load_error: 'you need to check the network and try again. 无法加载转账记录。'
+        msg_history_load_error: 'you need to check the network and try again. 无法加载转账记录。',
+        msg_asset_not_found: '请选择已启用资产'
     },
     send: {
         title: '发送',
@@ -183,6 +187,8 @@ export default {
         msg_invalid_address: '请输入有效地址',
         msg_invalid_address_checksum: '地址检验失败',
         msg_vet_domain_unresolved: 'you need to check the name or switch network',
+        msg_select_wallet: '发送前请先打开钱包',
+        msg_no_asset: '发送前请先启用资产',
         action_send: '发送'
     },
     swap: {
@@ -263,21 +269,30 @@ export default {
     },
     backup: {
         title: '备份',
+        title_private_key: '备份私钥',
         action_next_verify: '开始校验',
         label_backed_up: '钱包已备份',
         msg_backed_up: '请将助记词安全地存放，切勿将您的助记词与他人分享',
         msg_confirm_your_mnemonic: '验证您的助记词',
         msg_backup_intro: '助记词包含恢复钱包所需的信息，若您遗失了钱包可通过助记词恢复',
         label_backup_tips: '开始前请仔细阅读',
+        label_private_key_backup_tips: '备份私钥',
         msg_backup_tips_1: '请按照顺序抄写',
         msg_backup_tips_2: '请确保存放于安全的地方',
         msg_backup_tips_3: '请勿截图或录制屏幕',
+        msg_private_key_backup_intro: '此私钥控制一个地址。任何人拿到它都能转走该地址资产。',
+        msg_private_key_backup_tips_1: '请准确抄写',
+        msg_private_key_backup_tips_2: '请离线存放在安全位置',
+        msg_private_key_backup_tips_3: '请勿截图或录制屏幕',
         label_your_mnemonic: '抄写您的助记词',
+        label_your_private_key: '抄写您的私钥',
         msg_mnemonic_backup_only: 'you need to export the private key for this wallet',
+        msg_private_key_backup_only: '请选择软件钱包地址',
 
         // notify
         msg_wallet_not_found: '找不到钱包',
         msg_backup_load_failed: '请重试。无法加载备份助记词。',
+        msg_private_key_backup_load_failed: '请重试。无法加载私钥。',
         msg_backup_save_failed: '请重试。备份状态未保存。'
     },
     sign: {

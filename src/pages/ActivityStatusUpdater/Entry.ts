@@ -1,14 +1,15 @@
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { Transaction } from 'thor-devkit'
 
 const CONFIRMED_N = 12
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         activity: Object as () => M.Activity
     },
     computed: {
-        thor(): Connex.Thor { return this.$svc.bc(this.activity.gid).thor }
+        thor(): Connex.Thor { return this.$svc.bc(this.activity.gid).thor },
+        headNumber(): number { return this.thor.status.head.number }
     },
     asyncComputed: {
         task: {
@@ -17,9 +18,13 @@ export default Vue.extend({
                 if (a.type !== 'tx') {
                     return
                 }
+                if (!/^0x[0-9a-f]+$/i.test(a.glob.encoded)) {
+                    await this.$svc.activity.update(a.id, { status: 'completed' })
+                    return
+                }
 
                 const tx = Transaction.decode(Buffer.from(a.glob.encoded.slice(2), 'hex'))
-                const headNum = this.thor.status.head.number
+                const headNum = this.headNumber
 
                 const values: Parameters<Vue['$svc']['activity']['update']>[1] = {}
 
@@ -31,7 +36,7 @@ export default Vue.extend({
                         values.status = 'completed'
                     }
                 } else {
-                    const expired = headNum > parseInt(tx.body.blockRef.slice(0, 10)) +
+                    const expired = headNum > Number.parseInt(tx.body.blockRef.slice(2, 10), 16) +
                         tx.body.expiration +
                         CONFIRMED_N
 
@@ -51,11 +56,14 @@ export default Vue.extend({
         }
     },
     watch: {
-        thor() {
+        headNumber() {
             this.$asyncComputed.task.update()
         }
     },
-    render(h) {
-        return h()
+    mounted() {
+        this.$asyncComputed.task.update()
+    },
+    render(): null {
+        return null
     }
 })

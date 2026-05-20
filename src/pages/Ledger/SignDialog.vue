@@ -19,7 +19,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import * as Ledger from 'src/utils/ledger'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
@@ -42,7 +42,8 @@ type Arg = {
     cert?: Buffer
 }
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar, Steps },
     props: {
         arg: Object as () => Arg
@@ -50,7 +51,8 @@ export default Vue.extend({
     data() {
         return {
             status: null as Status | null,
-            error: null as Error | null
+            error: null as Error | null,
+            signal: null as Deferred<never> | null
         }
     },
     computed: {
@@ -82,9 +84,7 @@ export default Vue.extend({
     },
     async mounted() {
         const signal = new Deferred<never>()
-        this.$once('hook:beforeDestroy', () => {
-            signal.reject(new Error('interrupted'))
-        })
+        this.signal = signal
 
         const { index, signer, tx, cert } = { ...this.arg }
 
@@ -164,6 +164,9 @@ export default Vue.extend({
             }
             break
         }
+    },
+    beforeUnmount() {
+        this.signal?.reject(new Error('interrupted'))
     },
     methods: {
         // method is REQUIRED by $q.dialog

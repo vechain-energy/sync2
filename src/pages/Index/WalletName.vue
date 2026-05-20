@@ -9,11 +9,11 @@
     </span>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import SvgLedger from 'src/components/SvgLedger.vue'
 import { vetDomainWalletDisplayName } from 'src/utils/vet-domain-wallet-name'
 
-export default Vue.extend({
+export default defineComponent({
     components: { SvgLedger },
     props: {
         wallet: Object as () => M.Wallet
@@ -24,7 +24,7 @@ export default Vue.extend({
                 this.$svc.bc(this.wallet.gid).vetDomainsRevision()
                 return this.$svc.bc(this.wallet.gid).vetDomainsNamesOf(this.wallet.meta.addresses)
             },
-            default: [] as string[]
+            default: () => [] as string[]
         }
     },
     computed: {

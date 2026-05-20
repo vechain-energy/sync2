@@ -1,2 +1,2 @@
 import Controller from './Controller.vue'
-export default Controller.extend({ name: 'NewWallet' })
+export default Object.assign(Controller, { name: 'NewWallet' })

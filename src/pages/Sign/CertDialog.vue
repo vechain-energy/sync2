@@ -11,7 +11,7 @@
                 :title="$t('common.certificate')"
                 icon="close"
                 :gid="gid"
-                @action="hide()"
+                :action="() => hide()"
             />
             <page-content class="col q-pa-sm bg-grey-3">
                 <div class="text-uppercase">{{req.message.purpose}}</div>
@@ -60,6 +60,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
+import { defineComponent } from 'vue'
 import Common from './Common'
 import { QDialog } from 'quasar'
 import PageToolbar from 'src/components/PageToolbar.vue'
@@ -68,8 +69,11 @@ import PageAction from 'src/components/PageAction.vue'
 import SignerSelector from './SignerSelector.vue'
 import { Certificate, blake2b256 } from 'thor-devkit'
 import ErrorTip from './ErrorTip.vue'
+import { dialogErrorMessage } from 'src/utils/dialog-error'
 
-export default Common.extend({
+export default defineComponent({
+    extends: Common,
+    emits: ['hide', 'ok'],
     components: { PageToolbar, PageContent, PageAction, SignerSelector, ErrorTip },
     props: {
         req: Object as () => M.CertRequest
@@ -89,10 +93,21 @@ export default Common.extend({
         hide() { (this.$refs.dialog as QDialog).hide() },
 
         ok(result: M.CertResponse) {
+            this.rememberSigner()
             this.$emit('ok', result)
             this.hide()
         },
         async onClickSign() {
+            try {
+                await this.sign()
+            } catch (err) {
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (message) {
+                    this.$q.notify({ type: 'negative', message })
+                }
+            }
+        },
+        async sign() {
             const wallet = this.wallet
             if (!wallet) {
                 return

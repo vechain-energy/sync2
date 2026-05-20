@@ -1,10 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { boot } from 'quasar/wrappers'
-import { VueConstructor } from 'vue'
-
-type BootParams = {
-    Vue: VueConstructor
-}
+import { defineBoot } from '@quasar/app-webpack/wrappers'
+import { Directive, DirectiveBinding } from 'vue'
 import { debounce } from 'quasar'
 
 type ScrollDividerState = {
@@ -15,9 +10,16 @@ type ScrollDividerState = {
 type ScrollDividerElement = HTMLElement & {
     _scrollDivider?: ScrollDividerState
 }
+type FocusoutState = {
+    callback: (event: FocusEvent) => void
+}
+type FocusoutElement = HTMLElement & {
+    _needFocusout?: boolean
+    _focusout?: FocusoutState
+}
 
-export const scrollDivider: Vue.DirectiveOptions = {
-    inserted: (el, bind) => {
+export const scrollDivider: Directive<ScrollDividerElement> = {
+    mounted: (el, bind) => {
         const target = el as ScrollDividerElement
         const { top = true, bottom, both } = bind.modifiers
         const onScroll = () => {
@@ -44,7 +46,7 @@ export const scrollDivider: Vue.DirectiveOptions = {
         // get correct initial state
         onScroll()
     },
-    unbind: el => {
+    unmounted: el => {
         const target = el as ScrollDividerElement
         const state = target._scrollDivider
         if (!state) {
@@ -57,51 +59,52 @@ export const scrollDivider: Vue.DirectiveOptions = {
     }
 }
 
-const directives: Record<string, Vue.DirectiveOptions> = {
+const directives: Record<string, Directive> = {
     scrollDivider,
     nofocusout: {
-        bind(el: HTMLElement) {
-            const _el = (el as any)
-            _el.tabIndex = -1
-            const callback = (event: any) => {
-                if (!_el._needFocusout) {
+        mounted(el: HTMLElement) {
+            const target = el as FocusoutElement
+            target.tabIndex = -1
+            const callback = (event: FocusEvent) => {
+                if (!target._needFocusout) {
                     return
                 }
-                if (!el.contains(event.relatedTarget)) {
+                const relatedTarget = event.relatedTarget
+                if (!(relatedTarget instanceof Node) || !el.contains(relatedTarget)) {
                     el.focus()
                 }
             }
-            _el.addEventListener('focusout', callback)
-            _el._needFocusout = true
-            _el._focusout = {
+            target.addEventListener('focusout', callback)
+            target._needFocusout = true
+            target._focusout = {
                 callback
             }
         },
-        update(el: HTMLElement, binding: any) {
-            const _el = (el as any)
-            _el._needFocusout = binding.value
+        updated(el: HTMLElement, binding: DirectiveBinding<boolean | undefined>) {
+            const target = el as FocusoutElement
+            target._needFocusout = binding.value
         },
-        unbind(el: HTMLElement) {
-            const _el = (el as any)
-            if (_el._focusout) {
-                _el.removeEventListener('focusout', _el._focusout!.callback)
-                delete _el._focusout
-                delete _el._needFocusout
+        unmounted(el: HTMLElement) {
+            const target = el as FocusoutElement
+            if (target._focusout) {
+                target.removeEventListener('focusout', target._focusout.callback)
+                delete target._focusout
+                delete target._needFocusout
             }
         }
     },
     // this directive helps to remove focus helper in q-btn component.
     // the focus helper may cause focus problem in form input.
     disableFocusHelper: {
-        inserted: el => {
+        mounted: el => {
             const r = el.getElementsByClassName('q-focus-helper')
             r && r.length > 0 && r[0].remove()
         }
     }
 }
 
-export default boot(({ Vue }: BootParams) => {
+export default defineBoot(({ app }) => {
     Object.entries(directives).forEach(([name, definition]) => {
-        Vue.directive(name, definition)
+        app.directive(name, definition)
     })
 })

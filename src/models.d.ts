@@ -93,6 +93,7 @@ declare namespace M {
     type QRRequest = {
         title?: string
         content: string
+        caption?: string
         message?: string
         messageClass?: string
     }

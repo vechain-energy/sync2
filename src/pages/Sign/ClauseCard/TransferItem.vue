@@ -48,7 +48,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import TokenAvatar from 'src/components/TokenAvatar.vue'
 import { BigNumber } from 'bignumber.js'
 import AddressLabel from 'src/components/AddressLabel.vue'
@@ -62,7 +62,7 @@ export type OpTransfer = {
     to: string | null
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: { TokenAvatar, AddressLabel, AmountLabel, AddressAvatar },
     props: {
         op: Object as () => OpTransfer,

@@ -1,28 +1,15 @@
-import { boot } from 'quasar/wrappers'
+import { defineBoot } from '@quasar/app-webpack/wrappers'
 import messages from 'src/i18n'
-import Vue, { ComponentOptions } from 'vue'
-import VueI18n from 'vue-i18n'
+import { createI18n } from 'vue-i18n'
 
-type BootParams = {
-    app: ComponentOptions<Vue>
-}
-
-declare module 'vue/types/vue' {
-    interface Vue {
-        i18n: VueI18n;
-    }
-}
-
-Vue.use(VueI18n)
-
-export const i18n = new VueI18n({
+export const i18n = createI18n({
+    legacy: true,
     locale: 'en-us',
     fallbackLocale: 'en-us',
     messages,
-    silentFallbackWarn: true
+    fallbackWarn: false
 })
 
-export default boot(({ app }: BootParams) => {
-    // Set i18n instance on app
-    app.i18n = i18n
+export default defineBoot(({ app }) => {
+    app.use(i18n)
 })

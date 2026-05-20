@@ -1,6 +1,7 @@
 import { abi } from 'thor-devkit'
 import { genesises } from '../consts'
 import { VetDomainContracts, vetDomainNamehash } from './vet-domain-registration'
+import { isRecord, parseStoredJson } from './json'
 
 export const VET_DOMAIN_PROFILE_TEXT_KEYS = [
     'avatar',
@@ -28,10 +29,6 @@ export type VetDomainPreparedAvatar = {
 type VetDomainIpfsConfig = {
     fetchingService: string
     pinningService: string
-}
-
-type IpfsPinningResponse = {
-    IpfsHash?: string
 }
 
 const VET_DOMAIN_IPFS_BY_GID: Record<string, VetDomainIpfsConfig> = {
@@ -249,9 +246,9 @@ export async function prepareVetDomainProfileAvatar(file: File): Promise<VetDoma
     }
 }
 
-function parseIpfsPinningResponse(text: string): string {
-    const data = JSON.parse(text) as IpfsPinningResponse
-    if (!data.IpfsHash) {
+export function parseIpfsPinningResponse(text: string): string {
+    const data = parseStoredJson<unknown>(text, null)
+    if (!isRecord(data) || typeof data.IpfsHash !== 'string' || !data.IpfsHash) {
         throw new Error('IPFS upload did not return a hash')
     }
     return `ipfs://${data.IpfsHash}`

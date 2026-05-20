@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { SignerGroup } from './models'
 import { Transaction, Certificate, blake2b256 } from 'thor-devkit'
 import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
@@ -7,7 +7,7 @@ import { buildSignerGroups, selectSigner } from './signer-groups'
 
 type SignableTransaction = Transaction<Transaction.LegacyBody | Transaction.DynamicFeeBody>
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         gid: String,
         req: Object as () => (M.CertRequest | M.TxRequest)
@@ -40,6 +40,9 @@ export default Vue.extend({
         }
     },
     methods: {
+        rememberSigner() {
+            localStorage.setItem(`last-signer-${this.gid}`, this.signer)
+        },
         async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<SignableTransaction>): Promise<Buffer> {
             if (isSoftwareWalletType(wallet.meta.type)) {
                 // acquire user master key
@@ -84,9 +87,5 @@ export default Vue.extend({
     beforeMount() {
         const key = `last-signer-${this.gid}`
         this.signer = localStorage.getItem(key) || '' // load last signer
-        // save on ok
-        this.$once('ok', () => {
-            localStorage.setItem(key, this.signer)
-        })
     }
 })

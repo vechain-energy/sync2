@@ -6,8 +6,8 @@
         v-bind="$attrs"
         dense
         placeholder="0x"
-        clearable
-        v-model.lazy="input"
+        :model-value="input"
+        @update:model-value="onUpdateInput"
         spellcheck="false"
         :hint="resolvedHint"
     >
@@ -18,8 +18,19 @@
             <AddressAvatar :addr="to" :gid="gid" />
         </template>
         <template v-slot:append>
+            <button
+                v-if="input"
+                class="send-clear-btn q-field__focusable-action"
+                type="button"
+                aria-label="Clear"
+                title="Clear"
+                @mousedown.stop.prevent="clearInput"
+                @click.stop.prevent="clearInput"
+            >
+                <q-icon name="cancel" />
+            </button>
             <q-btn
-                v-show="hasCamera && !input"
+                v-else-if="hasCamera"
                 rounded
                 dense
                 icon="qr_code_scanner"
@@ -30,25 +41,31 @@
             />
         </template>
         <q-popup-proxy
+            v-model="addressListOpen"
             :no-parent-event="!!to"
+            :breakpoint="0"
             position="bottom"
             fit
         >
             <q-card>
                 <q-list padding>
-                    <template v-for="(group, gi) in wallets">
+                    <template
+                        v-for="(group, gi) in wallets"
+                        :key="gi"
+                    >
                         <q-item-label
-                            :key="gi"
                             header
                         >
                             {{group.name}}
                         </q-item-label>
-                        <template v-for="(addr, ai) in group.list">
+                        <template
+                            v-for="(addr, ai) in group.list"
+                            :key="`${gi}-${ai}`"
+                        >
                             <AddressItem
                                 clickable
                                 v-close-popup
                                 @click="onSelectAddress(addr)"
-                                :key="`${gi} + ${ai}`"
                                 :address="addr"
                                 :gid="gid"
                             />
@@ -60,7 +77,7 @@
     </q-input>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { address } from 'thor-devkit'
 import AddressAvatar from 'src/components/AddressAvatar.vue'
 import { AddressGroup } from './models'
@@ -69,26 +86,27 @@ import QrScannerDialog from 'pages/QrScannerDialog'
 import { QrScanner } from 'src/utils/qr-scanner'
 import { isVetDomainName, normalizeVetDomainName } from 'src/utils/vet-domains'
 
-export default Vue.extend({
+type InputValue = string | number | null
+
+export default defineComponent({
+    emits: ['update:modelValue', 'change'],
     components: {
         AddressAvatar,
         AddressItem
     },
-    model: {
-        prop: 'address',
-        event: 'change'
-    },
     props: {
         wallets: {
             type: Array as () => AddressGroup[],
-            default: []
+            default: () => []
         },
-        address: String,
+        modelValue: String,
         gid: String
     },
     data() {
         return {
-            input: this.address || ''
+            input: this.modelValue || '',
+            addressListOpen: false,
+            clearButtonPressListener: null as ((ev: MouseEvent) => void) | null
         }
     },
     computed: {
@@ -136,18 +154,50 @@ export default Vue.extend({
         }
     },
     watch: {
-        address(v: string) {
+        modelValue(v: string) {
             if (v === this.resolvedAddress) {
                 return
             }
             this.input = v
         },
+        input(v: string) {
+            if (v) {
+                this.addressListOpen = false
+            }
+        },
         to(v: string) {
+            this.$emit('update:modelValue', v)
             this.$emit('change', v)
         }
     },
     methods: {
         isAddress: address.test,
+        isClearButtonEvent(ev: Event) {
+            return ev.target instanceof Element && !!ev.target.closest('.send-clear-btn')
+        },
+        onClearButtonPress(ev: MouseEvent) {
+            if (!this.isClearButtonEvent(ev)) {
+                return
+            }
+            ev.preventDefault()
+            ev.stopPropagation()
+            this.clearInput()
+        },
+        onUpdateInput(value: InputValue) {
+            this.input = value === null ? '' : value.toString()
+        },
+        clearInput() {
+            this.input = ''
+            this.$emit('update:modelValue', '')
+            this.$emit('change', '')
+            this.$nextTick(() => {
+                const input = (this.$el as HTMLElement).querySelector<HTMLInputElement>('input')
+                if (input && input.value) {
+                    input.value = ''
+                    input.dispatchEvent(new Event('input', { bubbles: true }))
+                }
+            })
+        },
         onSelectAddress(addr: string) {
             this.input = address.toChecksumed(addr)
         },
@@ -156,6 +206,32 @@ export default Vue.extend({
                 this.input = await this.$dialog<string>({ component: QrScannerDialog })
             } catch { }
         }
+    },
+    mounted() {
+        this.clearButtonPressListener = ev => this.onClearButtonPress(ev)
+        document.addEventListener('mousedown', this.clearButtonPressListener, true)
+    },
+    beforeUnmount() {
+        if (this.clearButtonPressListener) {
+            document.removeEventListener('mousedown', this.clearButtonPressListener, true)
+        }
     }
 })
 </script>
+<style scoped>
+.send-clear-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: currentColor;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    height: 32px;
+    justify-content: center;
+    margin: 0;
+    outline: 0;
+    padding: 0;
+    width: 32px;
+}
+</style>

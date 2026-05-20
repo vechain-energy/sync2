@@ -1,34 +1,39 @@
-import Vue from 'vue'
+import { defineComponent, h, renderSlot, VNode } from 'vue'
 
 /* example:
 <delay-render :t="100">
   <!-- content rendering will be delayed in 100ms -->
 </delay-render>
 */
-export default Vue.extend({
+export default defineComponent({
     props: {
         tag: String,
         t: Number
     },
     data: () => {
         return {
+            timer: null as ReturnType<typeof setTimeout> | null,
             timeUp: false
         }
     },
     created() {
-        const timer = setTimeout(() => {
+        this.timer = setTimeout(() => {
             this.timeUp = true
         }, this.t)
-        this.$once('hook:beforeDestroy', () => clearTimeout(timer))
     },
-    render(h) {
-        if (this.timeUp) {
-            const slots = this.$slots.default || []
-            if (this.tag) {
-                return h(this.tag, slots)
-            }
-            return slots.length > 1 ? h('fragment', slots) : slots[0]
+    beforeUnmount() {
+        if (this.timer) {
+            clearTimeout(this.timer)
         }
-        return h()
+    },
+    render(): VNode | VNode[] | null {
+        if (this.timeUp) {
+            const slot = renderSlot(this.$slots, 'default')
+            if (this.tag) {
+                return h(this.tag, [slot])
+            }
+            return slot
+        }
+        return null
     }
 })

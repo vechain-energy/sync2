@@ -130,7 +130,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import { picasso } from '@vechain/picasso'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
@@ -147,7 +147,8 @@ import {
     vetDomainProfileTransactionComment
 } from 'src/utils/vet-domain-profile'
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar },
     props: {
         wallet: Object as () => M.Wallet,
@@ -200,7 +201,7 @@ export default Vue.extend({
     async mounted() {
         await this.loadProfile()
     },
-    beforeDestroy() {
+    beforeUnmount() {
         this.revokeAvatarPreviewUrl()
     },
     methods: {

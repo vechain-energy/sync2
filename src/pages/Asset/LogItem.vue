@@ -69,7 +69,7 @@
     </q-expansion-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import { openURL } from 'src/utils/open-url'
 import AmountLabel from 'components/AmountLabel.vue'
@@ -78,7 +78,7 @@ import { formatDate } from 'src/utils/format'
 import { copyText } from 'src/utils/clipboard'
 import { txExplorerUrl } from 'src/utils/explorer'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         AddressLabel,
         AmountLabel

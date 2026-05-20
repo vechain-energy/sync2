@@ -1,2 +1,2 @@
 import Controller from './Controller.vue'
-export default Controller.extend({ name: 'Address' })
+export default Object.assign(Controller, { name: 'Address' })

@@ -3,10 +3,14 @@
         <!-- the backdrop -->
         <div
             ref="backdrop"
-            class="drawer-backdrop fixed-full"
-            v-show="!invisible"
-            v-touch-pan.left.mouse.prevent="transiting? undefined:handleTouchPan"
-            @click="onClickBackdrop"
+            class="drawer-backdrop drawer-transition fixed-full"
+            v-show="opened || panning"
+            v-touch-pan.left.mouse.prevent="handleTouchPan"
+            @pointerdown.stop="onBackdropPointerDown"
+            @pointerup.stop="onBackdropPointerUp"
+            @touchstart.stop="onBackdropTouchStart"
+            @touchend.stop="onBackdropTouchEnd"
+            @click.stop="onClickBackdrop"
         />
         <!-- the opener -->
         <!-- <div
@@ -17,8 +21,8 @@
         <!-- content wrapper-->
         <aside
             class="drawer fixed-left q-drawer__content"
-            :class="{invisible: invisible, 'drawer-disable-pointer-events': panning||transiting}"
-            v-touch-pan.left.mouse.prevent="transiting? undefined:handleTouchPan"
+            :class="{invisible: invisible, 'drawer-disable-pointer-events': panning}"
+            v-touch-pan.left.mouse.prevent="handleTouchPan"
         >
             <slot />
             <q-resize-observer @resize="onContentResize" />
@@ -26,8 +30,8 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
-import { transitionEnd, newVelometer, newPipeline } from 'src/utils/transit'
+import { defineComponent } from 'vue'
+import { newVelometer } from 'src/utils/transit'
 
 type TouchPanEvent = {
     isFirst?: boolean;
@@ -36,6 +40,12 @@ type TouchPanEvent = {
     delta: { x: number };
     duration: number;
 }
+type TapPoint = {
+    x: number;
+    y: number;
+}
+const TAP_MAX_MOVE_PX = 12
+const CLICK_SUPPRESSION_MS = 500
 
 function parentElement(vm: Vue): HTMLElement | null {
     if (!vm.$parent || !(vm.$parent.$el instanceof HTMLElement)) {
@@ -44,47 +54,34 @@ function parentElement(vm: Vue): HTMLElement | null {
     return vm.$parent.$el
 }
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['update:modelValue', 'open'],
     props: {
-        value: Boolean,
+        modelValue: Boolean,
         disable: Boolean
     },
     data: () => {
         return {
             width: 0,
             panning: false,
-            transiting: false,
             openRatio: 0,
             touchPanInitOffset: 0,
             transitionMul: 1,
             opened: false,
-            velometer: newVelometer(),
-            pipeline: newPipeline()
+            backdropPointerStart: null as TapPoint | null,
+            backdropTouchStart: null as TapPoint | null,
+            lastBackdropActionAt: 0,
+            velometer: newVelometer()
         }
-    },
-    model: {
-        prop: 'value',
-        event: 'open'
     },
     computed: {
         invisible() {
-            return !this.opened && !this.panning && !this.transiting
-        },
-        animatedViews() {
-            const parent = parentElement(this)
-            const backdrop = this.$refs.backdrop
-            return [
-                parent,
-                backdrop instanceof HTMLElement ? backdrop : null
-            ].filter((el): el is HTMLElement => el !== null)
+            return !this.opened && !this.panning
         }
     },
     watch: {
-        value(newVal: boolean) {
-            this.opened = newVal
-        },
-        opened() {
-            this.pipeline.run(() => this.transit())
+        modelValue(newVal: boolean) {
+            this.setOpened(newVal)
         },
         width(newVal: number) {
             this.setParentProperty('--drawer-width', `${newVal}`)
@@ -104,40 +101,74 @@ export default Vue.extend({
             }
             parent.style.setProperty(name, value)
         },
-        onClickBackdrop() {
-            if (this.opened && !this.panning && !this.transiting) {
-                this.opened = false
-                this.$emit('open', false)
+        onBackdropPointerDown(event: PointerEvent) {
+            if (event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) {
+                this.backdropPointerStart = null
+                return
             }
+            this.backdropPointerStart = { x: event.clientX, y: event.clientY }
+        },
+        onBackdropPointerUp(event: PointerEvent) {
+            if (event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) {
+                this.backdropPointerStart = null
+                return
+            }
+            if (this.isTap(event.clientX, event.clientY, this.backdropPointerStart) && this.closeFromBackdropOnce()) {
+                event.preventDefault()
+            }
+            this.backdropPointerStart = null
+        },
+        onBackdropTouchStart(event: TouchEvent) {
+            const touch = event.changedTouches[0] || event.touches[0]
+            this.backdropTouchStart = touch
+                ? { x: touch.clientX, y: touch.clientY }
+                : null
+        },
+        onBackdropTouchEnd(event: TouchEvent) {
+            const touch = event.changedTouches[0]
+            if (touch && this.isTap(touch.clientX, touch.clientY, this.backdropTouchStart) && this.closeFromBackdropOnce()) {
+                event.preventDefault()
+            }
+            this.backdropTouchStart = null
+        },
+        onClickBackdrop(event: MouseEvent) {
+            if (this.closeFromBackdropOnce()) {
+                event.preventDefault()
+            }
+        },
+        isTap(x: number, y: number, start: TapPoint | null) {
+            if (!start) {
+                return false
+            }
+            return Math.hypot(x - start.x, y - start.y) <= TAP_MAX_MOVE_PX
+        },
+        closeFromBackdropOnce() {
+            if (!this.opened || this.panning || Date.now() - this.lastBackdropActionAt < CLICK_SUPPRESSION_MS) {
+                return false
+            }
+            this.lastBackdropActionAt = Date.now()
+            this.setOpened(false)
+            this.$emit('update:modelValue', false)
+            this.$emit('open', false)
+            return true
         },
         onContentResize(size: { width: number }) {
             if (size.width > 0) {
                 this.width = size.width
             }
         },
-        async transit() {
-            this.transiting = true
-            await this.$nextTick()
-
-            document.body.classList.add('drawer-body--prevent-scroll')
-
-            const views = this.animatedViews
-            views.forEach(v => v.classList.add('drawer-transition'))
-
-            this.openRatio = this.opened ? 1 : 0
-
-            await Promise.all(views.map(v => transitionEnd(v)))
-
-            views.forEach(v => v.classList.remove('drawer-transition'))
-
-            if (!this.opened) {
+        setOpened(opened: boolean) {
+            this.opened = opened
+            this.openRatio = opened ? 1 : 0
+            if (opened) {
+                document.body.classList.add('drawer-body--prevent-scroll')
+            } else {
                 document.body.classList.remove('drawer-body--prevent-scroll')
             }
             this.transitionMul = 1
-            this.transiting = false
         },
         handleTouchPanExternal(ev: TouchPanEvent) {
-            if (this.opened || this.transiting || this.disable) {
+            if (this.opened || this.disable) {
                 return
             }
             this.handleTouchPan(ev)
@@ -161,10 +192,11 @@ export default Vue.extend({
                 const triggered = (offset > width / 3 && v >= 0) || v > 0.3
                 this.transitionMul = 0.7
                 if (triggered) {
-                    this.opened = !this.opened
+                    this.setOpened(!this.opened)
+                    this.$emit('update:modelValue', this.opened)
                     this.$emit('open', this.opened)
                 } else {
-                    this.pipeline.run(() => this.transit())
+                    this.setOpened(this.opened)
                 }
             }
 
@@ -174,15 +206,16 @@ export default Vue.extend({
     mounted() {
         const parent = parentElement(this)
         if (parent) {
-            parent.classList.add('drawer-parent')
+            parent.classList.add('drawer-parent', 'drawer-transition')
         }
-        this.opened = this.value
+        this.setOpened(this.modelValue)
     },
-    beforeDestroy() {
+    beforeUnmount() {
         const parent = parentElement(this)
         if (parent) {
-            parent.classList.remove('drawer-parent')
+            parent.classList.remove('drawer-parent', 'drawer-transition')
         }
+        document.body.classList.remove('drawer-body--prevent-scroll')
     }
 })
 </script>
@@ -211,7 +244,9 @@ export default Vue.extend({
     );
 }
 .drawer-transition {
-    transition: all calc(0.25s * var(--drawer-transition-mul));
+    transition:
+        transform calc(0.25s * var(--drawer-transition-mul)),
+        opacity calc(0.25s * var(--drawer-transition-mul));
 }
 .drawer-body--prevent-scroll {
     position: fixed !important;

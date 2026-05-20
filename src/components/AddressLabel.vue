@@ -7,14 +7,14 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { address } from 'thor-devkit'
 
 type AsyncComputedState = Vue & {
     resolvedName: string
 }
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         addr: String,
         gid: String,

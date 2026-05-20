@@ -16,12 +16,16 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QrScanner } from 'src/utils/qr-scanner'
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['scan', 'error'],
     data: () => {
         return {
+            appElem: null as HTMLElement | null,
+            destroyed: false,
+            scanner: null as QrScanner | null,
             size: { w: 0, h: 0 }
         }
     },
@@ -42,13 +46,7 @@ export default Vue.extend({
     mounted() {
         if (this.isCordova) {
             const appElem = document.getElementById('q-app')!
-            let destroyed = false
-            this.$once('hook:beforeDestroy', () => {
-                destroyed = true
-                appElem.style.opacity = ''
-                window.QRScanner.hide()
-                window.QRScanner.destroy()
-            })
+            this.appElem = appElem
             window.QRScanner.prepare((err, status) => {
                 if (err) {
                     return this.$emit('error', err)
@@ -56,7 +54,7 @@ export default Vue.extend({
                 if (!status.authorized) {
                     return this.$emit('error', new Error('permission denied'))
                 }
-                if (!destroyed) {
+                if (!this.destroyed) {
                     appElem.style.opacity = '0';
                     (this.$el as HTMLElement).classList.remove('bg-black')
                     window.QRScanner.show()
@@ -64,7 +62,7 @@ export default Vue.extend({
                         if (err) {
                             return this.$emit('error', err)
                         }
-                        this.$emit('input', result)
+                        this.$emit('scan', result)
                     })
                 }
             })
@@ -73,7 +71,7 @@ export default Vue.extend({
             const scanner = new QrScanner(
                 video,
                 result => {
-                    this.$emit('input', result.data)
+                    this.$emit('scan', result.data)
                 },
                 {
                     onDecodeError: () => { },
@@ -86,9 +84,18 @@ export default Vue.extend({
                 this.$emit('error', err)
             })
 
-            this.$once('hook:beforeDestroy', () => {
-                scanner.destroy()
-            })
+            this.scanner = scanner
+        }
+    },
+    beforeUnmount() {
+        this.destroyed = true
+        if (this.appElem) {
+            this.appElem.style.opacity = ''
+            window.QRScanner.hide()
+            window.QRScanner.destroy()
+        }
+        if (this.scanner) {
+            this.scanner.destroy()
         }
     }
 })

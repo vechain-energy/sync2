@@ -67,7 +67,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { RelayedRequest, RelayedResponse } from './models'
 import { blake2b256 } from 'thor-devkit'
 import Summary from './Summary.vue'
@@ -79,7 +79,7 @@ import PageAction from 'src/components/PageAction.vue'
 const ACCEPTED_SUFFIX = '.accepted'
 const RESP_SUFFIX = '.resp'
 
-export default Vue.extend({
+export default defineComponent({
     components: { Summary, DelayRender, PageToolbar, PageContent, PageAction },
     props: {
         src: String // the url to fetch request object
@@ -119,7 +119,7 @@ export default Vue.extend({
                 for (let i = 0; i < 3; i++) {
                     try {
                         const resp = await this.$axios.get(
-                            `${this.src}?wait=1`,
+                            `${urlObject.href}?wait=1`,
                             { transformResponse: data => data } // raw data is needed to verify hash
                         )
                         if (resp.data) {
@@ -138,7 +138,6 @@ export default Vue.extend({
             }
             const request = RelayedRequest.validate(JSON.parse(resp.data))
             request.origin = resp.headers['x-data-origin']
-            // eslint-disable-next-line @typescript-eslint/camelcase
             this.$gtag.event('connex-sign', { event_label: request.origin })
             this.postStatus(ACCEPTED_SUFFIX, {})
             return request
@@ -203,9 +202,13 @@ export default Vue.extend({
             this.$router.replace({ name: 'sign-success', query: { type: request.type } })
         },
         async postStatus(suffix: string, result: object) {
+            const urlObject = this.urlObject
+            if (!urlObject) {
+                return
+            }
             for (let i = 0; i < 3; i++) {
                 try {
-                    await this.$axios.post(`${this.src}${suffix}`, result)
+                    await this.$axios.post(`${urlObject.href}${suffix}`, result)
                     return
                 } catch (err) {
                     console.warn(err)
@@ -222,7 +225,7 @@ export default Vue.extend({
             }
         }
     },
-    beforeDestroy() {
+    beforeUnmount() {
         this.respond()
     }
 })

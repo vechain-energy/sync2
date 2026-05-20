@@ -1,17 +1,12 @@
 import axios, { AxiosInstance } from 'axios'
-import { boot } from 'quasar/wrappers'
-import { VueConstructor } from 'vue'
+import { defineBoot } from '@quasar/app-webpack/wrappers'
 
-type BootParams = {
-    Vue: VueConstructor
-}
-
-declare module 'vue/types/vue' {
-    interface Vue {
+declare module 'vue' {
+    interface ComponentCustomProperties {
         $axios: AxiosInstance;
     }
 }
 
-export default boot(({ Vue }: BootParams) => {
-    Vue.prototype.$axios = axios.create({ timeout: 30 * 1000 })
+export default defineBoot(({ app }) => {
+    app.config.globalProperties.$axios = axios.create({ timeout: 30 * 1000 })
 })

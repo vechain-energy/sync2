@@ -9,6 +9,8 @@ export type Entity = {
     path?: string
 }
 
+const DEFAULT_HD_PATH = `m/44'/818'/0'/0`
+
 export function newVault(entity: Entity): Vault {
     const vault: Vault = {
         derive: index => {
@@ -23,8 +25,8 @@ export function newVault(entity: Entity): Vault {
                     get index() { return index },
                     unlock: key => {
                         const clearText = vault.decrypt(key)
-                        const words = clearText.toString('utf8').split(' ')
-                        return HDNode.fromMnemonic(words, entity.path).derive(index).privateKey!
+                        const words = clearText.toString('utf8').trim().split(/\s+/)
+                        return HDNode.fromMnemonic(words, entity.path || DEFAULT_HD_PATH).derive(index).privateKey!
                     }
                 }
             } else {

@@ -1,11 +1,17 @@
 {
-  "extends": "@quasar/app/tsconfig-preset",
+  "extends": "./.quasar/tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "useUnknownInCatchVariables": false,
     "experimentalDecorators": true,
     "skipLibCheck": true,
     "types": ["node", "@vechain/connex-types"],
     "paths": {
+      "vue-async-computed": ["src/shims-vue-async-computed.d.ts"],
       "src/*": ["src/*"],
       "app/*": ["*"],
       "components/*": ["src/components/*"],
@@ -16,7 +22,6 @@
       "core/*": ["src/core/*"]
     }
   },
-  "exclude": ["dist", ".quasar", "node_modules", "src-cordova/www", "src-cordova/platforms"],
   "ts-node": {
     "compilerOptions": {
       "module": "commonjs"

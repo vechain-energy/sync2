@@ -39,8 +39,20 @@ You can easily port your dApp by integrating [Connex v2](https://github.com/vech
 
 ### Requirements
 
-- Node.js 24 LTS
+- Node.js 24 LTS recommended. Node.js 22.12+ and npm 10+ are supported by `package.json`.
 - npm 10+
+
+### Toolchain
+
+- Quasar CLI: `@quasar/app-webpack` 4
+- UI runtime: Quasar 2 and Vue 3
+- Desktop runtime: Electron 42 and electron-builder 26
+- TypeScript: 6
+- Lint: ESLint 9 flat config
+
+ESLint 10 is not used yet because `@quasar/app-webpack` 4 declares peer support for ESLint 8 and 9 only.
+
+`npm audit --omit=dev` must be clean. The full dev audit still reports low severity `elliptic` advisories through VeChain/browser crypto packages; `npm audit fix --force` downgrades Connex and is not a safe production fix.
 
 ### Install the dependencies
 ```bash
@@ -83,7 +95,37 @@ npm test
 
 ### Build the app for production
 ```bash
-npx quasar build
+npm run build
+```
+
+### Build the PWA
+```bash
+npm run build:pwa
+```
+
+### Build macOS desktop packages
+```bash
+npm run build:electron:mac
+```
+
+### Desktop auto-update feed
+
+Electron releases use GitHub Releases as the update feed. The build points at
+`vechain-energy/sync2` by default. For another fork, set:
+
+```bash
+ELECTRON_RELEASE_OWNER=<owner> ELECTRON_RELEASE_REPO=<repo> npm run build:electron:mac
+```
+
+macOS auto-update only works from a signed and notarized app. The GitHub release
+workflow expects these repository secrets:
+
+```text
+MACOS_CSC_LINK
+MACOS_CSC_KEY_PASSWORD
+APPLE_API_KEY_ID
+APPLE_API_ISSUER
+APPLE_API_KEY_BASE64
 ```
 
 ## Version release flow
@@ -103,7 +145,8 @@ Browser version will be updated automatically by [Action](./.github/workflows/de
 + `git push origin v<version>`
 + Check [Action](./.github/workflows/release.yaml) for more detailed info.
 + The release workflow creates a draft GitHub Release and uploads built Electron binaries for Windows and macOS.
-+ Review the draft release assets, then publish the release manually.
++ Review the draft release assets.
++ Publish the draft release. Auto-update only sees published releases.
 </details>
 
 ## License

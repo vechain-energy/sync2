@@ -6,13 +6,15 @@
                 v-if="tokens.length>0"
                 padding
             >
-                <template v-for="(item, index) in tokens">
+                <template
+                    v-for="(item, index) in tokens"
+                    :key="item.symbol"
+                >
                     <q-separator
                         v-if="index !==0 "
-                        :key="item.symbol + 's'"
                         inset="item"
                     />
-                    <q-item :key="item.symbol">
+                    <q-item>
                         <q-item-section avatar>
                             <token-avatar
                                 :spec="item"
@@ -54,12 +56,12 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import PageContent from 'components/PageContent.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import TokenAvatar from 'components/TokenAvatar.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { PageContent, TokenAvatar, PageToolbar },
     data: () => {
         return {
@@ -82,10 +84,10 @@ export default Vue.extend({
                     return true
                 })
             },
-            default: []
+            default: () => []
         }
     },
-    async beforeDestroy() {
+    async beforeUnmount() {
         if (this.activeSymbols) {
             await this.$svc.config.token.saveActiveSymbols(this.activeSymbols)
         }

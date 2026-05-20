@@ -1,15 +1,10 @@
-import { boot } from 'quasar/wrappers'
-import { VueConstructor } from 'vue'
+import { defineBoot } from '@quasar/app-webpack/wrappers'
 import { Storage } from 'core/storage'
 import * as Blockchain from './blockchain'
 import * as Config from './config'
 import * as Wallet from './wallet'
 import * as Activity from './activity'
 import { groupBy } from 'src/utils/array'
-
-type BootParams = {
-    Vue: VueConstructor
-}
 
 type Service = {
     bc: ReturnType<typeof Blockchain.build>
@@ -18,13 +13,13 @@ type Service = {
     activity: ReturnType<typeof Activity.build>
 }
 
-declare module 'vue/types/vue' {
-    interface Vue {
+declare module 'vue' {
+    interface ComponentCustomProperties {
         $svc: Service
     }
 }
 
-export default boot(async ({ Vue }: BootParams) => {
+export default defineBoot(async ({ app }) => {
     const storage = await Storage.init()
 
     const config = Config.build(storage)
@@ -57,7 +52,7 @@ export default boot(async ({ Vue }: BootParams) => {
         }
     })()
 
-    Object.defineProperties(Vue.prototype, {
+    Object.defineProperties(app.config.globalProperties, {
         $svc: {
             get(): Service {
                 return {

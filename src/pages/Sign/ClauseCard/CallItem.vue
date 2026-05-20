@@ -28,7 +28,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import AddressAvatar from 'src/components/AddressAvatar.vue'
 
@@ -37,7 +37,7 @@ export type OpCall = {
     to: string
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: { AddressLabel, AddressAvatar },
     props: {
         op: Object as () => OpCall,

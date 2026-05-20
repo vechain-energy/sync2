@@ -10,7 +10,7 @@
             <page-toolbar
                 :title="$t('backup.title')"
                 icon="close"
-                @action="hide()"
+                :action="() => hide()"
             />
             <backup-panel
                 :wallet-id="walletId"
@@ -25,12 +25,13 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import BackupPanel from './BackupPanel.vue'
 import PageToolbar from 'src/components/PageToolbar.vue'
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['hide'],
     components: {
         QDialog,
         PageToolbar,

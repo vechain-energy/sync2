@@ -12,7 +12,7 @@ import {
     vetDomainResolverABI,
     vetDomainTextABI
 } from 'src/utils/vet-domain-profile'
-import Vue from 'vue'
+import { reactive } from 'vue'
 
 const VetDomainsResolverByGid: Record<string, string> = {
     // MainNet Resolver Utility
@@ -67,7 +67,7 @@ function serve(gid: string, pool: ReturnType<typeof createPool>) {
     const addressesByName = new Map<string, string>()
     const resolverByName = new Map<string, string>()
     const profileByName = new Map<string, VetDomainProfile>()
-    const vetDomainsReactor = Vue.observable({ v: 0 })
+    const vetDomainsReactor = reactive({ v: 0 })
 
     function touchVetDomains() {
         vetDomainsReactor.v++

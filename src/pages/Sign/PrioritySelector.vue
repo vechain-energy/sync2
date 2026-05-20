@@ -17,6 +17,7 @@
         <q-popup-proxy
             v-if="calcFee"
             position="bottom"
+            :breakpoint="0"
         >
             <q-card>
                 <q-list padding>
@@ -43,8 +44,8 @@
                         :key="i"
                         clickable
                         v-close-popup
-                        @click="$emit('change', l.value)"
-                        :active="priority === l.value"
+                        @click="onSelect(l.value)"
+                        :active="modelValue === l.value"
                     >
                         <q-item-section avatar>
                             <q-icon :name="l.icon" />
@@ -69,7 +70,7 @@
     </q-btn>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 
 type Level = {
@@ -78,14 +79,11 @@ type Level = {
     value: number
 }
 
-export default Vue.extend({
+export default defineComponent({
+    emits: ['update:modelValue', 'change'],
     components: { AmountLabel },
-    model: {
-        prop: 'priority',
-        event: 'change'
-    },
     props: {
-        priority: Number,
+        modelValue: Number,
         calcFee: Function as unknown as (() => ((priority: number) => string) | null)
     },
     computed: {
@@ -97,14 +95,20 @@ export default Vue.extend({
             ]
         },
         level(): Level | null {
-            return this.levels.find(l => l.value === this.priority) || null
+            return this.levels.find(l => l.value === this.modelValue) || null
         }
     },
     watch: {
-        priority(newVal: number) {
+        modelValue(newVal: number) {
             if (!this.levels.find(l => l.value === newVal)) {
-                this.$emit('change', this.levels[0].value)
+                this.onSelect(this.levels[0].value)
             }
+        }
+    },
+    methods: {
+        onSelect(value: number) {
+            this.$emit('update:modelValue', value)
+            this.$emit('change', value)
         }
     }
 })

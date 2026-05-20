@@ -3,13 +3,12 @@
         <slot :displayName="displayName(configLang)" />
         <pop-sheets
             v-bind="$attrs"
-            v-on="$listeners"
             :sheets="sheets"
         />
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import PopSheets, { Sheet } from 'src/components/PopSheets.vue'
 
 // maps lang to lang's localized display name
@@ -17,13 +16,17 @@ const displayNames: Record<string, string> = {
     'en-us': 'English (U.S.)',
     'zh-cn': '中文 (中国)'
 }
-
-type Item = {
-    lang: string
-    displayName: string
+type DisplayNamesConstructor = new (
+    locales: string[],
+    options: { type: 'language' }
+) => {
+    of(code: string): string | undefined
+}
+type IntlWithDisplayNames = typeof Intl & {
+    DisplayNames?: DisplayNamesConstructor
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: { PopSheets },
     computed: {
         sheets(): Sheet[] {
@@ -52,9 +55,12 @@ export default Vue.extend({
                 return name
             }
             try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const ns = new (Intl as any).DisplayNames([lang], { type: 'language' })
-                return ns.of(lang)
+                const DisplayNames = (Intl as IntlWithDisplayNames).DisplayNames
+                if (!DisplayNames) {
+                    return lang
+                }
+                const ns = new DisplayNames([lang], { type: 'language' })
+                return ns.of(lang) || lang
             } catch {
                 return lang
             }

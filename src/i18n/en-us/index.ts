@@ -1,7 +1,6 @@
 // This is just an example,
 // so you can safely delete all default props below
 
-/* eslint-disable @typescript-eslint/camelcase */
 export default {
     common: {
         ok: 'OK',
@@ -18,6 +17,7 @@ export default {
         copy_failed: 'you need to copy manually. Clipboard access failed.',
         close: 'Close',
         back: 'Back',
+        address: 'Address',
         more: 'More',
         open_link: 'Open link',
         view_on_explorer: 'View on explorer',
@@ -88,6 +88,7 @@ export default {
         action_swap: 'Swap',
         action_create: 'Create Now',
         msg_upgrade: 'New version is ready :)',
+        msg_upgrade_failed: 'you need to install the signed release manually. Auto-upgrade could not start.',
         // request user to enter "ok" to confirm
         msg_delete: 'Please enter "ok" to delete wallet. This cannot be undone. Unless you have backed up your wallet beforehand.',
         msg_backup: 'Wallet not backed up! Backup your wallet keep your assets safe.',
@@ -145,18 +146,18 @@ export default {
         title: 'Address',
         label_assets: 'Assets',
         action_receive: 'Receive',
-        action_export_private_key: 'Export Private Key',
+        action_export_private_key: 'Backup Private Key',
         action_edit_vns_profile: 'Edit VNS Profile',
         action_vns_profile_avatar: 'Avatar',
         action_vns_profile_remove_avatar: 'Remove',
-        title_export_private_key: 'Private Key',
+        title_export_private_key: 'Backup Private Key',
         label_private_key: 'Private Key',
         label_vns_profile_display: 'Display Name',
         label_vns_profile_description: 'Description',
         label_vns_profile_email: 'Email',
         label_vns_profile_url: 'Website',
         label_vns_profile_x: 'X Handle',
-        msg_export_private_key_warning: 'Anyone with this private key can move assets from this address. Sync2 will never ask you to share it. Type EXPORT to continue.',
+        msg_export_private_key_warning: 'Anyone with this private key can move assets from this address. Sync2 will never ask you to share it.',
         msg_private_key_reveal_warning: 'Keep this private key offline. Do not share it.',
         msg_vns_profile_warning: 'Changes update the profile records for {name} on-chain.',
         msg_vns_profile_load_error: 'you need to try again. Profile records could not be loaded.',
@@ -165,14 +166,17 @@ export default {
         msg_vns_profile_updated: 'VNS profile update submitted',
         msg_vns_profile_display_error: 'you need to use 25 characters or less',
         msg_vns_profile_description_error: 'you need to use 100 characters or less',
-        msg_vns_profile_url_error: 'you need to enter a http or https URL'
+        msg_vns_profile_url_error: 'you need to enter a http or https URL',
+        msg_wallet_not_found: 'you need to select an existing wallet',
+        msg_address_not_found: 'you need to select an existing address'
     },
     asset: {
         title: 'Asset',
         label_history: 'History',
         msg_no_history: 'No transfer history',
         msg_no_more: '- The End - ',
-        msg_history_load_error: 'you need to check the network and try again. History could not be loaded.'
+        msg_history_load_error: 'you need to check the network and try again. History could not be loaded.',
+        msg_asset_not_found: 'you need to select an enabled asset'
     },
     send: {
         title: 'Send',
@@ -184,6 +188,8 @@ export default {
         msg_invalid_address: 'Please enter a valid address',
         msg_invalid_address_checksum: 'Address checksum failed',
         msg_vet_domain_unresolved: 'you need to check the name or switch network',
+        msg_select_wallet: 'you need to open a wallet before sending',
+        msg_no_asset: 'you need to enable an asset before sending',
         action_send: 'Send'
     },
     swap: {
@@ -264,21 +270,30 @@ export default {
     },
     backup: {
         title: 'Backup',
+        title_private_key: 'Backup Private Key',
         action_next_verify: 'Let’s Verify',
         label_backed_up: 'Wallet Backed Up',
         msg_backed_up: 'Never share your mnemonic words with anyone,store it securely!',
         msg_confirm_your_mnemonic: 'Verify Your Mnemonic Words',
         msg_backup_intro: 'The mnemonic words stores all the information that is needed at any point in time to recover your wallet',
         label_backup_tips: 'Read Before Backup',
+        label_private_key_backup_tips: 'Backup Private Key',
         msg_backup_tips_1: 'Write it down in given order',
         msg_backup_tips_2: 'Keep it in a secure place',
         msg_backup_tips_3: 'No screenshot or screen recording',
+        msg_private_key_backup_intro: 'This private key controls one address. Anyone with it can move assets from that address.',
+        msg_private_key_backup_tips_1: 'Write it down exactly',
+        msg_private_key_backup_tips_2: 'Keep it offline in a secure place',
+        msg_private_key_backup_tips_3: 'No screenshot or screen recording',
         label_your_mnemonic: 'Write Down Your Mnemonic Words',
+        label_your_private_key: 'Write Down Your Private Key',
         msg_mnemonic_backup_only: 'you need to export the private key for this wallet',
+        msg_private_key_backup_only: 'you need to select a software wallet address',
 
         // notify
         msg_wallet_not_found: 'Wallet not found',
         msg_backup_load_failed: 'you need to try again. Backup words could not be loaded.',
+        msg_private_key_backup_load_failed: 'you need to try again. Private key could not be loaded.',
         msg_backup_save_failed: 'you need to try again. Backup status was not saved.'
     },
     sign: {

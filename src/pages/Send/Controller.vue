@@ -1,7 +1,7 @@
 <template>
     <q-form
         class="column fit no-wrap"
-        v-if="tokenList.length"
+        v-if="canSend"
         @submit="onSend"
     >
         <page-toolbar
@@ -34,7 +34,7 @@
                 v-model="amount"
                 :error-message="errors.amount"
                 :error="!!errors.amount"
-                @input="errors.amount = ''"
+                @update:model-value="errors.amount = ''"
                 dense
                 type="text"
                 inputmode="decimal"
@@ -53,9 +53,29 @@
             />
         </page-action>
     </q-form>
+    <div
+        v-else
+        class="column fit no-wrap"
+    >
+        <page-toolbar :title="$t('send.title')" />
+        <page-content class="col">
+            <q-item-label header>
+                {{invalidContextMessage}}
+            </q-item-label>
+        </page-content>
+        <page-action>
+            <q-btn
+                unelevated
+                class="col-6 col-sm-auto"
+                color="primary"
+                :label="$t('common.back')"
+                @click="$backOrHome()"
+            />
+        </page-action>
+    </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { abi, address } from 'thor-devkit'
 import { abis } from 'src/consts'
 import To from './To.vue'
@@ -67,8 +87,9 @@ import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
 import { isVetDomainName } from 'src/utils/vet-domains'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
+import { parseRouteInteger } from 'src/utils/route'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         To,
         TokenSelector,
@@ -94,7 +115,8 @@ export default Vue.extend({
     },
     asyncComputed: {
         wallet(): Promise<M.Wallet | null> {
-            return this.$svc.wallet.get(parseInt(this.wid, 10))
+            const id = this.walletIdNumber
+            return id === null ? Promise.resolve(null) : this.$svc.wallet.get(id)
         },
         recent: {
             async get(): Promise<string[]> {
@@ -103,7 +125,7 @@ export default Vue.extend({
                 }
                 return this.$svc.config.getRecentRecipients(this.wallet.gid)
             },
-            default: []
+            default: () => []
         },
         wallets: {
             async get(): Promise<M.Wallet[]> {
@@ -112,7 +134,7 @@ export default Vue.extend({
                 }
                 return await this.$svc.wallet.getByGid(this.wallet.gid)
             },
-            default: []
+            default: () => []
         },
         tokenList: {
             async get(): Promise<M.TokenSpec[]> {
@@ -131,10 +153,25 @@ export default Vue.extend({
                         (activeSymbols.includes(token.symbol) || token.permanent)
                 })
             },
-            default: []
+            default: () => []
         }
     },
     computed: {
+        walletIdNumber(): number | null {
+            return parseRouteInteger(this.wid)
+        },
+        addressIndexNumber(): number | null {
+            return parseRouteInteger(this.i)
+        },
+        canSend(): boolean {
+            return !!this.wallet && !!this.address && this.tokenList.length > 0 && !!this.currentToken
+        },
+        invalidContextMessage(): string {
+            if (!this.wallet || !this.address) {
+                return this.$t('send.msg_select_wallet').toString()
+            }
+            return this.$t('send.msg_no_asset').toString()
+        },
         toWallets(): AddressGroup[] {
             let list = [...this.wallets.map<AddressGroup>(w => { return { name: w.meta.name, list: w.meta.addresses } })]
             if (this.recent.length) {
@@ -152,21 +189,49 @@ export default Vue.extend({
             return this.tokenList.find(item => item.symbol === this.sym)
         },
         from(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i, 10)] : ''
+            const index = this.addressIndexNumber
+            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i, 10)] : ''
+            const index = this.addressIndexNumber
+            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
+        }
+    },
+    watch: {
+        tokenList(): void {
+            this.ensureSelectedToken()
+        },
+        symbol(value?: string): void {
+            this.sym = value || 'VET'
+            this.ensureSelectedToken()
         }
     },
     methods: {
         isAddress: address.test,
+        fallbackToken(): M.TokenSpec | undefined {
+            return this.tokenList.find(token => token.symbol === 'VET') || this.tokenList[0]
+        },
+        ensureSelectedToken(): void {
+            if (this.currentToken || this.tokenList.length === 0) {
+                return
+            }
+            const token = this.fallbackToken()
+            if (!token) {
+                return
+            }
+            this.sym = token.symbol
+        },
         checkSumAddress(v: string): boolean {
             return !(v !== v.toLowerCase() && address.toChecksumed(v) !== v)
         },
         balanceCheck(v: string): boolean {
+            const token = this.currentToken
+            if (!token) {
+                return false
+            }
             let pattern = '^(([1-9]{1}\\d*)|(0{1}))'
-            if (this.currentToken!.decimals > 0) {
-                pattern += `(\\.\\d{1,${this.currentToken!.decimals}})?$`
+            if (token.decimals > 0) {
+                pattern += `(\\.\\d{1,${token.decimals}})?$`
             } else {
                 pattern += '$'
             }
@@ -191,35 +256,39 @@ export default Vue.extend({
             if (!this.validate()) {
                 return
             }
+            const token = this.currentToken
+            const wallet = this.wallet
+            if (!token || !wallet) {
+                return
+            }
             let msgItem!: Connex.Vendor.TxMessage[0]
             let comment = ''
             if (this.sym === 'VET') {
                 comment = `${this.$t('send.title')} ${this.amount} VET`
                 msgItem = {
                     to: this.to,
-                    value: toWei(this.amount, this.currentToken!.decimals),
+                    value: toWei(this.amount, token.decimals),
                     comment
                 }
             } else {
                 const func = new abi.Function(abis.transfer)
                 comment = `${this.$t('send.title')} ${this.amount} ${this.sym}`
-                const data = func.encode(this.to, toWei(this.amount, this.currentToken!.decimals))
+                const data = func.encode(this.to, toWei(this.amount, token.decimals))
                 msgItem = {
-                    to: this.currentToken!.address,
+                    to: token.address,
                     value: 0,
                     data: data,
                     comment
                 }
             }
             try {
-                await this.$signTx(this.wallet!.gid, {
+                await this.$signTx(wallet.gid, {
                     message: [msgItem],
                     options: {
                         signer: this.from,
                         comment: comment
                     }
                 })
-                // eslint-disable-next-line @typescript-eslint/camelcase
                 this.$gtag.event('token-send', { event_label: this.sym })
                 const temp = [this.to, ...this.recent].reduce((result: string[], cv: string | null) => {
                     (cv && !result.includes(cv.toLowerCase())) && result.push(cv.toLowerCase())

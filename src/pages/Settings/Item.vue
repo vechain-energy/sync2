@@ -1,7 +1,6 @@
 <template>
     <q-item
         v-bind="$attrs"
-        v-on="$listeners"
     >
         <q-item-section avatar>
             <q-avatar :icon="icon" />
@@ -22,8 +21,8 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
-export default Vue.extend({
+import { defineComponent } from 'vue'
+export default defineComponent({
     props: {
         icon: String,
         title: String,

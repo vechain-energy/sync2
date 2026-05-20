@@ -27,4 +27,5 @@ export function connect() {
     return connector.connect()
 }
 
-export { default as App, Account, StatusCodes } from '@vechain/hw-app-vet'
+export { default as App, StatusCodes } from '@vechain/hw-app-vet'
+export type { Account } from '@vechain/hw-app-vet'
