@@ -8,7 +8,8 @@ export default defineComponent({
         activity: Object as () => M.Activity
     },
     computed: {
-        thor(): Connex.Thor { return this.$svc.bc(this.activity.gid).thor }
+        thor(): Connex.Thor { return this.$svc.bc(this.activity.gid).thor },
+        headNumber(): number { return this.thor.status.head.number }
     },
     asyncComputed: {
         task: {
@@ -19,7 +20,7 @@ export default defineComponent({
                 }
 
                 const tx = Transaction.decode(Buffer.from(a.glob.encoded.slice(2), 'hex'))
-                const headNum = this.thor.status.head.number
+                const headNum = this.headNumber
 
                 const values: Parameters<Vue['$svc']['activity']['update']>[1] = {}
 
@@ -31,7 +32,7 @@ export default defineComponent({
                         values.status = 'completed'
                     }
                 } else {
-                    const expired = headNum > parseInt(tx.body.blockRef.slice(0, 10)) +
+                    const expired = headNum > Number.parseInt(tx.body.blockRef.slice(2, 10), 16) +
                         tx.body.expiration +
                         CONFIRMED_N
 
@@ -51,9 +52,12 @@ export default defineComponent({
         }
     },
     watch: {
-        thor() {
+        headNumber() {
             this.$asyncComputed.task.update()
         }
+    },
+    mounted() {
+        this.$asyncComputed.task.update()
     },
     render(): null {
         return null

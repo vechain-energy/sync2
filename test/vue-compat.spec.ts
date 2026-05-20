@@ -105,4 +105,12 @@ describe('Vue compat migration guards', () => {
         assert.ok(scanner.includes("$emit('scan'"))
         assert.ok(controller.includes('@scan="onScanned"'))
     })
+
+    it('allows manual async-computed updates when automatic updates are disabled', () => {
+        const asyncComputed = fs.readFileSync(path.join(__dirname, '..', 'src/boot/misc/async-computed.ts'), 'utf8')
+
+        assert.ok(asyncComputed.includes('force = false'))
+        assert.ok(asyncComputed.includes("!force && typeof entry !== 'function' && entry.shouldUpdate"))
+        assert.ok(asyncComputed.includes('resolveAsyncComputed(vm, key, entry, runId, true)'))
+    })
 })

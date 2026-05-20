@@ -76,14 +76,14 @@ function setState(state: AsyncComputedState, next: AsyncComputedState['state']) 
     state.error = next === 'error'
 }
 
-function resolveAsyncComputed(vm: AsyncComputedVm, key: string, entry: AsyncComputedEntry, runId: number) {
+function resolveAsyncComputed(vm: AsyncComputedVm, key: string, entry: AsyncComputedEntry, runId: number, force = false) {
     const state = vm.$data._asyncComputed?.[key]
     const getter = entryGetter(entry)
     if (!state || !getter || vm.$data._asyncComputedDestroyed) {
         return runId
     }
 
-    if (typeof entry !== 'function' && entry.shouldUpdate && !entry.shouldUpdate.call(vm)) {
+    if (!force && typeof entry !== 'function' && entry.shouldUpdate && !entry.shouldUpdate.call(vm)) {
         return runId
     }
 
@@ -141,7 +141,7 @@ export const AsyncComputed = {
                         success: false,
                         error: false,
                         update: () => {
-                            runId = resolveAsyncComputed(vm, key, entry, runId)
+                            runId = resolveAsyncComputed(vm, key, entry, runId, true)
                             state.updateRunId = runId
                         }
                     }

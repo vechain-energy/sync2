@@ -11,6 +11,7 @@ export default defineComponent({
     },
     computed: {
         thor(): Connex.Thor { return this.$svc.bc(this.gid).thor },
+        headNumber(): number { return this.thor.status.head.number },
         addresses(): string[] {
             if (!this.wallets) {
                 return []
@@ -98,7 +99,7 @@ export default defineComponent({
         }
     },
     watch: {
-        thor() {
+        headNumber() {
             this.$asyncComputed.events.update()
             this.$asyncComputed.transfers.update()
         },
@@ -140,6 +141,10 @@ export default defineComponent({
                 }
             })
         }
+    },
+    mounted() {
+        this.$asyncComputed.events.update()
+        this.$asyncComputed.transfers.update()
     },
     methods: {
         // provides stored range for the query
