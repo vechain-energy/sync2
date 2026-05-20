@@ -60,6 +60,13 @@ export function newUpdater() {
             const result = await autoUpdater.checkForUpdates()
             return result ? result.updateInfo : null
         },
-        quitAndInstall() { autoUpdater.quitAndInstall() }
+        quitAndInstall() {
+            if (status !== 'downloaded') {
+                throw new Error('you need to wait until the update is downloaded before installing it.')
+            }
+
+            autoUpdater.quitAndInstall()
+            return true
+        }
     }
 }

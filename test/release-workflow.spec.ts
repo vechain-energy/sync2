@@ -28,5 +28,19 @@ describe('release workflow guards', () => {
         assert.strictEqual(explicitPublishCommands.length, 2)
         assert.ok(workflow.includes('Create draft GitHub Release'))
         assert.ok(workflow.includes('GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}'))
+        assert.ok(workflow.includes('ELECTRON_RELEASE_OWNER: ${{ github.repository_owner }}'))
+        assert.ok(workflow.includes('ELECTRON_RELEASE_REPO: ${{ github.event.repository.name }}'))
+    })
+
+    it('requires signed and notarized macOS releases for auto-update', () => {
+        const workflow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/release.yaml'), 'utf8')
+
+        assert.ok(workflow.includes('Verify macOS signing secrets'))
+        assert.ok(workflow.includes('MACOS_CSC_LINK'))
+        assert.ok(workflow.includes('MACOS_CSC_KEY_PASSWORD'))
+        assert.ok(workflow.includes('APPLE_API_KEY_ID'))
+        assert.ok(workflow.includes('APPLE_API_ISSUER'))
+        assert.ok(workflow.includes('APPLE_API_KEY_BASE64'))
+        assert.ok(workflow.includes('macOS auto-update needs a signed and notarized release'))
     })
 })

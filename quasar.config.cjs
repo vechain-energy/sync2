@@ -12,6 +12,7 @@ const { defineConfig } = require('@quasar/app-webpack/wrappers')
 const path = require('path')
 const { execSync } = require('child_process')
 const webpack = require('webpack')
+const { getElectronReleaseRepo } = require('./build/release-config.cjs')
 
 const appVersion = require('./package.json').version
 const appBuild = execSync('git --no-pager log -n 1 --date=short --pretty="%ad.%h"')
@@ -23,6 +24,7 @@ const electronBuildArches = (process.env.ELECTRON_BUILD_ARCHES || 'x64,arm64')
   .map(arch => arch.trim())
   .filter(Boolean)
 const electronMacTarget = process.env.ELECTRON_MAC_TARGET || 'default'
+const electronReleaseRepo = getElectronReleaseRepo(process.env)
 
 module.exports = defineConfig(function (ctx) {
   return {
@@ -293,6 +295,11 @@ module.exports = defineConfig(function (ctx) {
         productName: 'Sync2',
         appId: 'org.vechain.sync2',
         artifactName: '${productName}-${os}-${arch}-${version}.${ext}',
+        publish: [{
+          provider: 'github',
+          owner: electronReleaseRepo.owner,
+          repo: electronReleaseRepo.repo
+        }],
         protocols: {
             name: 'VeChain Connex',
             schemes: ['connex']

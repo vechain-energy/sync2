@@ -148,6 +148,18 @@ describe('UI regression guards', () => {
         assert.ok(source.includes("icon: 'src-electron/icons/icon.icns'"))
     })
 
+    it('keeps Upgrade Now actionable when updater install fails', () => {
+        const source = sourceFile('src/pages/Index/UpgradeTip.vue')
+        const updater = sourceFile('src-electron/main-process/updater.ts')
+
+        assert.ok(source.includes('installing: false'))
+        assert.ok(source.includes(':loading="installing"'))
+        assert.ok(source.includes("this.$t('index.msg_upgrade_failed').toString()"))
+        assert.ok(source.includes("console.warn('install update:', err)"))
+        assert.ok(updater.includes("status !== 'downloaded'"))
+        assert.ok(updater.includes('autoUpdater.quitAndInstall()'))
+    })
+
     it('surfaces signing failures without reporting user-cancelled dialogs', () => {
         const txDialog = sourceFile('src/pages/Sign/TxDialog.vue')
         const certDialog = sourceFile('src/pages/Sign/CertDialog.vue')

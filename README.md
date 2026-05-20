@@ -108,6 +108,26 @@ npm run build:pwa
 npm run build:electron:mac
 ```
 
+### Desktop auto-update feed
+
+Electron releases use GitHub Releases as the update feed. The build points at
+`vechain-energy/sync2` by default. For another fork, set:
+
+```bash
+ELECTRON_RELEASE_OWNER=<owner> ELECTRON_RELEASE_REPO=<repo> npm run build:electron:mac
+```
+
+macOS auto-update only works from a signed and notarized app. The GitHub release
+workflow expects these repository secrets:
+
+```text
+MACOS_CSC_LINK
+MACOS_CSC_KEY_PASSWORD
+APPLE_API_KEY_ID
+APPLE_API_ISSUER
+APPLE_API_KEY_BASE64
+```
+
 ## Version release flow
 
 <details>
@@ -125,7 +145,8 @@ Browser version will be updated automatically by [Action](./.github/workflows/de
 + `git push origin v<version>`
 + Check [Action](./.github/workflows/release.yaml) for more detailed info.
 + The release workflow creates a draft GitHub Release and uploads built Electron binaries for Windows and macOS.
-+ Review the draft release assets, then publish the release manually.
++ Review the draft release assets.
++ Publish the draft release. Auto-update only sees published releases.
 </details>
 
 ## License
