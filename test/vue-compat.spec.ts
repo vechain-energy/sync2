@@ -24,6 +24,25 @@ describe('Vue compat migration guards', () => {
         assert.deepStrictEqual(offenders, [])
     })
 
+    it('does not rely on legacy listener or scoped slot aliases', () => {
+        const root = path.join(__dirname, '..', 'src')
+        const legacyPatterns = [/\$listeners/, /\$scopedSlots/, /\$on\(/, /\$once\(/, /\$off\(/]
+        const offenders = sourceFiles(root)
+            .filter(file => legacyPatterns.some(pattern => pattern.test(fs.readFileSync(file, 'utf8'))))
+            .map(file => path.relative(path.join(__dirname, '..'), file))
+
+        assert.deepStrictEqual(offenders, [])
+    })
+
+    it('uses Vue 3 render functions without injected h arguments', () => {
+        const root = path.join(__dirname, '..', 'src')
+        const offenders = sourceFiles(root)
+            .filter(file => /render\s*\(\s*h\s*\)/.test(fs.readFileSync(file, 'utf8')))
+            .map(file => path.relative(path.join(__dirname, '..'), file))
+
+        assert.deepStrictEqual(offenders, [])
+    })
+
     it('declares custom events emitted by components', () => {
         const root = path.join(__dirname, '..', 'src')
         const offenders = sourceFiles(root)

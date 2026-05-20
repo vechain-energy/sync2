@@ -40,6 +40,9 @@ export default defineComponent({
         }
     },
     methods: {
+        rememberSigner() {
+            localStorage.setItem(`last-signer-${this.gid}`, this.signer)
+        },
         async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<SignableTransaction>): Promise<Buffer> {
             if (isSoftwareWalletType(wallet.meta.type)) {
                 // acquire user master key
@@ -84,9 +87,5 @@ export default defineComponent({
     beforeMount() {
         const key = `last-signer-${this.gid}`
         this.signer = localStorage.getItem(key) || '' // load last signer
-        // save on ok
-        this.$once('ok', () => {
-            localStorage.setItem(key, this.signer)
-        })
     }
 })

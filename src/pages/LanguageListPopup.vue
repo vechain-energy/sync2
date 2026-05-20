@@ -3,7 +3,6 @@
         <slot :displayName="displayName(configLang)" />
         <pop-sheets
             v-bind="$attrs"
-            v-on="$listeners"
             :sheets="sheets"
         />
     </div>

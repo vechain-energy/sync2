@@ -2,7 +2,6 @@
     <div
         class="text-white column no-wrap q-py-xs"
         :style="{...background}"
-        v-on="$listeners"
     >
         <q-item>
             <q-item-section avatar>

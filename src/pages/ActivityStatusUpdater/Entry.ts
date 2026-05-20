@@ -55,7 +55,7 @@ export default defineComponent({
             this.$asyncComputed.task.update()
         }
     },
-    render(h) {
-        return h()
+    render(): null {
+        return null
     }
 })

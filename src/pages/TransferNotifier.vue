@@ -192,8 +192,8 @@ export default defineComponent({
             })
         }
     },
-    render(h) {
-        return h()
+    render(): null {
+        return null
     }
 })
 </script>

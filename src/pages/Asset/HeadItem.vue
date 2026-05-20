@@ -1,6 +1,5 @@
 <template>
     <q-item
-        v-on="$listeners"
         v-bind="$attrs"
     >
         <q-item-section avatar>

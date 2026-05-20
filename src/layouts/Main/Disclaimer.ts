@@ -29,7 +29,7 @@ export default defineComponent({
             localStorage.setItem(KEY_DISCLAIMER_ACCEPTED, 't')
         }
     },
-    render(h) {
-        return h()
+    render(): null {
+        return null
     }
 })

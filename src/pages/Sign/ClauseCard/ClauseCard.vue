@@ -2,7 +2,6 @@
     <q-card
         flat
         class="q-py-sm"
-        v-on="$listeners"
     >
         <div
             v-for="(op, i) in ops"

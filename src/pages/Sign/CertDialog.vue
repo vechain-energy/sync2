@@ -92,6 +92,7 @@ export default defineComponent({
         hide() { (this.$refs.dialog as QDialog).hide() },
 
         ok(result: M.CertResponse) {
+            this.rememberSigner()
             this.$emit('ok', result)
             this.hide()
         },

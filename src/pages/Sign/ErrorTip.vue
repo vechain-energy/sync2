@@ -1,7 +1,6 @@
 <template>
     <q-item
         v-bind="$attrs"
-        v-on="$listeners"
         :class="classes"
         :dark="!invert"
     >

@@ -1,7 +1,6 @@
 <template>
     <q-popup-proxy
         v-bind="$attrs"
-        v-on="$listeners"
         position="bottom"
         v-model="opened"
     >

@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue'
+import { defineComponent, h, renderSlot, VNode } from 'vue'
 
 /* example:
 <delay-render :t="100">
@@ -26,14 +26,14 @@ export default defineComponent({
             clearTimeout(this.timer)
         }
     },
-    render(h) {
+    render(): VNode | VNode[] | null {
         if (this.timeUp) {
-            const slots = this.$slots.default || []
+            const slot = renderSlot(this.$slots, 'default')
             if (this.tag) {
-                return h(this.tag, slots)
+                return h(this.tag, [slot])
             }
-            return slots.length > 1 ? h('fragment', slots) : slots[0]
+            return slot
         }
-        return h()
+        return null
     }
 })

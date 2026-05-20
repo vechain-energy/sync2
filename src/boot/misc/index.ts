@@ -1,6 +1,6 @@
 import { defineBoot } from '@quasar/app-webpack/wrappers'
-import { ComponentPublicInstance } from 'vue'
 import { configureCompat } from '@vue/compat'
+import { ComponentPublicInstance } from 'vue'
 import * as State from './state'
 import * as Plugins from './plugins'
 import * as Modals from './modals'
@@ -18,14 +18,6 @@ type CompatAppConfig = {
     compatConfig?: Record<string, unknown>
 }
 
-type ComponentInternals = {
-    $: {
-        vnode: {
-            props?: Record<string, unknown> | null
-        }
-    }
-}
-
 const beforeUnmountCleanups = new WeakMap<ComponentPublicInstance, Array<() => void>>()
 
 function disableLegacyVModel(component: CompatComponent | undefined) {
@@ -37,29 +29,6 @@ function disableLegacyVModel(component: CompatComponent | undefined) {
         ...component.compatConfig,
         COMPONENT_V_MODEL: false
     }
-}
-
-function legacyEventName(key: string) {
-    if (!key.startsWith('on') || key.length <= 2) {
-        return null
-    }
-
-    const raw = key.slice(2)
-    return raw.charAt(0).toLowerCase() + raw.slice(1)
-}
-
-function legacyListeners(vm: ComponentPublicInstance) {
-    const vnodeProps = ((vm as ComponentPublicInstance & ComponentInternals).$.vnode.props || {})
-    const listeners: Record<string, unknown> = {}
-
-    for (const [key, value] of Object.entries(vnodeProps)) {
-        const eventName = legacyEventName(key)
-        if (eventName && typeof value === 'function') {
-            listeners[eventName] = value
-        }
-    }
-
-    return listeners
 }
 
 function addBeforeUnmountCleanup(vm: ComponentPublicInstance, cleanup: () => void) {
@@ -150,16 +119,6 @@ export default defineBoot(({ app }) => {
                     })
                     window.addEventListener(event, listener)
                 }
-            }
-        },
-        $listeners: {
-            get() {
-                return legacyListeners(this as ComponentPublicInstance)
-            }
-        },
-        $scopedSlots: {
-            get() {
-                return (this as ComponentPublicInstance).$slots
             }
         }
     })
