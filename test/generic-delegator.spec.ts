@@ -12,6 +12,7 @@ import {
     genericFeeModeFor,
     getGenericDelegatorUrl,
     getGenericGasTokenSpec,
+    parseGenericDelegatorDepositAccount,
     parseGenericDelegatorEstimate,
     shouldShowGenericFeeOptions,
     speedFromFeePriority
@@ -73,6 +74,14 @@ describe('generic delegator helpers', () => {
         )
         assert.strictEqual(genericDelegatorDepositUrl(baseUrl), 'https://testnet.delegator.vechain.org/api/v1/deposit/account')
         assert.strictEqual(genericDelegatorSignUrl(baseUrl, 'B3TR'), 'https://testnet.delegator.vechain.org/api/v1/sign/transaction/b3tr')
+    })
+
+    it('accepts only valid Generic Delegator deposit account addresses', () => {
+        assert.strictEqual(parseGenericDelegatorDepositAccount({ depositAccount }), depositAccount)
+        assert.throws(
+            () => parseGenericDelegatorDepositAccount({ depositAccount: 'not-address' }),
+            /valid Generic Delegator deposit account/
+        )
     })
 
     it('parses regular, medium, and high token estimates', () => {

@@ -1,4 +1,4 @@
-import { abi } from 'thor-devkit'
+import { abi, address } from 'thor-devkit'
 import { BigNumber } from 'bignumber.js'
 import { abis, genesises } from '../../consts'
 
@@ -170,7 +170,7 @@ export function parseGenericDelegatorEstimate(
 }
 
 export function parseGenericDelegatorDepositAccount(response: unknown): string {
-    if (!isRecord(response) || typeof response.depositAccount !== 'string' || !response.depositAccount) {
+    if (!isRecord(response) || typeof response.depositAccount !== 'string' || !address.test(response.depositAccount)) {
         throw new Error('you need a valid Generic Delegator deposit account')
     }
     return response.depositAccount
