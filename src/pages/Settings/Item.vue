@@ -22,8 +22,8 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
-export default Vue.extend({
+import { defineComponent } from 'vue'
+export default defineComponent({
     props: {
         icon: String,
         title: String,

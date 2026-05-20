@@ -1,4 +1,4 @@
-import { RouteConfig } from 'vue-router'
+import { RouteRecordRaw } from 'vue-router'
 import Main from 'layouts/Main'
 import Index from 'pages/Index'
 import Address from 'pages/Address'
@@ -15,7 +15,7 @@ import Activities from 'pages/Activities'
 import Domains from 'pages/Domains'
 import Swap from 'pages/Swap'
 
-const routes: RouteConfig[] = [
+const routes: RouteRecordRaw[] = [
     {
         path: '/',
         component: Main,
@@ -83,7 +83,7 @@ const routes: RouteConfig[] = [
 // Always leave this as last one
 if (process.env.MODE !== 'ssr') {
     routes.push({
-        path: '*',
+        path: '/:catchAll(.*)*',
         redirect: '/'
     })
 }

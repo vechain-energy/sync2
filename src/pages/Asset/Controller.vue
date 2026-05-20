@@ -60,7 +60,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import Logs from './Logs.vue'
 import HeadItem from './HeadItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
@@ -68,7 +68,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import AmountLabel from 'components/AmountLabel.vue'
-export default Vue.extend({
+export default defineComponent({
     components: {
         Logs,
         HeadItem,

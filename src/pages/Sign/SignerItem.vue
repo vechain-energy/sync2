@@ -33,12 +33,12 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AddressAvatar from 'src/components/AddressAvatar.vue'
 import { address } from 'thor-devkit'
 import AddressLabel from 'src/components/AddressLabel.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { AddressAvatar, AddressLabel },
     props: {
         text: String,

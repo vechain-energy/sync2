@@ -30,7 +30,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import * as Ledger from 'src/utils/ledger'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
@@ -45,7 +45,7 @@ type Step = {
     hint: string
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: { PromptDialogToolbar, Steps },
     data() {
         return {
@@ -78,7 +78,7 @@ export default Vue.extend({
     },
     async mounted() {
         const signal = new Deferred<never>()
-        this.$once('hook:beforeDestroy', () => {
+        this.$once('hook:beforeUnmount', () => {
             signal.reject(new Error('interrupted'))
         })
 

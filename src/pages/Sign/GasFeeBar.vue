@@ -62,11 +62,11 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import TokenAvatar from 'src/components/TokenAvatar.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { AmountLabel, TokenAvatar },
     props: {
         fee: String,

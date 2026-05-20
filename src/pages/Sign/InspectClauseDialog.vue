@@ -88,7 +88,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
@@ -114,7 +114,7 @@ async function queryAbi(signature: string): Promise<abi.Function.Definition | nu
     return abiItem
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: { AddressLabel, AmountLabel },
     props: {
         index: Number,

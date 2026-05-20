@@ -1,5 +1,5 @@
 import Controller from './Controller.vue'
-export default Controller.extend({ name: 'Backup' })
+export default Object.assign(Controller, { name: 'Backup' })
 
 import BackupDialog from './BackupDialog.vue'
 export { BackupDialog }

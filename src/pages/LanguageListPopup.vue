@@ -9,7 +9,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import PopSheets, { Sheet } from 'src/components/PopSheets.vue'
 
 // maps lang to lang's localized display name
@@ -18,12 +18,7 @@ const displayNames: Record<string, string> = {
     'zh-cn': '中文 (中国)'
 }
 
-type Item = {
-    lang: string
-    displayName: string
-}
-
-export default Vue.extend({
+export default defineComponent({
     components: { PopSheets },
     computed: {
         sheets(): Sheet[] {

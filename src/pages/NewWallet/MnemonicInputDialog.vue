@@ -22,7 +22,7 @@
                 <q-expansion-item :label="$t('newWallet.label_advance')" dense>
                     <q-card class="q-gutter-sm">
                         <q-card-section>
-                            <q-option-group class="q-mb-md" dense @input="onPathTypeChange" inline v-model="pathType" :options="options" />
+                            <q-option-group class="q-mb-md" dense @update:model-value="onPathTypeChange" inline v-model="pathType" :options="options" />
                             <q-input
                                 outlined
                                 v-model.trim="state.path"
@@ -55,7 +55,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import { mnemonic } from 'thor-devkit'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
@@ -67,7 +67,7 @@ const ETH_DERIVATION_PATH = `60'/0'/0`
 // eslint-disable-next-line quotes
 const PREFIX = `m/44'/`
 
-export default Vue.extend({
+export default defineComponent({
     components: { PromptDialogToolbar },
     props: {
         state: Object as () => { words: string, path: string }
@@ -94,7 +94,7 @@ export default Vue.extend({
             this.pathError = ''
         }
     },
-    destroyed() {
+    unmounted() {
         this.state.words = ''
         this.state.path = ''
     },

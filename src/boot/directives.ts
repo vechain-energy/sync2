@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { boot } from 'quasar/wrappers'
-import { VueConstructor } from 'vue'
-
-type BootParams = {
-    Vue: VueConstructor
-}
+import { defineBoot } from '@quasar/app-webpack/wrappers'
+import { Directive } from 'vue'
 import { debounce } from 'quasar'
 
 type ScrollDividerState = {
@@ -16,8 +12,8 @@ type ScrollDividerElement = HTMLElement & {
     _scrollDivider?: ScrollDividerState
 }
 
-export const scrollDivider: Vue.DirectiveOptions = {
-    inserted: (el, bind) => {
+export const scrollDivider: Directive<ScrollDividerElement> = {
+    mounted: (el, bind) => {
         const target = el as ScrollDividerElement
         const { top = true, bottom, both } = bind.modifiers
         const onScroll = () => {
@@ -44,7 +40,7 @@ export const scrollDivider: Vue.DirectiveOptions = {
         // get correct initial state
         onScroll()
     },
-    unbind: el => {
+    unmounted: el => {
         const target = el as ScrollDividerElement
         const state = target._scrollDivider
         if (!state) {
@@ -57,10 +53,10 @@ export const scrollDivider: Vue.DirectiveOptions = {
     }
 }
 
-const directives: Record<string, Vue.DirectiveOptions> = {
+const directives: Record<string, Directive> = {
     scrollDivider,
     nofocusout: {
-        bind(el: HTMLElement) {
+        mounted(el: HTMLElement) {
             const _el = (el as any)
             _el.tabIndex = -1
             const callback = (event: any) => {
@@ -77,11 +73,11 @@ const directives: Record<string, Vue.DirectiveOptions> = {
                 callback
             }
         },
-        update(el: HTMLElement, binding: any) {
+        updated(el: HTMLElement, binding: any) {
             const _el = (el as any)
             _el._needFocusout = binding.value
         },
-        unbind(el: HTMLElement) {
+        unmounted(el: HTMLElement) {
             const _el = (el as any)
             if (_el._focusout) {
                 _el.removeEventListener('focusout', _el._focusout!.callback)
@@ -93,15 +89,15 @@ const directives: Record<string, Vue.DirectiveOptions> = {
     // this directive helps to remove focus helper in q-btn component.
     // the focus helper may cause focus problem in form input.
     disableFocusHelper: {
-        inserted: el => {
+        mounted: el => {
             const r = el.getElementsByClassName('q-focus-helper')
             r && r.length > 0 && r[0].remove()
         }
     }
 }
 
-export default boot(({ Vue }: BootParams) => {
+export default defineBoot(({ app }) => {
     Object.entries(directives).forEach(([name, definition]) => {
-        Vue.directive(name, definition)
+        app.directive(name, definition)
     })
 })

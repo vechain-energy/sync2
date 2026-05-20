@@ -73,7 +73,7 @@
     </q-carousel>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import FeatureSlides from './FeatureSlides.vue'
 import Progress from './Progress.vue'
 import NewPasswordDialog from 'pages/NewPasswordDialog'
@@ -92,7 +92,7 @@ async function randomDelay<T>(p: () => Promise<T>, aboutSeconds: number) {
     return r
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         Progress,
         FeatureSlides,

@@ -60,6 +60,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
+import { defineComponent } from 'vue'
 import Common from './Common'
 import { QDialog } from 'quasar'
 import PageToolbar from 'src/components/PageToolbar.vue'
@@ -69,7 +70,8 @@ import SignerSelector from './SignerSelector.vue'
 import { Certificate, blake2b256 } from 'thor-devkit'
 import ErrorTip from './ErrorTip.vue'
 
-export default Common.extend({
+export default defineComponent({
+    extends: Common,
     components: { PageToolbar, PageContent, PageAction, SignerSelector, ErrorTip },
     props: {
         req: Object as () => M.CertRequest

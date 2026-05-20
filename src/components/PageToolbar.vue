@@ -32,9 +32,9 @@
     </q-toolbar>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { genesises } from 'src/consts'
-export default Vue.extend({
+export default defineComponent({
     props: {
         title: String,
         icon: String,

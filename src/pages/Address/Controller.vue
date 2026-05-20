@@ -91,7 +91,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import TokenItem from './TokenItem.vue'
 import HeadItem from './HeadItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
@@ -105,7 +105,7 @@ import { Vault } from 'src/core/vault'
 import { formatPrivateKey } from 'src/utils/private-key'
 import { supportsVetDomainProfile } from 'src/utils/vet-domain-profile'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         TokenItem,
         HeadItem,

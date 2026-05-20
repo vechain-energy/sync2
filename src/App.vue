@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { listen } from 'src/utils/external-url'
 import dayjs from 'dayjs'
 // import more locales here
@@ -36,7 +36,7 @@ function parseConnexURL(urlStr: string) {
     return null
 }
 
-export default Vue.extend({
+export default defineComponent({
     asyncComputed: {
         lang(): Promise<string> {
             return this.$svc.config.getLanguage()
@@ -57,7 +57,7 @@ export default Vue.extend({
     methods: {
         async externalSignHandlerLoop() {
             let destroyed = false
-            this.$once('hook:beforeDestroy', () => {
+            this.$once('hook:beforeUnmount', () => {
                 destroyed = true
             })
 

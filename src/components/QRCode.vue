@@ -7,11 +7,11 @@
     >
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const QRCode = require('qrcode-svg')
 
-export default Vue.extend({
+export default defineComponent({
     data() {
         return { content: '' }
     },

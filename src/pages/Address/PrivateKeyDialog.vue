@@ -39,12 +39,12 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { copyText } from 'src/utils/clipboard'
 
-export default Vue.extend({
+export default defineComponent({
     components: { PromptDialogToolbar },
     props: {
         privateKey: String

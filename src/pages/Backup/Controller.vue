@@ -13,12 +13,12 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { Vault } from 'src/core/vault'
 import PageToolbar from 'src/components/PageToolbar.vue'
 import BackupPanel from './BackupPanel.vue'
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         walletId: String
     },

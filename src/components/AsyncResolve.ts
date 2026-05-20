@@ -1,11 +1,11 @@
-import Vue, { VNode } from 'vue'
+import { defineComponent,  VNode  } from 'vue'
 
 /*
 <async-resolve tag="div" :promise="promiseObject" v-slot="{data, state}">
     <!-- go go go -->
 </async-resolve>
 */
-export default Vue.extend({
+export default defineComponent({
     props: {
         tag: String,
         promise: Promise as unknown as () => (Promise<unknown> | null)

@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { SignerGroup } from './models'
 import { Transaction, Certificate, blake2b256 } from 'thor-devkit'
 import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
@@ -7,7 +7,7 @@ import { buildSignerGroups, selectSigner } from './signer-groups'
 
 type SignableTransaction = Transaction<Transaction.LegacyBody | Transaction.DynamicFeeBody>
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         gid: String,
         req: Object as () => (M.CertRequest | M.TxRequest)

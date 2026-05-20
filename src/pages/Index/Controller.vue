@@ -71,7 +71,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import BackupTip from './BackupTip.vue'
 import UpgradeTip from './UpgradeTip.vue'
 import DrawerPanel from './DrawerPanel.vue'
@@ -85,7 +85,7 @@ import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
 const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
 
-export default Vue.extend({
+export default defineComponent({
     components: { BackupTip, UpgradeTip, DrawerPanel, WalletList, AddressCardList, OptionMenu, SideDrawer, PageToolbar },
     data: () => {
         return {

@@ -42,7 +42,7 @@
                 :disable="!supported"
                 :error="!!amountError"
                 :error-message="amountError"
-                @input="onAmountChanged"
+                @update:model-value="onAmountChanged"
             >
                 <template v-slot:append>
                     <q-btn
@@ -218,7 +218,7 @@
                         inputmode="decimal"
                         :label="$t('swap.label_custom_slippage')"
                         v-model="customSlippage"
-                        @input="onCustomSlippageChanged"
+                        @update:model-value="onCustomSlippageChanged"
                     />
                 </div>
             </q-expansion-item>
@@ -257,7 +257,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { BigNumber } from 'bignumber.js'
 import AggregatorLogo from './AggregatorLogo.vue'
 import PageAction from 'src/components/PageAction.vue'
@@ -346,7 +346,7 @@ function amountHasValidShape(amount: string, decimals: number): boolean {
     return !parts[1] || parts[1].length <= decimals
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         AggregatorLogo,
         PageAction,
@@ -480,7 +480,7 @@ export default Vue.extend({
         await this.loadBalances()
         this.scheduleQuote()
     },
-    beforeDestroy() {
+    beforeUnmount() {
         window.clearTimeout(this.quoteTimer)
     },
     methods: {

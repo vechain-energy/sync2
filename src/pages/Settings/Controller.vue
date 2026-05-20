@@ -31,9 +31,11 @@
                     >
                         <q-toggle
                             color="green"
-                            :value="bioPassSaved"
+                            :model-value="bioPassSaved"
+                            :true-value="true"
+                            :false-value="false"
                             :disable="!bioPass"
-                            @input="toggleBioPass"
+                            @update:model-value="toggleBioPass"
                         />
                     </item>
                     <q-separator inset="item" />
@@ -61,7 +63,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import Item from './Item.vue'
 import NewPasswordDialog from 'pages/NewPasswordDialog'
 import { BioPass } from 'src/utils/bio-pass'
@@ -71,7 +73,7 @@ import PageContent from 'src/components/PageContent.vue'
 import { kdfEncrypt } from 'src/core/vault'
 import { openURL } from 'src/utils/open-url'
 
-export default Vue.extend({
+export default defineComponent({
     components: { Item, LanguageListPopup, PageToolbar, PageContent },
     asyncComputed: {
         bioPass() {

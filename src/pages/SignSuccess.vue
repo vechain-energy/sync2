@@ -31,12 +31,12 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageAction from 'src/components/PageAction.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { PageToolbar, PageContent, PageAction },
     props: {
         type: String as () => 'tx' | 'cert'

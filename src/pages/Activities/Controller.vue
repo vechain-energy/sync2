@@ -3,14 +3,15 @@
         <page-toolbar :title="$t('activities.title')" />
         <page-content class="col">
             <template v-if="entryList.length">
-                <template v-for="(item, i) in entryList">
+                <template
+                    v-for="(item, i) in entryList"
+                    :key="i"
+                >
                     <q-separator
-                        :key="`s-${i}`"
                         v-if="i !== 0"
                     />
                     <Item
                         :entry="item"
-                        :key="i"
                     />
                 </template>
             </template>
@@ -25,13 +26,13 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import Item, { Entry } from './Item.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import { summarizeCertActivity } from './certificate'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         Item,
         PageToolbar,

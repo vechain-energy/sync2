@@ -13,25 +13,27 @@
         </page-toolbar>
         <page-content class="col">
             <q-list padding>
-                <template v-for="(group, gi) in groups">
+                <template
+                    v-for="(group, gi) in groups"
+                    :key="gi"
+                >
                     <q-separator
                         v-if="gi > 0"
-                        :key="`s-${gi}`"
                         spaced
                     />
                     <q-item-label
                         header
-                        :key="`h-${gi}`"
                     >{{$netDisplayName(group.list[0].genesis.id)}}</q-item-label>
-                    <template v-for="(node, i) in group.list">
+                    <template
+                        v-for="(node, i) in group.list"
+                        :key="`${gi}-${i}`"
+                    >
                         <q-separator
                             v-if="i > 0"
-                            :key="`s-${gi}-${i}`"
                             spaced
                             inset="item"
                         />
                         <q-item
-                            :key="`i-${gi}-${i}`"
                             clickable
                             @click="onSelect(node)"
                         >
@@ -71,7 +73,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AddDialog from './AddDialog.vue'
 import { count, groupBy } from 'src/utils/array'
 import PageContent from 'components/PageContent.vue'
@@ -79,7 +81,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 
 type NodeGroup = { list: M.Node[], selection: number }
 
-export default Vue.extend({
+export default defineComponent({
     components: { PageContent, PageToolbar },
     data() {
         return {
@@ -193,7 +195,7 @@ export default Vue.extend({
             }
         }
     },
-    beforeDestroy() {
+    beforeUnmount() {
         if (this.activeMap) {
             this.$svc.config.node.saveActiveMap(this.activeMap)
                 .catch(err => console.warn(err))

@@ -39,7 +39,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 
@@ -54,7 +54,7 @@ export type PromptOptions = {
     validate: (input: string) => string
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: { PromptDialogToolbar },
     props: {
         opts: Object as () => PromptOptions

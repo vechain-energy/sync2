@@ -85,7 +85,7 @@
                     :error="!!errors.name"
                     :error-message="errors.name"
                     no-error-icon
-                    @input="onInputChanged"
+                    @update:model-value="onInputChanged"
                 />
                 <q-input
                     outlined
@@ -98,13 +98,15 @@
                     :error="!!errors.years"
                     :error-message="errors.years"
                     no-error-icon
-                    @input="onInputChanged"
+                    @update:model-value="onInputChanged"
                 />
                 <q-checkbox
                     v-model="setAsPrimary"
+                    :true-value="true"
+                    :false-value="false"
                     :disable="!!commitment"
                     :label="$t('domains.label_set_primary')"
-                    @input="onPrimaryChanged"
+                    @update:model-value="onPrimaryChanged"
                 />
                 <q-banner
                     v-if="statusText"
@@ -186,7 +188,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { randomBytes } from 'crypto'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import AddressLabel from 'src/components/AddressLabel.vue'
@@ -272,7 +274,7 @@ type DomainData = {
     lookupTimer: number
 }
 
-export default Vue.extend({
+export default defineComponent({
     components: { AddressLabel, AmountLabel, PageAction, PageContent, PageToolbar },
     data(): DomainData {
         return {
@@ -355,7 +357,7 @@ export default Vue.extend({
         this.ensureSelectedAddress()
         this.scheduleCheck()
     },
-    beforeDestroy() {
+    beforeUnmount() {
         window.clearInterval(this.timer)
         window.clearTimeout(this.lookupTimer)
     },

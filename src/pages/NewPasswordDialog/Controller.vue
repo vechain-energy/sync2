@@ -47,12 +47,12 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { validateNewPasswordInput } from 'src/utils/new-password'
 
-export default Vue.extend({
+export default defineComponent({
     components: { PromptDialogToolbar },
     data: () => {
         return {

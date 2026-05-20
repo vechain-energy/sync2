@@ -35,11 +35,11 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import QRCode from 'components/QRCode.vue'
 import { copyText } from 'src/utils/clipboard'
-export default Vue.extend({
+export default defineComponent({
     components: {
         QRCode
     },

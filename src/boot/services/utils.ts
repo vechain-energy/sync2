@@ -1,5 +1,5 @@
 import { Storage } from 'core/storage'
-import Vue from 'vue'
+import { reactive } from 'vue'
 
 function cleanKeys<T>(target: T, src: object) {
     for (const tk in target) {
@@ -19,7 +19,7 @@ export function delegateTable<E extends Storage.Entity, M extends Storage.Entity
     const e2m = (e: E) => cleanKeys(_e2m(e), e)
     const m2e = (m: Partial<M>) => cleanKeys(_m2e(m), m)
 
-    const reactor = Vue.observable({ v: 0 })
+    const reactor = reactive({ v: 0 })
     void (async () => {
         const ob = table.observe()
         for (; ;) {

@@ -17,11 +17,11 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QSpinnerIos } from 'quasar'
 import DelayRender from './DelayRender'
 
-export default Vue.extend({
+export default defineComponent({
     components: { QSpinnerIos, DelayRender },
     mounted() {
         (this.$el as HTMLElement).focus()

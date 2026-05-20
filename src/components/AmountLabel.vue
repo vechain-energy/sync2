@@ -12,11 +12,11 @@
     </span>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { BigNumber } from 'bignumber.js'
 import { formatAmount } from 'src/utils/format'
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         value: [Number, String, Object as () => BigNumber],
         decimals: Number,

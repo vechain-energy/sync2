@@ -45,12 +45,12 @@
     </q-infinite-scroll>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { vetTransfers, tokenTransfers } from './queries'
 import { TransferLogItem } from './models'
 import LogItem from './LogItem.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         LogItem
     },

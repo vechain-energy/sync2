@@ -1,11 +1,11 @@
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 
 /* example:
 <delay-render :t="100">
   <!-- content rendering will be delayed in 100ms -->
 </delay-render>
 */
-export default Vue.extend({
+export default defineComponent({
     props: {
         tag: String,
         t: Number
@@ -19,7 +19,7 @@ export default Vue.extend({
         const timer = setTimeout(() => {
             this.timeUp = true
         }, this.t)
-        this.$once('hook:beforeDestroy', () => clearTimeout(timer))
+        this.$once('hook:beforeUnmount', () => clearTimeout(timer))
     },
     render(h) {
         if (this.timeUp) {

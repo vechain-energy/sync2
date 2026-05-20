@@ -1,4 +1,4 @@
-import Dexie from 'dexie'
+import Dexie, { type UpdateSpec } from 'dexie'
 import type { Storage } from './index'
 import { newObservable } from './observable'
 
@@ -16,10 +16,11 @@ function wrapTable<T extends Storage.Entity>(table: Dexie.Table<T, number>): Sto
             return id
         },
         update: async (cond, values) => {
+            const changes = values as UpdateSpec<T>
             if (Object.keys(cond).length > 0) {
-                await table.where(cond as {}).modify(values)
+                await table.where(cond as {}).modify(changes)
             } else {
-                await table.toCollection().modify(values)
+                await table.toCollection().modify(changes)
             }
             ob.notify()
         },

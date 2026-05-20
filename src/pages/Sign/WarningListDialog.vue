@@ -35,11 +35,11 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import ErrorTip from './ErrorTip.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { ErrorTip },
     props: {
         title: String,

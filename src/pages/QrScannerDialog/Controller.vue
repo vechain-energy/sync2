@@ -30,11 +30,11 @@
 </template>
 <script lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import Scanner from './Scanner.vue'
 import { QDialog } from 'quasar'
 
-export default Vue.extend({
+export default defineComponent({
     components: { Scanner },
     methods: {
         // method is REQUIRED by $q.dialog

@@ -36,19 +36,23 @@
         >
             <q-card>
                 <q-list padding>
-                    <template v-for="(group, gi) in wallets">
+                    <template
+                        v-for="(group, gi) in wallets"
+                        :key="gi"
+                    >
                         <q-item-label
-                            :key="gi"
                             header
                         >
                             {{group.name}}
                         </q-item-label>
-                        <template v-for="(addr, ai) in group.list">
+                        <template
+                            v-for="(addr, ai) in group.list"
+                            :key="`${gi}-${ai}`"
+                        >
                             <AddressItem
                                 clickable
                                 v-close-popup
                                 @click="onSelectAddress(addr)"
-                                :key="`${gi} + ${ai}`"
                                 :address="addr"
                                 :gid="gid"
                             />
@@ -60,7 +64,7 @@
     </q-input>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { address } from 'thor-devkit'
 import AddressAvatar from 'src/components/AddressAvatar.vue'
 import { AddressGroup } from './models'
@@ -69,26 +73,22 @@ import QrScannerDialog from 'pages/QrScannerDialog'
 import { QrScanner } from 'src/utils/qr-scanner'
 import { isVetDomainName, normalizeVetDomainName } from 'src/utils/vet-domains'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         AddressAvatar,
         AddressItem
-    },
-    model: {
-        prop: 'address',
-        event: 'change'
     },
     props: {
         wallets: {
             type: Array as () => AddressGroup[],
             default: []
         },
-        address: String,
+        modelValue: String,
         gid: String
     },
     data() {
         return {
-            input: this.address || ''
+            input: this.modelValue || ''
         }
     },
     computed: {
@@ -136,13 +136,14 @@ export default Vue.extend({
         }
     },
     watch: {
-        address(v: string) {
+        modelValue(v: string) {
             if (v === this.resolvedAddress) {
                 return
             }
             this.input = v
         },
         to(v: string) {
+            this.$emit('update:modelValue', v)
             this.$emit('change', v)
         }
     },

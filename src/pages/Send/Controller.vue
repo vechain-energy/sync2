@@ -34,7 +34,7 @@
                 v-model="amount"
                 :error-message="errors.amount"
                 :error="!!errors.amount"
-                @input="errors.amount = ''"
+                @update:model-value="errors.amount = ''"
                 dense
                 type="text"
                 inputmode="decimal"
@@ -55,7 +55,7 @@
     </q-form>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { abi, address } from 'thor-devkit'
 import { abis } from 'src/consts'
 import To from './To.vue'
@@ -68,7 +68,7 @@ import { toWei } from 'src/utils/format'
 import { isVetDomainName } from 'src/utils/vet-domains'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         To,
         TokenSelector,
@@ -219,7 +219,6 @@ export default Vue.extend({
                         comment: comment
                     }
                 })
-                // eslint-disable-next-line @typescript-eslint/camelcase
                 this.$gtag.event('token-send', { event_label: this.sym })
                 const temp = [this.to, ...this.recent].reduce((result: string[], cv: string | null) => {
                     (cv && !result.includes(cv.toLowerCase())) && result.push(cv.toLowerCase())

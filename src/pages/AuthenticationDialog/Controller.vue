@@ -49,12 +49,12 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import { kdfDecrypt } from 'src/core/vault'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { PromptDialogToolbar },
     data: () => {
         return {

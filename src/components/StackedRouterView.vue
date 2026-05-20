@@ -27,11 +27,11 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
-import { ScopedEntry } from 'vue-router-stack'
+import { defineComponent } from 'vue'
+import { ScopedEntry } from 'src/router/stack'
 import { newVelometer, newPipeline, transitionEnd } from 'src/utils/transit'
 
-export default Vue.extend({
+export default defineComponent({
     data: () => {
         return {
             stack: [] as ScopedEntry[],

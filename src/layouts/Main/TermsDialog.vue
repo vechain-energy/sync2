@@ -13,6 +13,8 @@
                 <q-checkbox
                     dense
                     v-model="accepted"
+                    :true-value="true"
+                    :false-value="false"
                     :label="terms.label()"
                 />
             </q-card-section>
@@ -30,7 +32,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 
 export type Terms = {
@@ -38,7 +40,7 @@ export type Terms = {
     label: () => string
 }
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         terms: Object as () => Terms
     },

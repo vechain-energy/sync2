@@ -1,9 +1,9 @@
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { Transaction } from 'thor-devkit'
 
 const CONFIRMED_N = 12
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         activity: Object as () => M.Activity
     },

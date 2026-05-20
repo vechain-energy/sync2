@@ -37,31 +37,28 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import TokenItem from './TokenItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
 
-export default Vue.extend({
+export default defineComponent({
     components: {
         TokenItem,
         AsyncResolve
     },
-    model: {
-        prop: 'symbol',
-        event: 'change'
-    },
     props: {
         address: String,
         tokens: Array as () => M.TokenSpec[],
-        symbol: String
+        modelValue: String
     },
     computed: {
         token() {
-            return this.tokens.find(t => t.symbol === this.symbol)
+            return this.tokens.find(t => t.symbol === this.modelValue)
         }
     },
     methods: {
         onSelect(symbol: string) {
+            this.$emit('update:modelValue', symbol)
             this.$emit('change', symbol)
         }
     }

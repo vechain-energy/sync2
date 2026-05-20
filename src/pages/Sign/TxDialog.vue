@@ -189,6 +189,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
+import { defineComponent } from 'vue'
 import Common from './Common'
 import { QDialog } from 'quasar'
 import PageToolbar from 'src/components/PageToolbar.vue'
@@ -268,7 +269,8 @@ type TxDialogState = Vue & {
     feeMode: GenericFeeMode
 }
 
-export default Common.extend({
+export default defineComponent({
+    extends: Common,
     components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, TokenAvatar, AmountLabel },
     props: {
         req: Object as () => M.TxRequest

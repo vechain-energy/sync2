@@ -1,10 +1,10 @@
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { abis } from 'src/consts'
 import { abi } from 'thor-devkit'
 import { transferNotification } from 'src/utils/transfer-notification'
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         gid: String
     },

@@ -1,16 +1,36 @@
-import { boot } from 'quasar/wrappers'
-import { VueConstructor } from 'vue'
+import { defineBoot } from '@quasar/app-webpack/wrappers'
+import { ComponentPublicInstance } from 'vue'
+import { configureCompat } from '@vue/compat'
 import * as State from './state'
 import * as Plugins from './plugins'
 import * as Modals from './modals'
 import { genesises } from 'src/consts'
 
-type BootParams = {
-    Vue: VueConstructor
+configureCompat({
+    COMPONENT_V_MODEL: false
+})
+
+type CompatComponent = {
+    compatConfig?: Record<string, unknown>
 }
 
-declare module 'vue/types/vue' {
-    interface Vue {
+type CompatAppConfig = {
+    compatConfig?: Record<string, unknown>
+}
+
+function disableLegacyVModel(component: CompatComponent | undefined) {
+    if (!component) {
+        return
+    }
+
+    component.compatConfig = {
+        ...component.compatConfig,
+        COMPONENT_V_MODEL: false
+    }
+}
+
+declare module 'vue' {
+    interface ComponentCustomProperties {
         /** navigate back or go to home(/) if stack empty */
         $backOrHome(): void
         /** returns the display name of network identified by gid */
@@ -20,15 +40,34 @@ declare module 'vue/types/vue' {
     }
 }
 
-export default boot(({ Vue }: BootParams) => {
-    State.boot()
-    Plugins.boot()
-    Modals.boot()
+export default defineBoot(({ app }) => {
+    const appConfig = app.config as CompatAppConfig
+    appConfig.compatConfig = {
+        ...appConfig.compatConfig,
+        COMPONENT_V_MODEL: false
+    }
 
-    Object.defineProperties(Vue.prototype, {
+    for (const name of [
+        'QCarousel',
+        'QCheckbox',
+        'QDialog',
+        'QInput',
+        'QOptionGroup',
+        'QPopupProxy',
+        'QTabPanels',
+        'QToggle'
+    ]) {
+        disableLegacyVModel(app.component(name) as CompatComponent | undefined)
+    }
+
+    State.boot(app)
+    Plugins.boot(app)
+    Modals.boot(app)
+
+    Object.defineProperties(app.config.globalProperties, {
         $backOrHome: {
             get() {
-                const vm = this as Vue
+                const vm = this as ComponentPublicInstance
                 return () => {
                     vm.$stack.canGoBack
                         ? vm.$router.back()
@@ -37,8 +76,8 @@ export default boot(({ Vue }: BootParams) => {
             }
         },
         $netDisplayName: {
-            get(): Vue['$netDisplayName'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$netDisplayName'] {
+                const vm = this as ComponentPublicInstance
                 return gid => {
                     switch (gid) {
                         case genesises.main.id: return vm.$t('common.mainnet').toString()
@@ -53,10 +92,10 @@ export default boot(({ Vue }: BootParams) => {
             }
         },
         $onWindowEvent: {
-            get(): Vue['$onWindowEvent'] {
-                const vm = this as Vue
+            get(): ComponentPublicInstance['$onWindowEvent'] {
+                const vm = this as ComponentPublicInstance
                 return (event, listener) => {
-                    vm.$once('hook:beforeDestroy', () => {
+                    vm.$once('hook:beforeUnmount', () => {
                         window.removeEventListener(event, listener)
                     })
                     window.addEventListener(event, listener)

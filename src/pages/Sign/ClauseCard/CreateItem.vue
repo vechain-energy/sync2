@@ -8,13 +8,13 @@
     </q-item>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 
 export type OpCreate = {
     type: 'create'
 }
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         op: Object as () => OpCreate
     }

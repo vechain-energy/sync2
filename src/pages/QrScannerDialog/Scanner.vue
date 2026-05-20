@@ -16,10 +16,10 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { QrScanner } from 'src/utils/qr-scanner'
 
-export default Vue.extend({
+export default defineComponent({
     data: () => {
         return {
             size: { w: 0, h: 0 }
@@ -43,7 +43,7 @@ export default Vue.extend({
         if (this.isCordova) {
             const appElem = document.getElementById('q-app')!
             let destroyed = false
-            this.$once('hook:beforeDestroy', () => {
+            this.$once('hook:beforeUnmount', () => {
                 destroyed = true
                 appElem.style.opacity = ''
                 window.QRScanner.hide()
@@ -86,7 +86,7 @@ export default Vue.extend({
                 this.$emit('error', err)
             })
 
-            this.$once('hook:beforeDestroy', () => {
+            this.$once('hook:beforeUnmount', () => {
                 scanner.destroy()
             })
         }

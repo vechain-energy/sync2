@@ -26,7 +26,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { transitionEnd, newVelometer, newPipeline } from 'src/utils/transit'
 
 type TouchPanEvent = {
@@ -44,9 +44,9 @@ function parentElement(vm: Vue): HTMLElement | null {
     return vm.$parent.$el
 }
 
-export default Vue.extend({
+export default defineComponent({
     props: {
-        value: Boolean,
+        modelValue: Boolean,
         disable: Boolean
     },
     data: () => {
@@ -62,10 +62,6 @@ export default Vue.extend({
             pipeline: newPipeline()
         }
     },
-    model: {
-        prop: 'value',
-        event: 'open'
-    },
     computed: {
         invisible() {
             return !this.opened && !this.panning && !this.transiting
@@ -80,7 +76,7 @@ export default Vue.extend({
         }
     },
     watch: {
-        value(newVal: boolean) {
+        modelValue(newVal: boolean) {
             this.opened = newVal
         },
         opened() {
@@ -107,6 +103,7 @@ export default Vue.extend({
         onClickBackdrop() {
             if (this.opened && !this.panning && !this.transiting) {
                 this.opened = false
+                this.$emit('update:modelValue', false)
                 this.$emit('open', false)
             }
         },
@@ -162,6 +159,7 @@ export default Vue.extend({
                 this.transitionMul = 0.7
                 if (triggered) {
                     this.opened = !this.opened
+                    this.$emit('update:modelValue', this.opened)
                     this.$emit('open', this.opened)
                 } else {
                     this.pipeline.run(() => this.transit())
@@ -176,9 +174,9 @@ export default Vue.extend({
         if (parent) {
             parent.classList.add('drawer-parent')
         }
-        this.opened = this.value
+        this.opened = this.modelValue
     },
-    beforeDestroy() {
+    beforeUnmount() {
         const parent = parentElement(this)
         if (parent) {
             parent.classList.remove('drawer-parent')

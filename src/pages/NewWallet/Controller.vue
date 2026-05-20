@@ -70,7 +70,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import { genesises } from 'src/consts'
 import { unique } from 'src/utils/array'
@@ -88,7 +88,7 @@ import { BackupDialog } from '../Backup'
 
 const defaultGid = genesises.main.id
 
-export default Vue.extend({
+export default defineComponent({
     components: { PageToolbar, PopSheets, PageContent, PageAction, SvgLedger },
     props: {
         defaultGid: String

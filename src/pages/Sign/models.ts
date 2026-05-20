@@ -103,12 +103,17 @@ export namespace RelayedRequest {
     function validateClause(value: unknown, index: number): Connex.Vendor.TxMessage[0] {
         const clause = requireRecord(value, `message[${index}]`)
         const to = clause.to
-        if (to !== null && (typeof to !== 'string' || !addressPattern.test(to))) {
+        let validTo: string | null
+        if (to === null) {
+            validTo = null
+        } else if (typeof to === 'string' && addressPattern.test(to)) {
+            validTo = to
+        } else {
             fail(`invalid message[${index}].to`)
         }
 
         const validated: Connex.Vendor.TxMessage[0] = {
-            to,
+            to: validTo,
             value: requireClauseValue(clause.value)
         }
 

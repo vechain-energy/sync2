@@ -1,17 +1,15 @@
 <template>
-    <fragment>
-        <entry
-            v-for="item in uncompleted"
-            :key="item.id"
-            :activity="item"
-        />
-    </fragment>
+    <entry
+        v-for="item in uncompleted"
+        :key="item.id"
+        :activity="item"
+    />
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import Entry from './Entry'
 
-export default Vue.extend({
+export default defineComponent({
     components: { Entry },
     asyncComputed: {
         uncompleted(): Promise<M.Activity[]> {

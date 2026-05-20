@@ -58,14 +58,14 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { picasso } from '@vechain/picasso'
 import Color from 'color'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import AddressAvatar from 'src/components/AddressAvatar.vue'
 
-export default Vue.extend({
+export default defineComponent({
     components: { AddressLabel, AmountLabel, AddressAvatar },
     props: {
         address: String,

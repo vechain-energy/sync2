@@ -47,7 +47,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { RelayedRequest } from './models'
 
 type Item = {
@@ -55,7 +55,7 @@ type Item = {
     text: string
 }
 
-export default Vue.extend({
+export default defineComponent({
     data: () => {
         return {
             iconLoaded: false

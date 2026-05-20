@@ -8,14 +8,14 @@
     </q-avatar>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { picasso } from '@vechain/picasso'
 
 type AsyncComputedState = Vue & {
     vetDomainAvatar: string
 }
 
-export default Vue.extend({
+export default defineComponent({
     props: {
         addr: String,
         gid: String

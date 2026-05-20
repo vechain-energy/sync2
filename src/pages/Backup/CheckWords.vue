@@ -55,9 +55,9 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 const GroupSize = 3
-export default Vue.extend({
+export default defineComponent({
     props: {
         words: {
             type: Array as () => string[],

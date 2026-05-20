@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { App, reactive } from 'vue'
 
 type State = {
     app: {
@@ -6,8 +6,8 @@ type State = {
     }
 }
 
-declare module 'vue/types/vue' {
-    interface Vue {
+declare module 'vue' {
+    interface ComponentCustomProperties {
         $state: State
     }
 }
@@ -18,14 +18,14 @@ declare global {
     }
 }
 
-export function boot() {
-    const state = Vue.observable<State>({
+export function boot(app: App) {
+    const state = reactive<State>({
         app: {
             updateAvailable: false
         }
     })
 
-    Object.defineProperty(Vue.prototype, '$state', {
+    Object.defineProperty(app.config.globalProperties, '$state', {
         get() { return state }
     })
 

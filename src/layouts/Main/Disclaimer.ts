@@ -1,10 +1,10 @@
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import TermsDialog from './TermsDialog.vue'
 
 const KEY_UNSTABLE_ACCEPTED = 'unstable-accepted'
 const KEY_DISCLAIMER_ACCEPTED = 'disclaimer-accepted'
 
-export default Vue.extend({
+export default defineComponent({
     async mounted() {
         if (process.env.DIST_TAG &&
             !localStorage.getItem(KEY_UNSTABLE_ACCEPTED)) {

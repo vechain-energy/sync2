@@ -2,14 +2,14 @@
     <pop-sheets :sheets="sheets" />
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import { Vault } from 'core/vault'
 import PopSheets, { Sheet } from 'src/components/PopSheets.vue'
 import PromptDialog, { PromptOptions } from './PromptDialog.vue'
 
 const MAX_ADDRESS = 10
 
-export default Vue.extend({
+export default defineComponent({
     components: { PopSheets },
     props: {
         wallet: Object as () => M.Wallet

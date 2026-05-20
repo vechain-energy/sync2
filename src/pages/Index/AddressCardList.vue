@@ -47,7 +47,7 @@
     </div>
 </template>
 <script lang="ts">
-import Vue from 'vue'
+import { defineComponent } from 'vue'
 import AddressCard from './AddressCard.vue'
 import AsyncResolve from 'components/AsyncResolve'
 import Intersecting from 'components/Intersecting.vue'
@@ -56,7 +56,7 @@ const CELL_WIDTH_S = 330
 const CELL_WIDTH_L = 400
 const MAX_COL = 3
 
-export default Vue.extend({
+export default defineComponent({
     components: { AddressCard, AsyncResolve, Intersecting },
     props: {
         wallet: Object as () => M.Wallet
