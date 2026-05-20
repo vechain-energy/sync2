@@ -396,11 +396,12 @@ export default defineComponent({
             this.commitState = null
         },
         walletSigners(): string[] {
-            if (!this.selectedWallet || !this.selectedAddress) {
+            const selectedWallet = this.selectedWallet
+            if (!selectedWallet || !this.selectedAddress) {
                 return []
             }
             const networkAddresses = this.wallets.reduce<string[]>((items, wallet) => {
-                return wallet.gid === this.selectedWallet!.gid
+                return wallet.gid === selectedWallet.gid
                     ? items.concat(wallet.meta.addresses)
                     : items
             }, [])

@@ -101,4 +101,13 @@ describe('UI regression guards', () => {
         assert.ok(txDialog.includes('if (genericToken && this.genericFeeWarning)'))
         assert.ok(txDialog.includes('message: this.genericFeeWarning.message'))
     })
+
+    it('keeps domain signer ordering safe when selected wallet state changes', () => {
+        const domains = sourceFile('src/pages/Domains/Controller.vue')
+
+        assert.ok(domains.includes('const selectedWallet = this.selectedWallet'))
+        assert.ok(domains.includes('if (!selectedWallet || !this.selectedAddress)'))
+        assert.ok(domains.includes('wallet.gid === selectedWallet.gid'))
+        assert.strictEqual(domains.includes('this.selectedWallet!.gid'), false)
+    })
 })
