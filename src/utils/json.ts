@@ -9,6 +9,11 @@ export function parseStoredJson<T>(value: string, fallback: T): T {
     }
 }
 
+export function parseStoredArray<T>(value: string): T[] {
+    const parsed = parseStoredJson<unknown>(value, [])
+    return Array.isArray(parsed) ? parsed as T[] : []
+}
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

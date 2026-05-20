@@ -4,7 +4,7 @@ import { genesises } from 'src/consts'
 import { TokenRegistry } from './token-registry'
 import { unique } from 'src/utils/array'
 import { presetNodes } from './preset-nodes'
-import { parseStoredJson } from 'src/utils/json'
+import { parseStoredNodes, parseStoredStringArray, parseStoredStringMap, parseStoredTokenRegistry } from './stored-config'
 
 export function build(storage: Storage) {
     const t = delegateTable<Storage.ConfigEntity, Storage.ConfigEntity>(
@@ -31,7 +31,7 @@ export function build(storage: Storage) {
             // prepend preset nodes
             return [
                 ...JSON.parse(JSON.stringify(presetNodes)),
-                ...parseStoredJson(await get('nodes'), [] as M.Node[])
+                ...parseStoredNodes(await get('nodes'))
             ]
         },
         save(val: M.Node[]) {
@@ -39,7 +39,7 @@ export function build(storage: Storage) {
             return set('nodes', JSON.stringify(val.filter(n => !n.preset)))
         },
         async activeMap() {
-            return parseStoredJson(await get('activeNodeMap'), {} as Record<string, string>)
+            return parseStoredStringMap(await get('activeNodeMap'))
         },
         saveActiveMap(val: Record<string, string>) {
             return set('activeNodeMap', JSON.stringify(val))
@@ -49,11 +49,7 @@ export function build(storage: Storage) {
     const token = {
         async all(): Promise<M.TokenSpec[]> {
             const [json, nodes] = await Promise.all([get('tokenRegistry'), node.all()])
-            const registry = parseStoredJson<TokenRegistry>(json, {
-                updated: 0,
-                main: [],
-                test: []
-            })
+            const registry = parseStoredTokenRegistry(json)
             if (registry.updated + 6 * 60 * 60 * 1000 < Date.now()) {
                 // fetch in background and don't block
                 TokenRegistry.fetch()
@@ -81,7 +77,7 @@ export function build(storage: Storage) {
             )
         },
         async activeSymbols() {
-            return parseStoredJson(await get('activeTokenSymbols'), [] as string[])
+            return parseStoredStringArray(await get('activeTokenSymbols'))
         },
         saveActiveSymbols(val: string[]) {
             val = Array.from(new Set(val))
@@ -98,7 +94,7 @@ export function build(storage: Storage) {
             return set('userMasterKeyGlob', val)
         },
         getRecentRecipients(gid: string) {
-            return getSubKey('recentRecipients', gid).then(r => parseStoredJson(r, [] as string[]))
+            return getSubKey('recentRecipients', gid).then(parseStoredStringArray)
         },
         saveRecentRecipients(gid: string, val: string[]) {
             return setSubKey('recentRecipients', gid, JSON.stringify(val))

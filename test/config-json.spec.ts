@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
-import { parseStoredJson, parseStoredRecord } from '../src/utils/json'
+import { parseStoredArray, parseStoredJson, parseStoredRecord } from '../src/utils/json'
 
 describe('config JSON helpers', () => {
     it('returns parsed stored JSON values', () => {
@@ -10,6 +10,12 @@ describe('config JSON helpers', () => {
     it('falls back for empty or malformed stored JSON values', () => {
         assert.deepStrictEqual(parseStoredJson('', [] as string[]), [])
         assert.deepStrictEqual(parseStoredJson('not-json', [] as string[]), [])
+    })
+
+    it('falls back to an empty array for non-array stored JSON values', () => {
+        assert.deepStrictEqual(parseStoredArray<string>('["VET"]'), ['VET'])
+        assert.deepStrictEqual(parseStoredArray<string>('{"symbol":"VET"}'), [])
+        assert.deepStrictEqual(parseStoredArray<string>('not-json'), [])
     })
 
     it('supports nullable stored objects', () => {
