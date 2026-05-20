@@ -1,7 +1,6 @@
 <template>
     <div
         class="column fit"
-        v-touch-pan.right.prevent="handleDrawerTouchPan"
     >
         <!-- ensure wallets is loaded -->
         <template v-if="wallets">
@@ -24,35 +23,40 @@
                     <option-menu :wallet="wallet" />
                 </q-btn>
             </page-toolbar>
-            <!-- tips -->
-            <div class="narrow-page q-mx-auto">
-                <upgrade-tip v-if="$state.app.updateAvailable" />
-                <backup-tip
-                    v-for="w in wallets"
-                    :key="w.id"
-                    @backup="$router.push({name: 'backup', params: {walletId: w.id.toString()}})"
-                    v-show="w.id === selectedWalletId && !w.meta.backedUp"
-                />
-            </div>
-            <!-- address list -->
-            <address-card-list
-                v-if="wallet"
-                ref="list"
-                :wallet="wallet"
-                class="col address-list"
-            />
             <div
-                v-else
-                class="narrow-page q-my-auto text-center self-center"
+                class="drawer-pan-region column col"
+                v-touch-pan.right.prevent="handleDrawerTouchPan"
             >
-                <p class="text-grey text-h5 text-center col-12">{{$t('common.no_wallet')}}</p>
-                <q-btn
-                    unelevated
-                    color="primary"
-                    class="w40"
-                    :label="$t('index.action_create')"
-                    :to="{name: 'new-wallet'}"
+                <!-- tips -->
+                <div class="narrow-page q-mx-auto">
+                    <upgrade-tip v-if="$state.app.updateAvailable" />
+                    <backup-tip
+                        v-for="w in wallets"
+                        :key="w.id"
+                        @backup="$router.push({name: 'backup', params: {walletId: w.id.toString()}})"
+                        v-show="w.id === selectedWalletId && !w.meta.backedUp"
+                    />
+                </div>
+                <!-- address list -->
+                <address-card-list
+                    v-if="wallet"
+                    ref="list"
+                    :wallet="wallet"
+                    class="col address-list"
                 />
+                <div
+                    v-else
+                    class="narrow-page q-my-auto text-center self-center"
+                >
+                    <p class="text-grey text-h5 text-center col-12">{{$t('common.no_wallet')}}</p>
+                    <q-btn
+                        unelevated
+                        color="primary"
+                        class="w40"
+                        :label="$t('index.action_create')"
+                        :to="{name: 'new-wallet'}"
+                    />
+                </div>
             </div>
             <!-- the drawer -->
             <side-drawer

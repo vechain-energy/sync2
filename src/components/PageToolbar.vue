@@ -5,7 +5,10 @@
             type="button"
             :aria-label="navButtonLabel"
             :title="navButtonLabel"
-            @mousedown.stop.prevent
+            @pointerdown.stop
+            @pointerup.stop.prevent="onPointerUpNavButton"
+            @mousedown.stop
+            @touchstart.stop
             @click.stop.prevent="onClickNavButton"
         >
             <q-icon :name="icon || 'chevron_left'" />
@@ -46,6 +49,7 @@ type ComponentWithVNodeProps = {
     }
 }
 type ActionHandler = (...args: unknown[]) => unknown
+const CLICK_SUPPRESSION_MS = 500
 
 export default defineComponent({
     emits: ['action'],
@@ -61,7 +65,8 @@ export default defineComponent({
             titleMargin: {
                 left: 0,
                 right: 0
-            }
+            },
+            lastPointerActionAt: 0
         }
     },
     computed: {
@@ -91,7 +96,20 @@ export default defineComponent({
         }
     },
     methods: {
+        onPointerUpNavButton(event: PointerEvent) {
+            if (event.button !== 0) {
+                return
+            }
+            this.lastPointerActionAt = Date.now()
+            this.runNavButtonAction()
+        },
         onClickNavButton() {
+            if (Date.now() - this.lastPointerActionAt < CLICK_SUPPRESSION_MS) {
+                return
+            }
+            this.runNavButtonAction()
+        },
+        runNavButtonAction() {
             if (this.icon === 'menu' || this.icon === 'close' || this.hasActionListener()) {
                 this.invokeAction()
             } else {
