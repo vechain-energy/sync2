@@ -17,7 +17,7 @@
                     type="textarea"
                     input-class="monospace"
                     :label="$t('address.label_private_key')"
-                    :value="privateKey"
+                    :model-value="privateKey"
                 />
             </q-card-section>
             <q-card-actions align="between">
