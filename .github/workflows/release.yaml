@@ -124,7 +124,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Build Electron binaries
-        run: npx quasar build -m electron
+        run: npx quasar build -m electron --publish onTagOrDraft
         env:
           ELECTRON_BUILD_ARCHES: x64
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -164,7 +164,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Build Electron binaries
-        run: npx quasar build -m electron
+        run: npx quasar build -m electron --publish onTagOrDraft
         env:
           ELECTRON_BUILD_ARCHES: x64,arm64
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

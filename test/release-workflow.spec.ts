@@ -20,4 +20,13 @@ describe('release workflow guards', () => {
         assert.ok(workflow.includes('run: npm run build'))
         assert.ok(workflow.includes('run: npm run build:pwa'))
     })
+
+    it('publishes Electron artifacts explicitly to the release draft', () => {
+        const workflow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/release.yaml'), 'utf8')
+        const explicitPublishCommands = workflow.match(/npx quasar build -m electron --publish onTagOrDraft/g) || []
+
+        assert.strictEqual(explicitPublishCommands.length, 2)
+        assert.ok(workflow.includes('Create draft GitHub Release'))
+        assert.ok(workflow.includes('GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}'))
+    })
 })
