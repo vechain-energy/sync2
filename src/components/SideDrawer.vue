@@ -3,9 +3,9 @@
         <!-- the backdrop -->
         <div
             ref="backdrop"
-            class="drawer-backdrop fixed-full"
-            v-show="!invisible"
-            v-touch-pan.left.mouse.prevent="transiting? undefined:handleTouchPan"
+            class="drawer-backdrop drawer-transition fixed-full"
+            v-show="opened || panning"
+            v-touch-pan.left.mouse.prevent="handleTouchPan"
             @click="onClickBackdrop"
         />
         <!-- the opener -->
@@ -17,8 +17,8 @@
         <!-- content wrapper-->
         <aside
             class="drawer fixed-left q-drawer__content"
-            :class="{invisible: invisible, 'drawer-disable-pointer-events': panning||transiting}"
-            v-touch-pan.left.mouse.prevent="transiting? undefined:handleTouchPan"
+            :class="{invisible: invisible, 'drawer-disable-pointer-events': panning}"
+            v-touch-pan.left.mouse.prevent="handleTouchPan"
         >
             <slot />
             <q-resize-observer @resize="onContentResize" />
@@ -27,7 +27,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { transitionEnd, newVelometer, newPipeline } from 'src/utils/transit'
+import { newVelometer } from 'src/utils/transit'
 
 type TouchPanEvent = {
     isFirst?: boolean;
@@ -53,34 +53,21 @@ export default defineComponent({
         return {
             width: 0,
             panning: false,
-            transiting: false,
             openRatio: 0,
             touchPanInitOffset: 0,
             transitionMul: 1,
             opened: false,
-            velometer: newVelometer(),
-            pipeline: newPipeline()
+            velometer: newVelometer()
         }
     },
     computed: {
         invisible() {
-            return !this.opened && !this.panning && !this.transiting
-        },
-        animatedViews() {
-            const parent = parentElement(this)
-            const backdrop = this.$refs.backdrop
-            return [
-                parent,
-                backdrop instanceof HTMLElement ? backdrop : null
-            ].filter((el): el is HTMLElement => el !== null)
+            return !this.opened && !this.panning
         }
     },
     watch: {
         modelValue(newVal: boolean) {
-            this.opened = newVal
-        },
-        opened() {
-            this.pipeline.run(() => this.transit())
+            this.setOpened(newVal)
         },
         width(newVal: number) {
             this.setParentProperty('--drawer-width', `${newVal}`)
@@ -101,8 +88,8 @@ export default defineComponent({
             parent.style.setProperty(name, value)
         },
         onClickBackdrop() {
-            if (this.opened && !this.panning && !this.transiting) {
-                this.opened = false
+            if (this.opened && !this.panning) {
+                this.setOpened(false)
                 this.$emit('update:modelValue', false)
                 this.$emit('open', false)
             }
@@ -112,29 +99,18 @@ export default defineComponent({
                 this.width = size.width
             }
         },
-        async transit() {
-            this.transiting = true
-            await this.$nextTick()
-
-            document.body.classList.add('drawer-body--prevent-scroll')
-
-            const views = this.animatedViews
-            views.forEach(v => v.classList.add('drawer-transition'))
-
-            this.openRatio = this.opened ? 1 : 0
-
-            await Promise.all(views.map(v => transitionEnd(v)))
-
-            views.forEach(v => v.classList.remove('drawer-transition'))
-
-            if (!this.opened) {
+        setOpened(opened: boolean) {
+            this.opened = opened
+            this.openRatio = opened ? 1 : 0
+            if (opened) {
+                document.body.classList.add('drawer-body--prevent-scroll')
+            } else {
                 document.body.classList.remove('drawer-body--prevent-scroll')
             }
             this.transitionMul = 1
-            this.transiting = false
         },
         handleTouchPanExternal(ev: TouchPanEvent) {
-            if (this.opened || this.transiting || this.disable) {
+            if (this.opened || this.disable) {
                 return
             }
             this.handleTouchPan(ev)
@@ -158,11 +134,11 @@ export default defineComponent({
                 const triggered = (offset > width / 3 && v >= 0) || v > 0.3
                 this.transitionMul = 0.7
                 if (triggered) {
-                    this.opened = !this.opened
+                    this.setOpened(!this.opened)
                     this.$emit('update:modelValue', this.opened)
                     this.$emit('open', this.opened)
                 } else {
-                    this.pipeline.run(() => this.transit())
+                    this.setOpened(this.opened)
                 }
             }
 
@@ -172,15 +148,16 @@ export default defineComponent({
     mounted() {
         const parent = parentElement(this)
         if (parent) {
-            parent.classList.add('drawer-parent')
+            parent.classList.add('drawer-parent', 'drawer-transition')
         }
-        this.opened = this.modelValue
+        this.setOpened(this.modelValue)
     },
     beforeUnmount() {
         const parent = parentElement(this)
         if (parent) {
-            parent.classList.remove('drawer-parent')
+            parent.classList.remove('drawer-parent', 'drawer-transition')
         }
+        document.body.classList.remove('drawer-body--prevent-scroll')
     }
 })
 </script>

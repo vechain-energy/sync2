@@ -11,7 +11,7 @@
                 :title="$t('common.transaction')"
                 icon="close"
                 :gid="gid"
-                @action="hide()"
+                :action="() => hide()"
             />
             <page-content
                 class="col q-pa-sm bg-grey-3"

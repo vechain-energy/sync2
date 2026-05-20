@@ -6,8 +6,8 @@
         v-bind="$attrs"
         dense
         placeholder="0x"
-        clearable
-        v-model.lazy="input"
+        :model-value="input"
+        @update:model-value="onUpdateInput"
         spellcheck="false"
         :hint="resolvedHint"
     >
@@ -18,8 +18,19 @@
             <AddressAvatar :addr="to" :gid="gid" />
         </template>
         <template v-slot:append>
+            <button
+                v-if="input"
+                class="send-clear-btn q-field__focusable-action"
+                type="button"
+                aria-label="Clear"
+                title="Clear"
+                @mousedown.stop.prevent="clearInput"
+                @click.stop.prevent="clearInput"
+            >
+                <q-icon name="cancel" />
+            </button>
             <q-btn
-                v-show="hasCamera && !input"
+                v-else-if="hasCamera"
                 rounded
                 dense
                 icon="qr_code_scanner"
@@ -73,7 +84,10 @@ import QrScannerDialog from 'pages/QrScannerDialog'
 import { QrScanner } from 'src/utils/qr-scanner'
 import { isVetDomainName, normalizeVetDomainName } from 'src/utils/vet-domains'
 
+type InputValue = string | number | null
+
 export default defineComponent({
+    emits: ['update:modelValue', 'change'],
     components: {
         AddressAvatar,
         AddressItem
@@ -88,7 +102,9 @@ export default defineComponent({
     },
     data() {
         return {
-            input: this.modelValue || ''
+            input: this.modelValue || '',
+            clearButtonPressListener: null as ((ev: MouseEvent) => void) | null,
+            clearButtonClickListener: null as ((ev: MouseEvent) => void) | null
         }
     },
     computed: {
@@ -149,6 +165,40 @@ export default defineComponent({
     },
     methods: {
         isAddress: address.test,
+        isClearButtonEvent(ev: Event) {
+            return ev.target instanceof Element && !!ev.target.closest('.send-clear-btn')
+        },
+        onClearButtonPress(ev: MouseEvent) {
+            if (!this.isClearButtonEvent(ev)) {
+                return
+            }
+            ev.preventDefault()
+            ev.stopPropagation()
+            this.clearInput()
+        },
+        onClearButtonClick(ev: MouseEvent) {
+            if (!this.isClearButtonEvent(ev)) {
+                return
+            }
+            ev.preventDefault()
+            ev.stopPropagation()
+            this.clearInput()
+        },
+        onUpdateInput(value: InputValue) {
+            this.input = value === null ? '' : value.toString()
+        },
+        clearInput() {
+            this.input = ''
+            this.$emit('update:modelValue', '')
+            this.$emit('change', '')
+            this.$nextTick(() => {
+                const input = (this.$el as HTMLElement).querySelector<HTMLInputElement>('input')
+                if (input && input.value) {
+                    input.value = ''
+                    input.dispatchEvent(new Event('input', { bubbles: true }))
+                }
+            })
+        },
         onSelectAddress(addr: string) {
             this.input = address.toChecksumed(addr)
         },
@@ -157,6 +207,37 @@ export default defineComponent({
                 this.input = await this.$dialog<string>({ component: QrScannerDialog })
             } catch { }
         }
+    },
+    mounted() {
+        this.clearButtonPressListener = ev => this.onClearButtonPress(ev)
+        this.clearButtonClickListener = ev => this.onClearButtonClick(ev)
+        document.addEventListener('mousedown', this.clearButtonPressListener, true)
+        document.addEventListener('click', this.clearButtonClickListener, true)
+    },
+    beforeUnmount() {
+        if (this.clearButtonPressListener) {
+            document.removeEventListener('mousedown', this.clearButtonPressListener, true)
+        }
+        if (this.clearButtonClickListener) {
+            document.removeEventListener('click', this.clearButtonClickListener, true)
+        }
     }
 })
 </script>
+<style scoped>
+.send-clear-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: currentColor;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    height: 32px;
+    justify-content: center;
+    margin: 0;
+    outline: 0;
+    padding: 0;
+    width: 32px;
+}
+</style>

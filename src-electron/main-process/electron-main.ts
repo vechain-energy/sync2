@@ -93,6 +93,25 @@ async function setupDevelopmentTools() {
     }
 }
 
+async function promptMoveToApplicationsFolder() {
+    if (process.platform !== 'darwin' || app.isInApplicationsFolder()) {
+        return
+    }
+
+    const result = await dialog.showMessageBox(mainWindow || undefined, {
+        message: `${app.name} is not in Application folder, move there?`,
+        type: 'question',
+        buttons: ['OK', 'Cancel']
+    })
+    if (result.response !== 0) {
+        return
+    }
+
+    try {
+        app.moveToApplicationsFolder()
+    } catch { }
+}
+
 (() => {
     if (process.env.PROD) {
         if (!app.requestSingleInstanceLock()) {
@@ -142,20 +161,6 @@ async function setupDevelopmentTools() {
         await setupDevelopmentTools()
         setupMenu()
         if (process.env.PROD) {
-            if (process.platform === 'darwin') {
-                if (!app.isInApplicationsFolder()) {
-                    if (dialog.showMessageBoxSync({
-                        message: `${app.name} is not in Application folder, move there?`,
-                        type: 'question',
-                        buttons: ['OK', 'Cancel']
-                    }) === 0) {
-                        try {
-                            app.moveToApplicationsFolder()
-                            return
-                        } catch { }
-                    }
-                }
-            }
             void app.updater.check()
             setInterval(() => {
                 void app.updater.check()
@@ -166,5 +171,8 @@ async function setupDevelopmentTools() {
         }
 
         await createWindow()
+        if (process.env.PROD) {
+            void promptMoveToApplicationsFolder()
+        }
     })
 })()

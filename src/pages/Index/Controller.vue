@@ -1,7 +1,7 @@
 <template>
     <div
         class="column fit"
-        v-touch-pan.right.mouse.prevent="handleDrawerTouchPan"
+        v-touch-pan.right.prevent="handleDrawerTouchPan"
     >
         <!-- ensure wallets is loaded -->
         <template v-if="wallets">
@@ -10,7 +10,6 @@
                 icon="menu"
                 :nav-label="$t('index.label_wallets').toString()"
                 :gid="wallet && wallet.gid"
-                @action="drawerOpen=true"
             >
                 <q-btn
                     v-if="wallet"
@@ -84,12 +83,18 @@ import { scroll } from 'quasar'
 import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
 const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
+type DrawerHandle = Vue & {
+    handleTouchPanExternal(ev: Record<string, unknown>): void;
+    setOpened(opened: boolean): void;
+}
 
 export default defineComponent({
     components: { BackupTip, UpgradeTip, DrawerPanel, WalletList, AddressCardList, OptionMenu, SideDrawer, PageToolbar },
     data: () => {
         return {
             drawerOpen: false,
+            drawerButtonPressListener: null as ((ev: MouseEvent) => void) | null,
+            drawerButtonClickListener: null as ((ev: MouseEvent) => void) | null,
             selectedWalletId: parseStoredNonNegativeInteger(localStorage.getItem(SELECTED_WALLET_ID_KEY))
         }
     },
@@ -142,13 +147,54 @@ export default defineComponent({
         }
     },
     methods: {
+        isDrawerButtonEvent(ev: Event) {
+            const button = ev.target instanceof Element ? ev.target.closest('.page-toolbar-nav-btn') : null
+            return !!button && !!button.closest('.drawer-parent')
+        },
+        onDrawerButtonPress(ev: MouseEvent) {
+            if (!this.isDrawerButtonEvent(ev)) {
+                return
+            }
+            ev.preventDefault()
+            ev.stopPropagation()
+            this.openDrawer()
+        },
+        onDrawerButtonClick(ev: MouseEvent) {
+            if (!this.isDrawerButtonEvent(ev)) {
+                return
+            }
+            ev.preventDefault()
+            ev.stopPropagation()
+            this.openDrawer()
+        },
+        drawerHandle() {
+            return this.$refs.drawer as DrawerHandle | undefined
+        },
+        openDrawer() {
+            this.drawerOpen = true
+            this.drawerHandle()?.setOpened(true)
+        },
         handleDrawerTouchPan(ev: Record<string, unknown>) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this.$refs.drawer as any).handleTouchPanExternal(ev)
+            this.drawerHandle()?.handleTouchPanExternal(ev)
         },
         onSelectWallet(id: number) {
             this.drawerOpen = false
+            this.drawerHandle()?.setOpened(false)
             this.selectedWalletId = id
+        }
+    },
+    mounted() {
+        this.drawerButtonPressListener = ev => this.onDrawerButtonPress(ev)
+        this.drawerButtonClickListener = ev => this.onDrawerButtonClick(ev)
+        document.addEventListener('mousedown', this.drawerButtonPressListener, true)
+        document.addEventListener('click', this.drawerButtonClickListener, true)
+    },
+    beforeUnmount() {
+        if (this.drawerButtonPressListener) {
+            document.removeEventListener('mousedown', this.drawerButtonPressListener, true)
+        }
+        if (this.drawerButtonClickListener) {
+            document.removeEventListener('click', this.drawerButtonClickListener, true)
         }
     }
 })

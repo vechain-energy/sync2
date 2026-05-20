@@ -2,7 +2,7 @@
     <div
         @mousedown.capture="testTouchPan"
         @touchstart.capture="testTouchPan"
-        v-touch-pan.right.mouse.prevent="shouldHandlePan? handleTouchPan: undefined"
+        v-touch-pan.right.prevent="shouldHandlePan? handleTouchPan: undefined"
         :class="{'stack--disable-pointer-events': transiting}"
     >
         <div

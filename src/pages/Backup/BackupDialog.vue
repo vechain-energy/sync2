@@ -10,7 +10,7 @@
             <page-toolbar
                 :title="$t('backup.title')"
                 icon="close"
-                @action="hide()"
+                :action="() => hide()"
             />
             <backup-panel
                 :wallet-id="walletId"

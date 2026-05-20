@@ -1,13 +1,14 @@
 <template>
     <q-toolbar class="q-px-xs">
-        <q-btn
-            flat
-            round
-            :icon="icon || 'chevron_left'"
+        <button
+            ref="navButton"
+            class="page-toolbar-nav-btn"
+            type="button"
             :aria-label="navButtonLabel"
             :title="navButtonLabel"
-            @click="onClickNavButton()"
-        />
+        >
+            <q-icon :name="icon || 'chevron_left'" />
+        </button>
         <q-toolbar-title class="text-center">
             <div
                 ref="title"
@@ -32,13 +33,26 @@
     </q-toolbar>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, PropType } from 'vue'
 import { genesises } from 'src/consts'
+
+type AttrsWithListeners = Record<string, unknown>
+type ComponentWithVNodeProps = {
+    $: {
+        vnode: {
+            props?: AttrsWithListeners | null
+        }
+    }
+}
+type ActionHandler = (...args: unknown[]) => unknown
+
 export default defineComponent({
+    emits: ['action'],
     props: {
         title: String,
         icon: String,
         navLabel: String,
+        action: Function as PropType<() => void>,
         gid: String // to check if in dev mode
     },
     data: () => {
@@ -46,7 +60,9 @@ export default defineComponent({
             titleMargin: {
                 left: 0,
                 right: 0
-            }
+            },
+            navButtonPressListener: null as ((ev: MouseEvent) => void) | null,
+            navButtonClickListener: null as ((ev: MouseEvent) => void) | null
         }
     },
     computed: {
@@ -76,12 +92,50 @@ export default defineComponent({
         }
     },
     methods: {
+        navButtonElement() {
+            return this.$refs.navButton instanceof HTMLButtonElement ? this.$refs.navButton : null
+        },
+        onPressNavButton(ev: MouseEvent) {
+            if (this.icon !== 'menu' && this.icon !== 'close') {
+                return
+            }
+            ev.preventDefault()
+            ev.stopPropagation()
+            this.invokeAction()
+        },
         onClickNavButton() {
-            if (this.$listeners.action) {
-                this.$emit('action')
+            if (this.icon === 'menu' || this.icon === 'close' || this.hasActionListener()) {
+                this.invokeAction()
             } else {
                 this.$backOrHome()
             }
+        },
+        actionListener(): ActionHandler | ActionHandler[] | null {
+            const attrs = this.$attrs as AttrsWithListeners
+            const vnodeProps = (this as ComponentWithVNodeProps).$.vnode.props || {}
+            const listener = attrs.onAction || vnodeProps.onAction
+            return typeof listener === 'function' || Array.isArray(listener)
+                ? listener as ActionHandler | ActionHandler[]
+                : null
+        },
+        invokeAction() {
+            if (this.action) {
+                this.action()
+                return
+            }
+            const listener = this.actionListener()
+            if (Array.isArray(listener)) {
+                listener.forEach(fn => fn())
+                return
+            }
+            if (listener) {
+                listener()
+                return
+            }
+            this.$emit('action')
+        },
+        hasActionListener() {
+            return this.actionListener() !== null
         },
         centerTitleText() {
             const titleRect = (this.$refs.title as HTMLElement).getBoundingClientRect()
@@ -93,6 +147,57 @@ export default defineComponent({
             this.titleMargin.left = Math.max(leftSpace, rightSpace) - leftSpace
             this.titleMargin.right = Math.max(leftSpace, rightSpace) - rightSpace
         }
+    },
+    mounted() {
+        const button = this.navButtonElement()
+        if (!button) {
+            return
+        }
+
+        this.navButtonPressListener = ev => this.onPressNavButton(ev)
+        this.navButtonClickListener = ev => {
+            ev.stopPropagation()
+            this.onClickNavButton()
+        }
+        button.addEventListener('mousedown', this.navButtonPressListener)
+        button.addEventListener('click', this.navButtonClickListener)
+    },
+    beforeUnmount() {
+        const button = this.navButtonElement()
+        if (!button) {
+            return
+        }
+
+        if (this.navButtonPressListener) {
+            button.removeEventListener('mousedown', this.navButtonPressListener)
+        }
+        if (this.navButtonClickListener) {
+            button.removeEventListener('click', this.navButtonClickListener)
+        }
     }
 })
 </script>
+<style scoped>
+.page-toolbar-nav-btn {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: currentColor;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 42px;
+    font: inherit;
+    height: 42px;
+    justify-content: center;
+    margin: 0;
+    outline: 0;
+    padding: 0;
+    width: 42px;
+}
+
+.page-toolbar-nav-btn:active,
+.page-toolbar-nav-btn:focus-visible {
+    background: rgba(0, 0, 0, 0.08);
+}
+</style>

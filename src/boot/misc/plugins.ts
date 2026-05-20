@@ -1,6 +1,6 @@
-import AsyncComputed from 'vue-async-computed'
 import { App } from 'vue'
 import { createGtag } from 'vue-gtag'
+import { AsyncComputed } from './async-computed'
 
 export function boot(app: App) {
     app.use(AsyncComputed)
