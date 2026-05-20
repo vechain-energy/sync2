@@ -13,7 +13,7 @@
             {{$t('index.msg_upgrade')}}
             <template v-slot:action>
                 <q-btn
-                    @click="reloadApp"
+                    @click="upgradeNow"
                     flat
                     :loading="installing"
                     :label="$t('index.action_upgrade')"
@@ -24,6 +24,9 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { openURL } from 'src/utils/open-url'
+import { latestReleaseUrl } from 'src/utils/release-url'
+
 export default defineComponent({
     data() {
         return {
@@ -31,23 +34,35 @@ export default defineComponent({
         }
     },
     methods: {
-        async reloadApp() {
+        upgradeNow() {
             if (this.installing) {
                 return
             }
 
+            if (process.env.MODE === 'electron') {
+                this.openRelease()
+                return
+            }
+
+            void this.reloadApp()
+        },
+        openRelease() {
+            const opened = openURL(this.$state.app.updateReleaseUrl || latestReleaseUrl())
+            if (opened) {
+                return
+            }
+
+            this.$q.notify({
+                type: 'negative',
+                message: this.$t('index.msg_upgrade_failed').toString()
+            })
+        },
+        async reloadApp() {
             this.installing = true
             try {
-                if (process.env.MODE === 'electron') {
-                    await require('@electron/remote')
-                        .app
-                        .updater
-                        .quitAndInstall()
-                } else {
-                    window.location.reload()
-                }
+                window.location.reload()
             } catch (err) {
-                console.warn('install update:', err)
+                console.warn('reload update:', err)
                 this.installing = false
                 this.$q.notify({
                     type: 'negative',

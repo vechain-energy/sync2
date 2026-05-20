@@ -10,6 +10,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { listen } from 'src/utils/external-url'
+import { releaseUrlForVersion } from 'src/utils/release-url'
 import dayjs from 'dayjs'
 // import more locales here
 import 'dayjs/locale/zh-cn'
@@ -84,7 +85,8 @@ export default defineComponent({
         // to watch available update for electron build only
         // the approach for the PWA mode is in src-pwa/register-service-worker.js
         if (process.env.MODE === 'electron') {
-            require('@electron/remote').app.updater.downloaded.then(() => {
+            require('@electron/remote').app.updater.downloaded.then((info: { version?: string }) => {
+                this.$state.app.updateReleaseUrl = releaseUrlForVersion(info.version)
                 this.$state.app.updateAvailable = true
             })
         } else if (process.env.MODE === 'cordova') {

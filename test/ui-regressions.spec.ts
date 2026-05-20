@@ -148,16 +148,19 @@ describe('UI regression guards', () => {
         assert.ok(source.includes("icon: 'src-electron/icons/icon.icns'"))
     })
 
-    it('keeps Upgrade Now actionable when updater install fails', () => {
+    it('keeps Upgrade Now actionable for unsigned Electron releases', () => {
         const source = sourceFile('src/pages/Index/UpgradeTip.vue')
-        const updater = sourceFile('src-electron/main-process/updater.ts')
+        const app = sourceFile('src/App.vue')
+        const state = sourceFile('src/boot/misc/state.ts')
 
         assert.ok(source.includes('installing: false'))
         assert.ok(source.includes(':loading="installing"'))
+        assert.ok(source.includes("openURL(this.$state.app.updateReleaseUrl || latestReleaseUrl())"))
         assert.ok(source.includes("this.$t('index.msg_upgrade_failed').toString()"))
-        assert.ok(source.includes("console.warn('install update:', err)"))
-        assert.ok(updater.includes("status !== 'downloaded'"))
-        assert.ok(updater.includes('autoUpdater.quitAndInstall()'))
+        assert.ok(source.includes("console.warn('reload update:', err)"))
+        assert.strictEqual(source.includes('quitAndInstall'), false)
+        assert.ok(app.includes('releaseUrlForVersion(info.version)'))
+        assert.ok(state.includes('updateReleaseUrl: string'))
     })
 
     it('surfaces signing failures without reporting user-cancelled dialogs', () => {

@@ -1,5 +1,7 @@
 import { openURL as defaultOpen } from 'quasar'
 
+type ElectronRemote = typeof import('@electron/remote')
+
 export function isSafeExternalUrl(url: string): boolean {
     try {
         const parsed = new URL(url)
@@ -14,7 +16,10 @@ export const openURL = (url: string): boolean => {
         return false
     }
 
-    if (process.env.MODE === 'cordova') {
+    if (process.env.MODE === 'electron') {
+        const remote = require('@electron/remote') as ElectronRemote
+        void remote.shell.openExternal(url)
+    } else if (process.env.MODE === 'cordova') {
         cordova.InAppBrowser.open(url, '_system')
     } else {
         defaultOpen(url)

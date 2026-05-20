@@ -88,7 +88,7 @@ export default {
         action_swap: '兑换',
         action_create: '现在创建',
         msg_upgrade: '新版本已经就绪',
-        msg_upgrade_failed: 'you need to install the signed release manually. Auto-upgrade could not start.',
+        msg_upgrade_failed: '请打开 GitHub release 页面并手动安装最新版本。',
         msg_delete: '请输入"ok"继续。请确认此钱包已经备份，该操作无法撤销。',
         msg_backup: '钱包尚未备份！备份钱包以保障资产安全。',
         label_wallets: '钱包'

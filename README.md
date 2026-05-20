@@ -39,6 +39,8 @@ old built-in dApp browser. dApps connect from normal browsers through
 | Android | [Google Play](https://play.google.com/store/apps/details?id=org.vechain.sync2) |
 | iOS | [App Store](https://apps.apple.com/app/6446363029) |
 
+Unsigned desktop releases are installed from GitHub Releases manually.
+
 ## Developers
 
 Requirements:

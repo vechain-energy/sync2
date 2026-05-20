@@ -3,6 +3,7 @@ import { App, reactive } from 'vue'
 type State = {
     app: {
         updateAvailable: boolean
+        updateReleaseUrl: string
     }
 }
 
@@ -21,7 +22,8 @@ declare global {
 export function boot(app: App) {
     const state = reactive<State>({
         app: {
-            updateAvailable: false
+            updateAvailable: false,
+            updateReleaseUrl: ''
         }
     })
 

@@ -88,7 +88,7 @@ export default {
         action_swap: 'Swap',
         action_create: 'Create Now',
         msg_upgrade: 'New version is ready :)',
-        msg_upgrade_failed: 'you need to install the signed release manually. Auto-upgrade could not start.',
+        msg_upgrade_failed: 'you need to open the GitHub release page and install the latest build manually.',
         // request user to enter "ok" to confirm
         msg_delete: 'Please enter "ok" to delete wallet. This cannot be undone. Unless you have backed up your wallet beforehand.',
         msg_backup: 'Wallet not backed up! Backup your wallet keep your assets safe.',
