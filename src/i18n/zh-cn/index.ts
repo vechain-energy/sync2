@@ -182,6 +182,8 @@ export default {
         msg_invalid_address: '请输入有效地址',
         msg_invalid_address_checksum: '地址检验失败',
         msg_vet_domain_unresolved: 'you need to check the name or switch network',
+        msg_select_wallet: '发送前请先打开钱包',
+        msg_no_asset: '发送前请先启用资产',
         action_send: '发送'
     },
     swap: {

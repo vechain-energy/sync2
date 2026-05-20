@@ -183,6 +183,8 @@ export default {
         msg_invalid_address: 'Please enter a valid address',
         msg_invalid_address_checksum: 'Address checksum failed',
         msg_vet_domain_unresolved: 'you need to check the name or switch network',
+        msg_select_wallet: 'you need to open a wallet before sending',
+        msg_no_asset: 'you need to enable an asset before sending',
         action_send: 'Send'
     },
     swap: {

@@ -1,7 +1,7 @@
 <template>
     <q-form
         class="column fit no-wrap"
-        v-if="tokenList.length"
+        v-if="canSend"
         @submit="onSend"
     >
         <page-toolbar
@@ -53,6 +53,26 @@
             />
         </page-action>
     </q-form>
+    <div
+        v-else
+        class="column fit no-wrap"
+    >
+        <page-toolbar :title="$t('send.title')" />
+        <page-content class="col">
+            <q-item-label header>
+                {{invalidContextMessage}}
+            </q-item-label>
+        </page-content>
+        <page-action>
+            <q-btn
+                unelevated
+                class="col-6 col-sm-auto"
+                color="primary"
+                :label="$t('common.back')"
+                @click="$backOrHome()"
+            />
+        </page-action>
+    </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
@@ -67,6 +87,14 @@ import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
 import { isVetDomainName } from 'src/utils/vet-domains'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
+
+function parseRouteInteger(value: string | undefined): number | null {
+    if (!value || !/^\d+$/.test(value)) {
+        return null
+    }
+
+    return Number.parseInt(value, 10)
+}
 
 export default defineComponent({
     components: {
@@ -94,7 +122,8 @@ export default defineComponent({
     },
     asyncComputed: {
         wallet(): Promise<M.Wallet | null> {
-            return this.$svc.wallet.get(parseInt(this.wid, 10))
+            const id = this.walletIdNumber
+            return id === null ? Promise.resolve(null) : this.$svc.wallet.get(id)
         },
         recent: {
             async get(): Promise<string[]> {
@@ -135,6 +164,21 @@ export default defineComponent({
         }
     },
     computed: {
+        walletIdNumber(): number | null {
+            return parseRouteInteger(this.wid)
+        },
+        addressIndexNumber(): number | null {
+            return parseRouteInteger(this.i)
+        },
+        canSend(): boolean {
+            return !!this.wallet && !!this.address && this.tokenList.length > 0
+        },
+        invalidContextMessage(): string {
+            if (!this.wallet || !this.address) {
+                return this.$t('send.msg_select_wallet').toString()
+            }
+            return this.$t('send.msg_no_asset').toString()
+        },
         toWallets(): AddressGroup[] {
             let list = [...this.wallets.map<AddressGroup>(w => { return { name: w.meta.name, list: w.meta.addresses } })]
             if (this.recent.length) {
@@ -152,10 +196,12 @@ export default defineComponent({
             return this.tokenList.find(item => item.symbol === this.sym)
         },
         from(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i, 10)] : ''
+            const index = this.addressIndexNumber
+            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i, 10)] : ''
+            const index = this.addressIndexNumber
+            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
         }
     },
     methods: {
