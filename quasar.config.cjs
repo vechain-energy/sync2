@@ -311,6 +311,7 @@ module.exports = defineConfig(function (ctx) {
         },
         afterSign: "build/notarize.js",
         mac: {
+          icon: 'src-electron/icons/icon.icns',
           hardenedRuntime: true,
           entitlements: "build/entitlements.mac.plist",
           entitlementsInherit: "build/entitlements.mac.plist",
