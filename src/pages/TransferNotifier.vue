@@ -3,6 +3,7 @@ import { defineComponent } from 'vue'
 import { abis } from 'src/consts'
 import { abi } from 'thor-devkit'
 import { transferNotification } from 'src/utils/transfer-notification'
+import { parseStoredNonNegativeInteger } from 'src/utils/storage'
 
 export default defineComponent({
     props: {
@@ -147,7 +148,8 @@ export default defineComponent({
 
             const headNum = this.thor.status.head.number
             const savedRange = localStorage.getItem(key)
-            const rangeStart = Math.max(parseInt(savedRange!, 10) || headNum, headNum - 8640) // span no longer than a day
+            const storedRangeStart = parseStoredNonNegativeInteger(savedRange, headNum)
+            const rangeStart = Math.max(storedRangeStart, headNum - 8640) // span no longer than a day
             if (rangeStart === 0) {
                 return []
             }
