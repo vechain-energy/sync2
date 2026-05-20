@@ -114,41 +114,48 @@
                 >
                     {{statusText}}
                 </q-banner>
-                <q-list
-                    v-if="info"
-                    bordered
-                    separator
-                >
-                    <q-item>
-                        <q-item-section>{{$t('domains.label_status')}}</q-item-section>
-                        <q-item-section side>
-                            <q-badge
-                                :color="info.available ? 'positive' : 'negative'"
-                                :label="info.available ? $t('domains.label_available') : $t('domains.label_unavailable')"
-                            />
-                        </q-item-section>
-                    </q-item>
-                    <q-item>
-                        <q-item-section>{{$t('domains.label_cost')}}</q-item-section>
-                        <q-item-section side>
-                            <span>
-                                <amount-label
-                                    :value="price"
-                                    :decimals="18"
-                                    :fixed="2"
-                                /> VET
-                            </span>
-                        </q-item-section>
-                    </q-item>
-                    <q-item>
-                        <q-item-section>{{$t('domains.label_network')}}</q-item-section>
-                        <q-item-section side>{{$netDisplayName(selectedWallet.gid)}}</q-item-section>
-                    </q-item>
-                    <q-item v-if="commitment">
-                        <q-item-section>{{$t('domains.label_wait')}}</q-item-section>
-                        <q-item-section side>{{waitText}}</q-item-section>
-                    </q-item>
-                </q-list>
+                <transition name="domain-result-fade">
+                    <q-list
+                        v-if="checking || info"
+                        bordered
+                        separator
+                    >
+                        <q-item>
+                            <q-item-section>{{$t('domains.label_status')}}</q-item-section>
+                            <q-item-section side>
+                                <q-spinner-dots
+                                    v-if="checking && !info"
+                                    color="primary"
+                                />
+                                <q-badge
+                                    v-else-if="info"
+                                    :color="info.available ? 'positive' : 'negative'"
+                                    :label="info.available ? $t('domains.label_available') : $t('domains.label_unavailable')"
+                                />
+                            </q-item-section>
+                        </q-item>
+                        <q-item v-if="info">
+                            <q-item-section>{{$t('domains.label_cost')}}</q-item-section>
+                            <q-item-section side>
+                                <span>
+                                    <amount-label
+                                        :value="price"
+                                        :decimals="18"
+                                        :fixed="2"
+                                    /> VET
+                                </span>
+                            </q-item-section>
+                        </q-item>
+                        <q-item v-if="info && networkDisplayName">
+                            <q-item-section>{{$t('domains.label_network')}}</q-item-section>
+                            <q-item-section side>{{networkDisplayName}}</q-item-section>
+                        </q-item>
+                        <q-item v-if="commitment">
+                            <q-item-section>{{$t('domains.label_wait')}}</q-item-section>
+                            <q-item-section side>{{waitText}}</q-item-section>
+                        </q-item>
+                    </q-list>
+                </transition>
                 <q-banner
                     v-if="commitment"
                     class="bg-orange-1 text-deep-orange"
@@ -316,6 +323,9 @@ export default defineComponent({
         price(): string {
             return this.info ? sumVetDomainPrice(this.info.price) : '0'
         },
+        networkDisplayName(): string {
+            return this.selectedWallet ? this.$netDisplayName(this.selectedWallet.gid) : ''
+        },
         commitment(): string {
             return this.commitState ? this.commitState.commitment : ''
         },
@@ -479,10 +489,8 @@ export default defineComponent({
                     maxCommitmentAge: decodedNumber(maxAge.decoded),
                     price: decodedVetDomainPrice(rentPrice.decoded)
                 }
-                this.statusText = this.info.available
-                    ? this.$t('domains.msg_available').toString()
-                    : this.$t('domains.msg_unavailable').toString()
-                this.statusClass = this.info.available ? 'bg-green-1 text-positive' : 'bg-red-1 text-negative'
+                this.statusText = this.info.available ? '' : this.$t('domains.msg_unavailable').toString()
+                this.statusClass = this.info.available ? '' : 'bg-red-1 text-negative'
             } catch (err) {
                 this.info = null
                 this.statusText = err.message || this.$t('common.something_wrong').toString()
@@ -590,3 +598,14 @@ export default defineComponent({
     }
 })
 </script>
+<style scoped>
+.domain-result-fade-enter-active,
+.domain-result-fade-leave-active {
+    transition: opacity 160ms ease;
+}
+
+.domain-result-fade-enter-from,
+.domain-result-fade-leave-to {
+    opacity: 0;
+}
+</style>
