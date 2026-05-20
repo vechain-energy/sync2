@@ -87,14 +87,7 @@ import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
 import { isVetDomainName } from 'src/utils/vet-domains'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
-
-function parseRouteInteger(value: string | undefined): number | null {
-    if (!value || !/^\d+$/.test(value)) {
-        return null
-    }
-
-    return Number.parseInt(value, 10)
-}
+import { parseRouteInteger } from 'src/utils/route'
 
 export default defineComponent({
     components: {

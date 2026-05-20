@@ -164,14 +164,17 @@ export default {
         msg_vns_profile_updated: 'VNS profile update submitted',
         msg_vns_profile_display_error: 'you need to use 25 characters or less',
         msg_vns_profile_description_error: 'you need to use 100 characters or less',
-        msg_vns_profile_url_error: 'you need to enter a http or https URL'
+        msg_vns_profile_url_error: 'you need to enter a http or https URL',
+        msg_wallet_not_found: 'you need to select an existing wallet',
+        msg_address_not_found: 'you need to select an existing address'
     },
     asset: {
         title: 'Asset',
         label_history: 'History',
         msg_no_history: 'No transfer history',
         msg_no_more: '- The End - ',
-        msg_history_load_error: 'you need to check the network and try again. History could not be loaded.'
+        msg_history_load_error: 'you need to check the network and try again. History could not be loaded.',
+        msg_asset_not_found: 'you need to select an enabled asset'
     },
     send: {
         title: 'Send',

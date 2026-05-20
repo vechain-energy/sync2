@@ -20,8 +20,8 @@ describe('send route guards', () => {
     it('does not query wallets with invalid route query ids', () => {
         const source = sourceFile('src/pages/Send/Controller.vue')
 
+        assert.ok(source.includes("import { parseRouteInteger } from 'src/utils/route'"))
         assert.ok(source.includes('parseRouteInteger'))
-        assert.ok(source.includes('/^\\d+$/'))
         assert.ok(source.includes('walletIdNumber'))
         assert.ok(source.includes('addressIndexNumber'))
         assert.ok(source.includes('return id === null ? Promise.resolve(null) : this.$svc.wallet.get(id)'))

@@ -163,14 +163,17 @@ export default {
         msg_vns_profile_updated: 'VNS 资料更新已提交',
         msg_vns_profile_display_error: 'you need to use 25 characters or less',
         msg_vns_profile_description_error: 'you need to use 100 characters or less',
-        msg_vns_profile_url_error: 'you need to enter a http or https URL'
+        msg_vns_profile_url_error: 'you need to enter a http or https URL',
+        msg_wallet_not_found: '请选择已有钱包',
+        msg_address_not_found: '请选择已有地址'
     },
     asset: {
         title: '资产',
         label_history: '转账记录',
         msg_no_history: '无记录',
         msg_no_more: '- 完 - ',
-        msg_history_load_error: 'you need to check the network and try again. 无法加载转账记录。'
+        msg_history_load_error: 'you need to check the network and try again. 无法加载转账记录。',
+        msg_asset_not_found: '请选择已启用资产'
     },
     send: {
         title: '发送',
