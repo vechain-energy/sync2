@@ -17,9 +17,10 @@ export default defineRouter(function () {
             : createWebHashHistory(process.env.VUE_ROUTER_BASE)
     })
 
+    const stack = createRouterStack(Router)
     Router.install = ((install) => (app) => {
+        app.use(stack)
         install.call(Router, app)
-        app.use(createRouterStack(Router))
     })(Router.install)
 
     return Router

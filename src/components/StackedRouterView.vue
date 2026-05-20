@@ -12,11 +12,16 @@
             class="absolute-full bg-white"
             :class="viewClasses(i)"
         >
-            <component
-                class="stack-page"
-                :is="entry.component"
-                v-bind="entryToBinds(entry)"
-            />
+            <router-view
+                :route="entry"
+                v-slot="{ Component }"
+            >
+                <component
+                    class="stack-page"
+                    :is="Component"
+                    v-bind="entryToBinds(entry)"
+                />
+            </router-view>
         </div>
         <div
             ref="backdrop"

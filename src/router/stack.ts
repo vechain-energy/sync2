@@ -18,24 +18,51 @@ type StackApi = {
     readonly appTriggered: boolean
 }
 
+type ScopeRoot = readonly [RouteRecordNormalized, number]
+
 declare module 'vue' {
     interface ComponentCustomProperties {
         $stack: StackApi
     }
 }
 
-function getScopeRoot(vm: ComponentPublicInstance | null, entries: ScopedEntry[]) {
+function recordOwnsView(vm: ComponentPublicInstance, record: RouteRecordNormalized) {
+    if (vm === record.instances.default) {
+        return true
+    }
+
+    const component = record.components?.default
+    return !!component && vm.$?.type === component
+}
+
+function inferScopeRoot(entries: ScopedEntry[]): ScopeRoot | undefined {
+    const last = entries[entries.length - 1]
+    if (!last) {
+        return undefined
+    }
+
+    const rootIndex = last.matched.findIndex((_record, index) => !!last.matched[index + 1])
+    if (rootIndex < 0) {
+        return undefined
+    }
+
+    return [last.matched[rootIndex], rootIndex]
+}
+
+function getScopeRoot(vm: ComponentPublicInstance | null, entries: ScopedEntry[]): ScopeRoot | undefined {
     while (vm) {
         for (const entry of entries) {
             for (let i = 0; i < entry.matched.length; i++) {
                 const record = entry.matched[i]
-                if (vm === record.instances.default) {
+                if (recordOwnsView(vm, record)) {
                     return [record, i] as const
                 }
             }
         }
         vm = vm.$parent
     }
+
+    return inferScopeRoot(entries)
 }
 
 export function createRouterStack(router: Router) {

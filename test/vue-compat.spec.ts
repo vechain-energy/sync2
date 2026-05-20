@@ -15,6 +15,19 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe('Vue compat migration guards', () => {
+    it('does not ship the Vue compatibility build', () => {
+        const root = path.join(__dirname, '..')
+        const packageJson = fs.readFileSync(path.join(root, 'package.json'), 'utf8')
+        const quasarConfig = fs.readFileSync(path.join(root, 'quasar.config.cjs'), 'utf8')
+        const boot = fs.readFileSync(path.join(root, 'src/boot/misc/index.ts'), 'utf8')
+
+        assert.strictEqual(packageJson.includes('@vue/compat'), false)
+        assert.strictEqual(quasarConfig.includes('@vue/compat'), false)
+        assert.strictEqual(quasarConfig.includes('compatConfig'), false)
+        assert.strictEqual(boot.includes('@vue/compat'), false)
+        assert.strictEqual(boot.includes('configureCompat'), false)
+    })
+
     it('does not rely on unsupported hook:beforeUnmount event cleanup', () => {
         const root = path.join(__dirname, '..', 'src')
         const offenders = sourceFiles(root)
@@ -22,6 +35,33 @@ describe('Vue compat migration guards', () => {
             .map(file => path.relative(path.join(__dirname, '..'), file))
 
         assert.deepStrictEqual(offenders, [])
+    })
+
+    it('keeps router stack scope detection compatible with Vue 3 route records', () => {
+        const stack = fs.readFileSync(path.join(__dirname, '..', 'src/router/stack.ts'), 'utf8')
+
+        assert.ok(stack.includes('recordOwnsView'))
+        assert.ok(stack.includes('vm.$?.type === component'))
+        assert.ok(stack.includes('inferScopeRoot(entries)'))
+    })
+
+    it('registers the route stack before router install captures initial navigation', () => {
+        const router = fs.readFileSync(path.join(__dirname, '..', 'src/router/index.ts'), 'utf8')
+        const stackInstall = router.indexOf('app.use(stack)')
+        const routerInstall = router.indexOf('install.call(Router, app)')
+
+        assert.ok(stackInstall >= 0)
+        assert.ok(routerInstall >= 0)
+        assert.ok(stackInstall < routerInstall)
+    })
+
+    it('renders stacked routes through the Vue Router 4 RouterView slot', () => {
+        const stackView = fs.readFileSync(path.join(__dirname, '..', 'src/components/StackedRouterView.vue'), 'utf8')
+
+        assert.ok(stackView.includes('<router-view'))
+        assert.ok(stackView.includes(':route="entry"'))
+        assert.ok(stackView.includes('v-slot="{ Component }"'))
+        assert.ok(stackView.includes(':is="Component"'))
     })
 
     it('does not rely on legacy listener or scoped slot aliases', () => {

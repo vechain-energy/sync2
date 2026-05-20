@@ -1,35 +1,11 @@
 import { defineBoot } from '@quasar/app-webpack/wrappers'
-import { configureCompat } from '@vue/compat'
 import { ComponentPublicInstance } from 'vue'
 import * as State from './state'
 import * as Plugins from './plugins'
 import * as Modals from './modals'
 import { genesises } from 'src/consts'
 
-configureCompat({
-    COMPONENT_V_MODEL: false
-})
-
-type CompatComponent = {
-    compatConfig?: Record<string, unknown>
-}
-
-type CompatAppConfig = {
-    compatConfig?: Record<string, unknown>
-}
-
 const beforeUnmountCleanups = new WeakMap<ComponentPublicInstance, Array<() => void>>()
-
-function disableLegacyVModel(component: CompatComponent | undefined) {
-    if (!component) {
-        return
-    }
-
-    component.compatConfig = {
-        ...component.compatConfig,
-        COMPONENT_V_MODEL: false
-    }
-}
 
 function addBeforeUnmountCleanup(vm: ComponentPublicInstance, cleanup: () => void) {
     const cleanups = beforeUnmountCleanups.get(vm) || []
@@ -49,25 +25,6 @@ declare module 'vue' {
 }
 
 export default defineBoot(({ app }) => {
-    const appConfig = app.config as CompatAppConfig
-    appConfig.compatConfig = {
-        ...appConfig.compatConfig,
-        COMPONENT_V_MODEL: false
-    }
-
-    for (const name of [
-        'QCarousel',
-        'QCheckbox',
-        'QDialog',
-        'QInput',
-        'QOptionGroup',
-        'QPopupProxy',
-        'QTabPanels',
-        'QToggle'
-    ]) {
-        disableLegacyVModel(app.component(name) as CompatComponent | undefined)
-    }
-
     State.boot(app)
     Plugins.boot(app)
     Modals.boot(app)

@@ -136,14 +136,6 @@ module.exports = defineConfig(function (ctx) {
       },
       vueRouterMode: 'hash', // available values: 'hash', 'history'
       vueOptionsAPI: true,
-      vueLoaderOptions: {
-        compilerOptions: {
-          compatConfig: {
-            MODE: 2,
-            COMPONENT_V_MODEL: false
-          }
-        }
-      },
       typescript: {
         strict: false,
         vueShim: true
@@ -183,7 +175,6 @@ module.exports = defineConfig(function (ctx) {
 
         cfg.resolve.alias = {
           ...cfg.resolve.alias,
-          vue: '@vue/compat',
           core: path.resolve(__dirname, './src/core'),
           'thor-devkit$': path.resolve(__dirname, './node_modules/thor-devkit/dist/index.js'),
           '@noble/curves/secp256k1$': path.resolve(__dirname, './node_modules/@noble/curves/esm/secp256k1.js')
