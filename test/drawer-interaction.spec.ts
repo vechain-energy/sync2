@@ -53,4 +53,14 @@ describe('drawer interaction guards', () => {
         assert.ok(source.includes('TAP_MAX_MOVE_PX'))
         assert.ok(source.includes('CLICK_SUPPRESSION_MS'))
     })
+
+    it('limits drawer and stack transitions to animated properties', () => {
+        const drawer = sourceFile('src/components/SideDrawer.vue')
+        const stack = sourceFile('src/components/StackedRouterView.vue')
+
+        assert.strictEqual(drawer.includes('transition: all'), false)
+        assert.strictEqual(stack.includes('transition: all'), false)
+        assert.ok(drawer.includes('transition:\n        transform'))
+        assert.ok(stack.includes('transition:\n        transform'))
+    })
 })

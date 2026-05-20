@@ -244,7 +244,9 @@ export default defineComponent({
     );
 }
 .drawer-transition {
-    transition: all calc(0.25s * var(--drawer-transition-mul));
+    transition:
+        transform calc(0.25s * var(--drawer-transition-mul)),
+        opacity calc(0.25s * var(--drawer-transition-mul));
 }
 .drawer-body--prevent-scroll {
     position: fixed !important;

@@ -249,7 +249,9 @@ export default defineComponent({
     );
 }
 .stack-transition {
-    transition: all calc(0.35s * var(--stack-transition-mul));
+    transition:
+        transform calc(0.35s * var(--stack-transition-mul)),
+        opacity calc(0.35s * var(--stack-transition-mul));
 }
 .stack-body--prevent-scroll {
     position: fixed !important;
