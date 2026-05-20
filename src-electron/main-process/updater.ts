@@ -1,6 +1,9 @@
 import electronUpdater from 'electron-updater'
 import type { UpdateInfo } from 'electron-updater'
+import { app } from 'electron'
+import fs from 'fs'
 import Deferred from '../../src/utils/deferred'
+import { shouldCheckForUpdates } from './update-config'
 
 const { autoUpdater } = electronUpdater
 
@@ -49,6 +52,11 @@ export function newUpdater() {
         get downloaded() { return downloaded },
 
         async check() {
+            if (!shouldCheckForUpdates(process.resourcesPath, app.isPackaged, fs.existsSync)) {
+                status = 'none'
+                error = null
+                return null
+            }
             const result = await autoUpdater.checkForUpdates()
             return result ? result.updateInfo : null
         },
