@@ -1,5 +1,8 @@
-import { autoUpdater, UpdateInfo } from 'electron-updater'
+import electronUpdater from 'electron-updater'
+import type { UpdateInfo } from 'electron-updater'
 import Deferred from '../../src/utils/deferred'
+
+const { autoUpdater } = electronUpdater
 
 export function newUpdater() {
     let downloadProgress = 0
