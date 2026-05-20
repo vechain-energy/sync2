@@ -119,7 +119,7 @@ export default defineComponent({
                 for (let i = 0; i < 3; i++) {
                     try {
                         const resp = await this.$axios.get(
-                            `${this.src}?wait=1`,
+                            `${urlObject.href}?wait=1`,
                             { transformResponse: data => data } // raw data is needed to verify hash
                         )
                         if (resp.data) {
@@ -202,9 +202,13 @@ export default defineComponent({
             this.$router.replace({ name: 'sign-success', query: { type: request.type } })
         },
         async postStatus(suffix: string, result: object) {
+            const urlObject = this.urlObject
+            if (!urlObject) {
+                return
+            }
             for (let i = 0; i < 3; i++) {
                 try {
-                    await this.$axios.post(`${this.src}${suffix}`, result)
+                    await this.$axios.post(`${urlObject.href}${suffix}`, result)
                     return
                 } catch (err) {
                     console.warn(err)

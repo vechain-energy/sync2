@@ -1,5 +1,7 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
+import * as fs from 'fs'
+import * as path from 'path'
 import { RelayedRequest } from '../src/pages/Sign/models'
 
 const gid = `0x${'1'.repeat(64)}`
@@ -7,6 +9,15 @@ const address = `0x${'2'.repeat(40)}`
 const txId = `0x${'3'.repeat(64)}`
 
 describe('sign request models', () => {
+    it('uses the validated relay URL for fetch and status callbacks', () => {
+        const source = fs.readFileSync(path.join(__dirname, '..', 'src/pages/Sign/Controller.vue'), 'utf8')
+
+        assert.ok(source.includes('${urlObject.href}?wait=1'))
+        assert.ok(source.includes('${urlObject.href}${suffix}'))
+        assert.strictEqual(source.includes('${this.src}?wait=1'), false)
+        assert.strictEqual(source.includes('${this.src}${suffix}'), false)
+    })
+
     it('validates transaction relayed requests', () => {
         const request = RelayedRequest.validate({
             gid,
