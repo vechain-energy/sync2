@@ -41,7 +41,9 @@
             />
         </template>
         <q-popup-proxy
+            v-model="addressListOpen"
             :no-parent-event="!!to"
+            :breakpoint="0"
             position="bottom"
             fit
         >
@@ -103,6 +105,7 @@ export default defineComponent({
     data() {
         return {
             input: this.modelValue || '',
+            addressListOpen: false,
             clearButtonPressListener: null as ((ev: MouseEvent) => void) | null
         }
     },
@@ -156,6 +159,11 @@ export default defineComponent({
                 return
             }
             this.input = v
+        },
+        input(v: string) {
+            if (v) {
+                this.addressListOpen = false
+            }
         },
         to(v: string) {
             this.$emit('update:modelValue', v)
