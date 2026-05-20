@@ -211,6 +211,7 @@ import { randomBytes } from 'crypto'
 import ErrorTip from './ErrorTip.vue'
 import WarningListDialog from './WarningListDialog.vue'
 import InspectClauseDialog from './InspectClauseDialog.vue'
+import { dialogErrorMessage } from 'src/utils/dialog-error'
 import {
     FeePriority,
     buildDynamicFeeTxBody,
@@ -631,6 +632,16 @@ export default defineComponent({
             vm.feeMode = mode
         },
         async onClickSign() {
+            try {
+                await this.sign()
+            } catch (err) {
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (message) {
+                    this.$q.notify({ type: 'negative', message })
+                }
+            }
+        },
+        async sign() {
             const est = this.estimation
             const wallet = this.wallet
             const signer = this.signer
@@ -685,13 +696,8 @@ export default defineComponent({
                                 origin: signer
                             }, { transformResponse: data => JSON.parse(data), headers: { 'content-type': 'application/json' } })
                             delegatorSig = Buffer.from(resp.data.signature.slice(2), 'hex')
-                        } catch (err) {
-                            this.$q.notify({
-                                type: 'negative',
-                                message: this.$t('sign.msg_delegation_failed').toString()
-                            })
-                            // rethrow to end the process
-                            throw err
+                        } catch {
+                            throw new Error(this.$t('sign.msg_delegation_failed').toString())
                         }
                     } else if (genericToken) {
                         tx = new Transaction({ ...txBody, reserved: { features: Transaction.DELEGATED_MASK } })
@@ -717,12 +723,8 @@ export default defineComponent({
                         )
                         return parseGenericDelegatorSignature(resp.data)
                     })
-                } catch (err) {
-                    this.$q.notify({
-                        type: 'negative',
-                        message: this.$t('sign.msg_generic_delegation_failed').toString()
-                    })
-                    throw err
+                } catch {
+                    throw new Error(this.$t('sign.msg_generic_delegation_failed').toString())
                 }
             }
 

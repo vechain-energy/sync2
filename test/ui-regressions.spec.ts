@@ -79,4 +79,17 @@ describe('UI regression guards', () => {
 
         assert.ok(source.includes("icon: 'src-electron/icons/icon.icns'"))
     })
+
+    it('surfaces signing failures without reporting user-cancelled dialogs', () => {
+        const txDialog = sourceFile('src/pages/Sign/TxDialog.vue')
+        const certDialog = sourceFile('src/pages/Sign/CertDialog.vue')
+
+        for (const source of [txDialog, certDialog]) {
+            assert.ok(source.includes("import { dialogErrorMessage } from 'src/utils/dialog-error'"))
+            assert.ok(source.includes('await this.sign()'))
+            assert.ok(source.includes('dialogErrorMessage(err, this.$t(\'common.something_wrong\').toString())'))
+        }
+        assert.ok(txDialog.includes("throw new Error(this.$t('sign.msg_delegation_failed').toString())"))
+        assert.ok(txDialog.includes("throw new Error(this.$t('sign.msg_generic_delegation_failed').toString())"))
+    })
 })

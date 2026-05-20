@@ -69,6 +69,7 @@ import PageAction from 'src/components/PageAction.vue'
 import SignerSelector from './SignerSelector.vue'
 import { Certificate, blake2b256 } from 'thor-devkit'
 import ErrorTip from './ErrorTip.vue'
+import { dialogErrorMessage } from 'src/utils/dialog-error'
 
 export default defineComponent({
     extends: Common,
@@ -97,6 +98,16 @@ export default defineComponent({
             this.hide()
         },
         async onClickSign() {
+            try {
+                await this.sign()
+            } catch (err) {
+                const message = dialogErrorMessage(err, this.$t('common.something_wrong').toString())
+                if (message) {
+                    this.$q.notify({ type: 'negative', message })
+                }
+            }
+        },
+        async sign() {
             const wallet = this.wallet
             if (!wallet) {
                 return
