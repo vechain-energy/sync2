@@ -76,7 +76,7 @@ interface InAppBrowser {
      *                  For multi-line scripts, this is the return value of the last statement,
      *                  or the last expression evaluated.
      */
-    executeScript(script: { code: string } | { file: string }, callback: (result: any) => void): void;
+    executeScript(script: { code: string } | { file: string }, callback: (result: unknown) => void): void;
     /**
      * Injects CSS into the InAppBrowser window.
      * @param css       Details of the script to run, specifying either a file or code key.

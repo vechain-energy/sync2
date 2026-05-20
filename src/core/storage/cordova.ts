@@ -18,16 +18,14 @@ export async function open() {
                 db.executeSql(
                     sql,
                     params,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (res: any) => {
+                    (res: SQLiteResultSet) => {
                         const rows = []
                         for (let i = 0; i < res.rows.length; i++) {
                             rows.push(res.rows.item(i))
                         }
                         resolve(rows)
                     },
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (err: any) => reject(new Error(err.message))) // err is not an Error object
+                    (err: { message: string }) => reject(new Error(err.message))) // err is not an Error object
             })
         },
         exec: (sql, ...params) => {
@@ -35,10 +33,8 @@ export async function open() {
                 db.executeSql(
                     sql,
                     params,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (r: any) => resolve({ insertId: r.insertId }),
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (err: any) => reject(new Error(err.message)))
+                    (r: SQLiteResultSet) => resolve({ insertId: r.insertId }),
+                    (err: { message: string }) => reject(new Error(err.message)))
             })
         }
     })

@@ -16,6 +16,15 @@ const displayNames: Record<string, string> = {
     'en-us': 'English (U.S.)',
     'zh-cn': '中文 (中国)'
 }
+type DisplayNamesConstructor = new (
+    locales: string[],
+    options: { type: 'language' }
+) => {
+    of(code: string): string | undefined
+}
+type IntlWithDisplayNames = typeof Intl & {
+    DisplayNames?: DisplayNamesConstructor
+}
 
 export default defineComponent({
     components: { PopSheets },
@@ -46,9 +55,12 @@ export default defineComponent({
                 return name
             }
             try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const ns = new (Intl as any).DisplayNames([lang], { type: 'language' })
-                return ns.of(lang)
+                const DisplayNames = (Intl as IntlWithDisplayNames).DisplayNames
+                if (!DisplayNames) {
+                    return lang
+                }
+                const ns = new DisplayNames([lang], { type: 'language' })
+                return ns.of(lang) || lang
             } catch {
                 return lang
             }

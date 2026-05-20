@@ -20,7 +20,7 @@ import { defineComponent } from 'vue'
 import { QrScanner } from 'src/utils/qr-scanner'
 
 export default defineComponent({
-    emits: ['input', 'error'],
+    emits: ['scan', 'error'],
     data: () => {
         return {
             appElem: null as HTMLElement | null,
@@ -62,7 +62,7 @@ export default defineComponent({
                         if (err) {
                             return this.$emit('error', err)
                         }
-                        this.$emit('input', result)
+                        this.$emit('scan', result)
                     })
                 }
             })
@@ -71,7 +71,7 @@ export default defineComponent({
             const scanner = new QrScanner(
                 video,
                 result => {
-                    this.$emit('input', result.data)
+                    this.$emit('scan', result.data)
                 },
                 {
                     onDecodeError: () => { },

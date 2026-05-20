@@ -54,4 +54,15 @@ describe('Vue compat migration guards', () => {
 
         assert.deepStrictEqual(offenders, [])
     })
+
+    it('does not use legacy custom input events for QR scanner results', () => {
+        const scanner = fs.readFileSync(path.join(__dirname, '..', 'src/pages/QrScannerDialog/Scanner.vue'), 'utf8')
+        const controller = fs.readFileSync(path.join(__dirname, '..', 'src/pages/QrScannerDialog/Controller.vue'), 'utf8')
+
+        assert.strictEqual(scanner.includes("$emit('input'"), false)
+        assert.strictEqual(scanner.includes("emits: ['input'"), false)
+        assert.strictEqual(controller.includes('@input="onScanned"'), false)
+        assert.ok(scanner.includes("$emit('scan'"))
+        assert.ok(controller.includes('@scan="onScanned"'))
+    })
 })

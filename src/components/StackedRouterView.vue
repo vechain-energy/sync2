@@ -31,6 +31,21 @@ import { defineComponent } from 'vue'
 import { ScopedEntry } from 'src/router/stack'
 import { newVelometer, newPipeline, transitionEnd } from 'src/utils/transit'
 
+type TouchPanEvent = {
+    isFirst?: boolean;
+    isFinal?: boolean;
+    offset: { x: number };
+    delta: { x: number };
+    duration: number;
+}
+
+function startClientX(event: MouseEvent | TouchEvent): number | null {
+    if ('targetTouches' in event) {
+        return event.targetTouches[0]?.clientX ?? null
+    }
+    return event.clientX
+}
+
 export default defineComponent({
     data: () => {
         return {
@@ -105,15 +120,19 @@ export default defineComponent({
             }
             return classes
         },
-        testTouchPan(ev: TouchEvent & MouseEvent) {
+        testTouchPan(ev: MouseEvent | TouchEvent) {
+            const clientX = startClientX(ev)
+            if (clientX === null) {
+                this.shouldHandlePan = false
+                return
+            }
             const rect = this.$el.getBoundingClientRect()
-            const x = (ev.targetTouches ? ev.targetTouches[0].clientX : ev.clientX) - rect.x
+            const x = clientX - rect.x
             const stack = this.stack
             this.shouldHandlePan = x >= 0 && x < rect.width /* / 2 */ &&
                 (stack.length > 1 || (stack[0] && stack[0].depth > 0))
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        handleTouchPan(ev: any) {
+        handleTouchPan(ev: TouchPanEvent) {
             if (ev.isFirst) {
                 document.body.classList.add('stack-body--prevent-scroll')
                 this.panning = true

@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { defineBoot } from '@quasar/app-webpack/wrappers'
-import { Directive } from 'vue'
+import { Directive, DirectiveBinding } from 'vue'
 import { debounce } from 'quasar'
 
 type ScrollDividerState = {
@@ -10,6 +9,13 @@ type ScrollDividerState = {
 
 type ScrollDividerElement = HTMLElement & {
     _scrollDivider?: ScrollDividerState
+}
+type FocusoutState = {
+    callback: (event: FocusEvent) => void
+}
+type FocusoutElement = HTMLElement & {
+    _needFocusout?: boolean
+    _focusout?: FocusoutState
 }
 
 export const scrollDivider: Directive<ScrollDividerElement> = {
@@ -57,32 +63,33 @@ const directives: Record<string, Directive> = {
     scrollDivider,
     nofocusout: {
         mounted(el: HTMLElement) {
-            const _el = (el as any)
-            _el.tabIndex = -1
-            const callback = (event: any) => {
-                if (!_el._needFocusout) {
+            const target = el as FocusoutElement
+            target.tabIndex = -1
+            const callback = (event: FocusEvent) => {
+                if (!target._needFocusout) {
                     return
                 }
-                if (!el.contains(event.relatedTarget)) {
+                const relatedTarget = event.relatedTarget
+                if (!(relatedTarget instanceof Node) || !el.contains(relatedTarget)) {
                     el.focus()
                 }
             }
-            _el.addEventListener('focusout', callback)
-            _el._needFocusout = true
-            _el._focusout = {
+            target.addEventListener('focusout', callback)
+            target._needFocusout = true
+            target._focusout = {
                 callback
             }
         },
-        updated(el: HTMLElement, binding: any) {
-            const _el = (el as any)
-            _el._needFocusout = binding.value
+        updated(el: HTMLElement, binding: DirectiveBinding<boolean | undefined>) {
+            const target = el as FocusoutElement
+            target._needFocusout = binding.value
         },
         unmounted(el: HTMLElement) {
-            const _el = (el as any)
-            if (_el._focusout) {
-                _el.removeEventListener('focusout', _el._focusout!.callback)
-                delete _el._focusout
-                delete _el._needFocusout
+            const target = el as FocusoutElement
+            if (target._focusout) {
+                target.removeEventListener('focusout', target._focusout.callback)
+                delete target._focusout
+                delete target._needFocusout
             }
         }
     },

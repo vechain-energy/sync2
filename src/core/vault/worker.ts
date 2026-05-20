@@ -1,12 +1,23 @@
 // codes in this file run in web worker
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const m = require('more-entropy')
 import { Pbkdf2HmacSha256 } from 'asmcrypto.js/dist_es8/pbkdf2/pbkdf2-hmac-sha256'
 import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256'
 
 export type CommandName = 'secureRNG' | 'kdfEstimateN' | 'kdf'
+type CommandArgs = {
+    secureRNG: [number]
+    kdfEstimateN: []
+    kdf: [Uint8Array, Uint8Array, number]
+}
+type WorkerRequest = {
+    [K in CommandName]: [number, K, CommandArgs[K]]
+}[CommandName]
+
+function isErrorWithMessage(err: unknown): err is { message: string } {
+    return !!err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+}
 /**
  * securely generate random bytes
  * @param size in bytes (at most 32)
@@ -59,17 +70,17 @@ function kdf(password: Uint8Array, salt: Uint8Array, n: number) {
     return Pbkdf2HmacSha256(password, salt, n, 32)
 }
 
-async function handleCommand(cmd: CommandName, arg: any) {
+async function handleCommand(cmd: CommandName, arg: CommandArgs[CommandName]) {
     switch (cmd) {
         case 'secureRNG': {
-            const [size] = arg
+            const [size] = arg as CommandArgs['secureRNG']
             return secureRNG(size)
         }
         case 'kdfEstimateN': {
             return kdfEstimateN()
         }
         case 'kdf': {
-            const [password, salt, n] = arg
+            const [password, salt, n] = arg as CommandArgs['kdf']
             return kdf(password, salt, n)
         }
         default:
@@ -79,12 +90,12 @@ async function handleCommand(cmd: CommandName, arg: any) {
 
 const ctx: Worker = self as never
 ctx.onmessage = async (ev) => {
-    const [seq, cmd, arg] = ev.data
+    const [seq, cmd, arg] = ev.data as WorkerRequest
     try {
         const result = await handleCommand(cmd, arg)
         ctx.postMessage([seq, result])
     } catch (err) {
         // TODO error translation
-        ctx.postMessage([seq, undefined, { message: err.message }])
+        ctx.postMessage([seq, undefined, { message: isErrorWithMessage(err) ? err.message : 'worker error' }])
     }
 }
