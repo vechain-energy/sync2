@@ -147,6 +147,11 @@ export default defineComponent({
                     }
                 }
             }
+        },
+        '$route.name'(name: string) {
+            if (name !== 'index') {
+                this.closeDrawer()
+            }
         }
     },
     methods: {
@@ -157,12 +162,15 @@ export default defineComponent({
             this.drawerOpen = true
             this.drawerHandle()?.setOpened(true)
         },
+        closeDrawer() {
+            this.drawerOpen = false
+            this.drawerHandle()?.setOpened(false)
+        },
         handleDrawerTouchPan(ev: Record<string, unknown>) {
             this.drawerHandle()?.handleTouchPanExternal(ev)
         },
         onSelectWallet(id: number) {
-            this.drawerOpen = false
-            this.drawerHandle()?.setOpened(false)
+            this.closeDrawer()
             this.selectedWalletId = id
         }
     }

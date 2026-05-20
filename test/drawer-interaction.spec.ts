@@ -19,11 +19,38 @@ describe('drawer interaction guards', () => {
         assert.ok(source.includes('v-touch-pan.right.prevent="handleDrawerTouchPan"'))
     })
 
+    it('closes stale index drawers when leaving the wallet screen', () => {
+        const source = sourceFile('src/pages/Index/Controller.vue')
+
+        assert.ok(source.includes("'$route.name'(name: string)"))
+        assert.ok(source.includes("if (name !== 'index')"))
+        assert.ok(source.includes('this.closeDrawer()'))
+        assert.ok(source.includes('closeDrawer()'))
+        assert.ok(source.includes('this.drawerHandle()?.setOpened(false)'))
+    })
+
     it('opens the toolbar action on pointer release before click fallback', () => {
         const source = sourceFile('src/components/PageToolbar.vue')
 
-        assert.ok(source.includes('@pointerup.stop.prevent="onPointerUpNavButton"'))
-        assert.ok(source.includes('@touchstart.stop'))
+        assert.ok(source.includes('@pointerup.stop="onPointerUpNavButton"'))
+        assert.strictEqual(source.includes('@pointerup.stop.prevent="onPointerUpNavButton"'), false)
+        assert.strictEqual(source.includes('@click.stop.prevent="onClickNavButton"'), false)
+        assert.ok(source.includes('@touchstart.stop="onTouchStartNavButton"'))
+        assert.ok(source.includes('@touchend.stop="onTouchEndNavButton"'))
+        assert.ok(source.includes('CLICK_SUPPRESSION_MS'))
+        assert.ok(source.includes('TOUCH_TAP_MAX_MOVE_PX'))
+        assert.ok(source.includes('runNavButtonActionOnce()'))
+        assert.ok(source.includes('isPrimaryPointerRelease(event)'))
+        assert.ok(source.includes("event.pointerType === 'mouse'"))
+    })
+
+    it('closes the drawer backdrop from pointer and touch taps', () => {
+        const source = sourceFile('src/components/SideDrawer.vue')
+
+        assert.ok(source.includes('@pointerup.stop="onBackdropPointerUp"'))
+        assert.ok(source.includes('@touchend.stop="onBackdropTouchEnd"'))
+        assert.ok(source.includes('closeFromBackdropOnce()'))
+        assert.ok(source.includes('TAP_MAX_MOVE_PX'))
         assert.ok(source.includes('CLICK_SUPPRESSION_MS'))
     })
 })

@@ -6,7 +6,11 @@
             class="drawer-backdrop drawer-transition fixed-full"
             v-show="opened || panning"
             v-touch-pan.left.mouse.prevent="handleTouchPan"
-            @click="onClickBackdrop"
+            @pointerdown.stop="onBackdropPointerDown"
+            @pointerup.stop="onBackdropPointerUp"
+            @touchstart.stop="onBackdropTouchStart"
+            @touchend.stop="onBackdropTouchEnd"
+            @click.stop="onClickBackdrop"
         />
         <!-- the opener -->
         <!-- <div
@@ -36,6 +40,12 @@ type TouchPanEvent = {
     delta: { x: number };
     duration: number;
 }
+type TapPoint = {
+    x: number;
+    y: number;
+}
+const TAP_MAX_MOVE_PX = 12
+const CLICK_SUPPRESSION_MS = 500
 
 function parentElement(vm: Vue): HTMLElement | null {
     if (!vm.$parent || !(vm.$parent.$el instanceof HTMLElement)) {
@@ -58,6 +68,9 @@ export default defineComponent({
             touchPanInitOffset: 0,
             transitionMul: 1,
             opened: false,
+            backdropPointerStart: null as TapPoint | null,
+            backdropTouchStart: null as TapPoint | null,
+            lastBackdropActionAt: 0,
             velometer: newVelometer()
         }
     },
@@ -88,12 +101,56 @@ export default defineComponent({
             }
             parent.style.setProperty(name, value)
         },
-        onClickBackdrop() {
-            if (this.opened && !this.panning) {
-                this.setOpened(false)
-                this.$emit('update:modelValue', false)
-                this.$emit('open', false)
+        onBackdropPointerDown(event: PointerEvent) {
+            if (event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) {
+                this.backdropPointerStart = null
+                return
             }
+            this.backdropPointerStart = { x: event.clientX, y: event.clientY }
+        },
+        onBackdropPointerUp(event: PointerEvent) {
+            if (event.isPrimary === false || (event.pointerType === 'mouse' && event.button !== 0)) {
+                this.backdropPointerStart = null
+                return
+            }
+            if (this.isTap(event.clientX, event.clientY, this.backdropPointerStart) && this.closeFromBackdropOnce()) {
+                event.preventDefault()
+            }
+            this.backdropPointerStart = null
+        },
+        onBackdropTouchStart(event: TouchEvent) {
+            const touch = event.changedTouches[0] || event.touches[0]
+            this.backdropTouchStart = touch
+                ? { x: touch.clientX, y: touch.clientY }
+                : null
+        },
+        onBackdropTouchEnd(event: TouchEvent) {
+            const touch = event.changedTouches[0]
+            if (touch && this.isTap(touch.clientX, touch.clientY, this.backdropTouchStart) && this.closeFromBackdropOnce()) {
+                event.preventDefault()
+            }
+            this.backdropTouchStart = null
+        },
+        onClickBackdrop(event: MouseEvent) {
+            if (this.closeFromBackdropOnce()) {
+                event.preventDefault()
+            }
+        },
+        isTap(x: number, y: number, start: TapPoint | null) {
+            if (!start) {
+                return false
+            }
+            return Math.hypot(x - start.x, y - start.y) <= TAP_MAX_MOVE_PX
+        },
+        closeFromBackdropOnce() {
+            if (!this.opened || this.panning || Date.now() - this.lastBackdropActionAt < CLICK_SUPPRESSION_MS) {
+                return false
+            }
+            this.lastBackdropActionAt = Date.now()
+            this.setOpened(false)
+            this.$emit('update:modelValue', false)
+            this.$emit('open', false)
+            return true
         },
         onContentResize(size: { width: number }) {
             if (size.width > 0) {

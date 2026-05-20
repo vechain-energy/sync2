@@ -6,10 +6,11 @@
             :aria-label="navButtonLabel"
             :title="navButtonLabel"
             @pointerdown.stop
-            @pointerup.stop.prevent="onPointerUpNavButton"
+            @pointerup.stop="onPointerUpNavButton"
             @mousedown.stop
-            @touchstart.stop
-            @click.stop.prevent="onClickNavButton"
+            @touchstart.stop="onTouchStartNavButton"
+            @touchend.stop="onTouchEndNavButton"
+            @click.stop="onClickNavButton"
         >
             <q-icon :name="icon || 'chevron_left'" />
         </button>
@@ -49,7 +50,22 @@ type ComponentWithVNodeProps = {
     }
 }
 type ActionHandler = (...args: unknown[]) => unknown
+type TouchPoint = {
+    x: number;
+    y: number;
+}
 const CLICK_SUPPRESSION_MS = 500
+const TOUCH_TAP_MAX_MOVE_PX = 12
+
+function isPrimaryPointerRelease(event: PointerEvent): boolean {
+    if (event.isPrimary === false) {
+        return false
+    }
+    if (event.pointerType === 'mouse') {
+        return event.button === 0
+    }
+    return true
+}
 
 export default defineComponent({
     emits: ['action'],
@@ -66,7 +82,8 @@ export default defineComponent({
                 left: 0,
                 right: 0
             },
-            lastPointerActionAt: 0
+            lastNavActionAt: 0,
+            touchStartPoint: null as TouchPoint | null
         }
     },
     computed: {
@@ -97,17 +114,49 @@ export default defineComponent({
     },
     methods: {
         onPointerUpNavButton(event: PointerEvent) {
-            if (event.button !== 0) {
+            if (!isPrimaryPointerRelease(event)) {
                 return
             }
-            this.lastPointerActionAt = Date.now()
-            this.runNavButtonAction()
+            if (this.runNavButtonActionOnce()) {
+                event.preventDefault()
+            }
         },
-        onClickNavButton() {
-            if (Date.now() - this.lastPointerActionAt < CLICK_SUPPRESSION_MS) {
+        onClickNavButton(event: MouseEvent) {
+            event.preventDefault()
+            this.runNavButtonActionOnce()
+        },
+        onTouchStartNavButton(event: TouchEvent) {
+            const touch = event.changedTouches[0] || event.touches[0]
+            this.touchStartPoint = touch
+                ? { x: touch.clientX, y: touch.clientY }
+                : null
+        },
+        onTouchEndNavButton(event: TouchEvent) {
+            if (!this.isTouchTap(event)) {
+                this.touchStartPoint = null
                 return
             }
+            if (this.runNavButtonActionOnce()) {
+                event.preventDefault()
+            }
+            this.touchStartPoint = null
+        },
+        isTouchTap(event: TouchEvent) {
+            const touch = event.changedTouches[0]
+            if (!touch || !this.touchStartPoint) {
+                return false
+            }
+            const dx = touch.clientX - this.touchStartPoint.x
+            const dy = touch.clientY - this.touchStartPoint.y
+            return Math.hypot(dx, dy) <= TOUCH_TAP_MAX_MOVE_PX
+        },
+        runNavButtonActionOnce() {
+            if (Date.now() - this.lastNavActionAt < CLICK_SUPPRESSION_MS) {
+                return false
+            }
+            this.lastNavActionAt = Date.now()
             this.runNavButtonAction()
+            return true
         },
         runNavButtonAction() {
             if (this.icon === 'menu' || this.icon === 'close' || this.hasActionListener()) {
