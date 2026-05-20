@@ -93,6 +93,7 @@ async function randomDelay<T>(p: () => Promise<T>, aboutSeconds: number) {
 }
 
 export default defineComponent({
+    emits: ['done'],
     components: {
         Progress,
         FeatureSlides,

@@ -53,6 +53,7 @@ import { genesises } from 'src/consts'
 import WalletName from './WalletName.vue'
 
 export default defineComponent({
+    emits: ['select'],
     components: {
         WalletName
     },

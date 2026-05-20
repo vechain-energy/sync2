@@ -41,6 +41,7 @@ export type Terms = {
 }
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     props: {
         terms: Object as () => Terms
     },

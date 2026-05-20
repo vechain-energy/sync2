@@ -46,6 +46,7 @@ type Step = {
 }
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar, Steps },
     data() {
         return {

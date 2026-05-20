@@ -148,6 +148,7 @@ import {
 } from 'src/utils/vet-domain-profile'
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar },
     props: {
         wallet: Object as () => M.Wallet,

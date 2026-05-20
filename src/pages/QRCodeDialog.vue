@@ -40,6 +40,7 @@ import { QDialog } from 'quasar'
 import QRCode from 'components/QRCode.vue'
 import { copyText } from 'src/utils/clipboard'
 export default defineComponent({
+    emits: ['hide'],
     components: {
         QRCode
     },

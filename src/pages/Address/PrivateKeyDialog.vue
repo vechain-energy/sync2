@@ -45,6 +45,7 @@ import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { copyText } from 'src/utils/clipboard'
 
 export default defineComponent({
+    emits: ['hide'],
     components: { PromptDialogToolbar },
     props: {
         privateKey: String

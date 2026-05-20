@@ -31,6 +31,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 export default defineComponent({
+    emits: ['backup'],
     data: () => {
         return {
             dismissed: false

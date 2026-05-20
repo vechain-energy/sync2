@@ -127,6 +127,7 @@ const ETH_DERIVATION_PATH = `60'/0'/0`
 const PREFIX = `m/44'/`
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar },
     props: {
         state: Object as () => ImportState

@@ -274,6 +274,7 @@ type TxDialogState = Vue & {
 
 export default defineComponent({
     extends: Common,
+    emits: ['hide', 'ok'],
     components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, TokenAvatar, AmountLabel },
     props: {
         req: Object as () => M.TxRequest

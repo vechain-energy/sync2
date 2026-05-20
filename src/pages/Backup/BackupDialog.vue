@@ -31,6 +31,7 @@ import BackupPanel from './BackupPanel.vue'
 import PageToolbar from 'src/components/PageToolbar.vue'
 
 export default defineComponent({
+    emits: ['hide'],
     components: {
         QDialog,
         PageToolbar,

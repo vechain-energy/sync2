@@ -58,6 +58,7 @@
 import { defineComponent } from 'vue'
 const GroupSize = 3
 export default defineComponent({
+    emits: ['checked'],
     props: {
         words: {
             type: Array as () => string[],

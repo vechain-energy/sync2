@@ -45,6 +45,7 @@ function parentElement(vm: Vue): HTMLElement | null {
 }
 
 export default defineComponent({
+    emits: ['update:modelValue', 'open'],
     props: {
         modelValue: Boolean,
         disable: Boolean

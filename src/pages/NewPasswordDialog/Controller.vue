@@ -53,6 +53,7 @@ import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { validateNewPasswordInput } from 'src/utils/new-password'
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar },
     data: () => {
         return {

@@ -106,6 +106,7 @@ import Notice from './Notice.vue'
 import PageContent from 'src/components/PageContent.vue'
 import PageAction from 'src/components/PageAction.vue'
 export default defineComponent({
+    emits: ['start', 'next', 'done'],
     props: {
         panel: String,
         walletId: Number,

@@ -115,6 +115,7 @@ async function queryAbi(signature: string): Promise<abi.Function.Definition | nu
 }
 
 export default defineComponent({
+    emits: ['hide'],
     components: { AddressLabel, AmountLabel },
     props: {
         index: Number,

@@ -49,6 +49,7 @@ import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar },
     props: {
         state: Object as () => { url: string }

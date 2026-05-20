@@ -43,6 +43,7 @@ type Arg = {
 }
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar, Steps },
     props: {
         arg: Object as () => Arg

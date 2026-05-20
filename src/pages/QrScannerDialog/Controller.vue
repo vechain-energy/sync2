@@ -35,6 +35,7 @@ import Scanner from './Scanner.vue'
 import { QDialog } from 'quasar'
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { Scanner },
     methods: {
         // method is REQUIRED by $q.dialog

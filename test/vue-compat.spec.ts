@@ -23,4 +23,16 @@ describe('Vue compat migration guards', () => {
 
         assert.deepStrictEqual(offenders, [])
     })
+
+    it('declares custom events emitted by components', () => {
+        const root = path.join(__dirname, '..', 'src')
+        const offenders = sourceFiles(root)
+            .filter(file => {
+                const source = fs.readFileSync(file, 'utf8')
+                return /\$emit\(\s*['"]/.test(source) && !/\bemits\s*:/.test(source)
+            })
+            .map(file => path.relative(path.join(__dirname, '..'), file))
+
+        assert.deepStrictEqual(offenders, [])
+    })
 })

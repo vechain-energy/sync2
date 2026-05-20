@@ -40,6 +40,7 @@ import { QDialog } from 'quasar'
 import ErrorTip from './ErrorTip.vue'
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { ErrorTip },
     props: {
         title: String,

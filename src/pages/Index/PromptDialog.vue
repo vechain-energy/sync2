@@ -55,6 +55,7 @@ export type PromptOptions = {
 }
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar },
     props: {
         opts: Object as () => PromptOptions

@@ -72,6 +72,7 @@ import ErrorTip from './ErrorTip.vue'
 
 export default defineComponent({
     extends: Common,
+    emits: ['hide', 'ok'],
     components: { PageToolbar, PageContent, PageAction, SignerSelector, ErrorTip },
     props: {
         req: Object as () => M.CertRequest

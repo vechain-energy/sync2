@@ -55,6 +55,7 @@ import { kdfDecrypt } from 'src/core/vault'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 
 export default defineComponent({
+    emits: ['hide', 'ok'],
     components: { PromptDialogToolbar },
     data: () => {
         return {
