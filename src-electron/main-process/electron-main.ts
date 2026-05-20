@@ -5,7 +5,7 @@ import {
     webContents,
     dialog
 } from 'electron'
-import * as remoteMain from '@electron/remote/main'
+import * as remoteMain from '@electron/remote/main/index.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
