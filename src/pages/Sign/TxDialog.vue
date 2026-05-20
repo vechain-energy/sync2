@@ -399,6 +399,9 @@ export default defineComponent({
             }
             return null
         },
+        genericFeeBalanceLow(): boolean {
+            return !!this.genericFeeWarning
+        },
         genericFeeOptions(): GenericFeeOption[] {
             return GENERIC_GAS_TOKENS.reduce((items: GenericFeeOption[], token) => {
                 const tokenSpec = getGenericGasTokenSpec(this.gid, this.tokens, token)
@@ -427,7 +430,12 @@ export default defineComponent({
             }, [])
         },
         signActionDisabled(): boolean {
-            return this.isGenericFeeMode && (!this.genericDelegatorEstimate || !this.genericDelegatorDepositAccount || !this.selectedGenericTokenSpec)
+            return this.isGenericFeeMode && (
+                !this.genericDelegatorEstimate ||
+                !this.genericDelegatorDepositAccount ||
+                !this.selectedGenericTokenSpec ||
+                this.genericFeeBalanceLow
+            )
         },
         criticalError(): Error | null {
             if (!this.wallet) {
@@ -658,6 +666,13 @@ export default defineComponent({
                 this.$q.notify({
                     type: 'negative',
                     message: this.$t('sign.msg_generic_fee_unavailable').toString()
+                })
+                return
+            }
+            if (genericToken && this.genericFeeWarning) {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.genericFeeWarning.message
                 })
                 return
             }

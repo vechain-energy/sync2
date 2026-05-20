@@ -92,4 +92,13 @@ describe('UI regression guards', () => {
         assert.ok(txDialog.includes("throw new Error(this.$t('sign.msg_delegation_failed').toString())"))
         assert.ok(txDialog.includes("throw new Error(this.$t('sign.msg_generic_delegation_failed').toString())"))
     })
+
+    it('blocks generic fee signing when the selected fee token balance is too low', () => {
+        const txDialog = sourceFile('src/pages/Sign/TxDialog.vue')
+
+        assert.ok(txDialog.includes('genericFeeBalanceLow(): boolean'))
+        assert.ok(txDialog.includes('this.genericFeeBalanceLow'))
+        assert.ok(txDialog.includes('if (genericToken && this.genericFeeWarning)'))
+        assert.ok(txDialog.includes('message: this.genericFeeWarning.message'))
+    })
 })
