@@ -120,4 +120,35 @@ export default defineComponent({
 .gas-fee-actions {
     display: block;
 }
+
+.gas-fee-actions :deep(.row) {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 6px;
+}
+
+@media (max-width: 420px) {
+    .gas-fee-item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .gas-fee-label-section {
+        flex: 0 0 82px;
+    }
+
+    .gas-fee-value-section {
+        flex: 1 1 calc(100% - 92px);
+    }
+
+    .gas-fee-action-section {
+        flex: 0 0 100%;
+        padding-left: 92px;
+        padding-top: 8px;
+    }
+
+    .gas-fee-actions :deep(.row) {
+        justify-content: flex-start;
+    }
+}
 </style>
