@@ -89,7 +89,7 @@ export default defineComponent({
                 }
                 return list
             },
-            default: []
+            default: () => []
         }
     },
     computed: {

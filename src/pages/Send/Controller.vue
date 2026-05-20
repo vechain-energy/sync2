@@ -103,7 +103,7 @@ export default defineComponent({
                 }
                 return this.$svc.config.getRecentRecipients(this.wallet.gid)
             },
-            default: []
+            default: () => []
         },
         wallets: {
             async get(): Promise<M.Wallet[]> {
@@ -112,7 +112,7 @@ export default defineComponent({
                 }
                 return await this.$svc.wallet.getByGid(this.wallet.gid)
             },
-            default: []
+            default: () => []
         },
         tokenList: {
             async get(): Promise<M.TokenSpec[]> {
@@ -131,7 +131,7 @@ export default defineComponent({
                         (activeSymbols.includes(token.symbol) || token.permanent)
                 })
             },
-            default: []
+            default: () => []
         }
     },
     computed: {

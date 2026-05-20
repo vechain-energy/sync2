@@ -61,7 +61,7 @@ export default defineComponent({
     props: {
         words: {
             type: Array as () => string[],
-            default: []
+            default: () => []
         }
     },
     data() {

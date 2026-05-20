@@ -134,7 +134,7 @@ export default defineComponent({
                 ])
                 return tokens.filter(token => token.gid === wallet.gid && (activeSymbols.includes(token.symbol) || token.permanent))
             },
-            default: []
+            default: () => []
         },
         primaryName: {
             async get(): Promise<string> {

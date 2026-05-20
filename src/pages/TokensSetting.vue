@@ -84,7 +84,7 @@ export default defineComponent({
                     return true
                 })
             },
-            default: []
+            default: () => []
         }
     },
     async beforeUnmount() {

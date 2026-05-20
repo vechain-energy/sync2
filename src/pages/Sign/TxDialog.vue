@@ -497,7 +497,7 @@ export default defineComponent({
                 const all = await this.$svc.config.token.all()
                 return all.filter(spec => spec.gid === this.gid)
             },
-            default: []
+            default: () => []
         },
         genericDelegatorDepositAccount: {
             async get(): Promise<string> {
@@ -539,7 +539,7 @@ export default defineComponent({
                     return result
                 }, {})
             },
-            default: {}
+            default: () => ({})
         },
         genericGasTokenBalances: {
             async get(): Promise<GenericGasTokenBalanceMap> {
@@ -563,7 +563,7 @@ export default defineComponent({
                     return result
                 }, {})
             },
-            default: {}
+            default: () => ({})
         },
         async energyWarning(): Promise<Error | null> {
             const est = this.estimation

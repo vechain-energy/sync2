@@ -24,7 +24,7 @@ export default defineComponent({
                 this.$svc.bc(this.wallet.gid).vetDomainsRevision()
                 return this.$svc.bc(this.wallet.gid).vetDomainsNamesOf(this.wallet.meta.addresses)
             },
-            default: [] as string[]
+            default: () => [] as string[]
         }
     },
     computed: {

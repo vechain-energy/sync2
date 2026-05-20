@@ -43,7 +43,7 @@ export default defineComponent({
             get(): Promise<M.Activity[]> {
                 return this.$svc.activity.page(100, 0)
             },
-            default: []
+            default: () => []
         },
         walletNames: {
             async get(): Promise<{ [key: string]: string }> {
@@ -53,7 +53,7 @@ export default defineComponent({
                     return prev
                 }, {})
             },
-            default: {}
+            default: () => ({})
         }
     },
     computed: {

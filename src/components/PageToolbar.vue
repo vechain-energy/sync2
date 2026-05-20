@@ -1,11 +1,12 @@
 <template>
     <q-toolbar class="q-px-xs">
         <button
-            ref="navButton"
             class="page-toolbar-nav-btn"
             type="button"
             :aria-label="navButtonLabel"
             :title="navButtonLabel"
+            @mousedown.stop.prevent
+            @click.stop.prevent="onClickNavButton"
         >
             <q-icon :name="icon || 'chevron_left'" />
         </button>
@@ -60,9 +61,7 @@ export default defineComponent({
             titleMargin: {
                 left: 0,
                 right: 0
-            },
-            navButtonPressListener: null as ((ev: MouseEvent) => void) | null,
-            navButtonClickListener: null as ((ev: MouseEvent) => void) | null
+            }
         }
     },
     computed: {
@@ -92,17 +91,6 @@ export default defineComponent({
         }
     },
     methods: {
-        navButtonElement() {
-            return this.$refs.navButton instanceof HTMLButtonElement ? this.$refs.navButton : null
-        },
-        onPressNavButton(ev: MouseEvent) {
-            if (this.icon !== 'menu' && this.icon !== 'close') {
-                return
-            }
-            ev.preventDefault()
-            ev.stopPropagation()
-            this.invokeAction()
-        },
         onClickNavButton() {
             if (this.icon === 'menu' || this.icon === 'close' || this.hasActionListener()) {
                 this.invokeAction()
@@ -146,33 +134,6 @@ export default defineComponent({
 
             this.titleMargin.left = Math.max(leftSpace, rightSpace) - leftSpace
             this.titleMargin.right = Math.max(leftSpace, rightSpace) - rightSpace
-        }
-    },
-    mounted() {
-        const button = this.navButtonElement()
-        if (!button) {
-            return
-        }
-
-        this.navButtonPressListener = ev => this.onPressNavButton(ev)
-        this.navButtonClickListener = ev => {
-            ev.stopPropagation()
-            this.onClickNavButton()
-        }
-        button.addEventListener('mousedown', this.navButtonPressListener)
-        button.addEventListener('click', this.navButtonClickListener)
-    },
-    beforeUnmount() {
-        const button = this.navButtonElement()
-        if (!button) {
-            return
-        }
-
-        if (this.navButtonPressListener) {
-            button.removeEventListener('mousedown', this.navButtonPressListener)
-        }
-        if (this.navButtonClickListener) {
-            button.removeEventListener('click', this.navButtonClickListener)
         }
     }
 })

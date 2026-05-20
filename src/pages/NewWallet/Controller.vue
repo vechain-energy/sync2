@@ -150,7 +150,7 @@ export default defineComponent({
                 const nodes = await this.$svc.config.node.all()
                 return unique(nodes.map(n => n.genesis.id))
             },
-            default: []
+            default: () => []
         }
     },
     watch: {

@@ -97,7 +97,7 @@ export default defineComponent({
                 }
                 return this.$svc.config.node.all()
             },
-            default: []
+            default: () => []
         }
     },
     computed: {

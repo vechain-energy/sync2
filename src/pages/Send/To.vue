@@ -95,7 +95,7 @@ export default defineComponent({
     props: {
         wallets: {
             type: Array as () => AddressGroup[],
-            default: []
+            default: () => []
         },
         modelValue: String,
         gid: String
@@ -103,8 +103,7 @@ export default defineComponent({
     data() {
         return {
             input: this.modelValue || '',
-            clearButtonPressListener: null as ((ev: MouseEvent) => void) | null,
-            clearButtonClickListener: null as ((ev: MouseEvent) => void) | null
+            clearButtonPressListener: null as ((ev: MouseEvent) => void) | null
         }
     },
     computed: {
@@ -176,14 +175,6 @@ export default defineComponent({
             ev.stopPropagation()
             this.clearInput()
         },
-        onClearButtonClick(ev: MouseEvent) {
-            if (!this.isClearButtonEvent(ev)) {
-                return
-            }
-            ev.preventDefault()
-            ev.stopPropagation()
-            this.clearInput()
-        },
         onUpdateInput(value: InputValue) {
             this.input = value === null ? '' : value.toString()
         },
@@ -210,16 +201,11 @@ export default defineComponent({
     },
     mounted() {
         this.clearButtonPressListener = ev => this.onClearButtonPress(ev)
-        this.clearButtonClickListener = ev => this.onClearButtonClick(ev)
         document.addEventListener('mousedown', this.clearButtonPressListener, true)
-        document.addEventListener('click', this.clearButtonClickListener, true)
     },
     beforeUnmount() {
         if (this.clearButtonPressListener) {
             document.removeEventListener('mousedown', this.clearButtonPressListener, true)
-        }
-        if (this.clearButtonClickListener) {
-            document.removeEventListener('click', this.clearButtonClickListener, true)
         }
     }
 })
