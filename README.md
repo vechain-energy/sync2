@@ -1,159 +1,87 @@
 # Sync2
 
-The next generation VeChain wallet for all platforms.
+Sync2 is a VeChain wallet for web, desktop, and mobile.
 
-## What's New
+Use it to hold accounts, sign dApp requests, send assets, manage `.vet` names,
+register domains, edit VNS profiles, and swap tokens on VeChain.
 
-Compared to Sync v1, the most significant change is that the built-in dApp browser is abandoned. That means now dApps can freely run in your favorite web browser.
+## Origin
 
-## Wallet Features
+Sync2 comes from VeChain Sync. It is the successor to Sync v1 and removes the
+old built-in dApp browser. dApps connect from normal browsers through
+[Connex v2](https://github.com/vechain/connex).
 
-- Name support: `.vet` and `.vet.domains` names can be entered on the send screen and displayed for known addresses. Reverse names are network-aware and fall back to the raw address when no name is set.
-- Domains: the Domains menu lets users check `.vet` availability, see the VET cost, pick the signer in the transaction screen, register the name, and view a confirmation screen after success.
-- Swap: the Swap menu quotes active mainnet tokens through VeTrade.vet and BetterSwap.io, shows route, slippage, minimum received, and fee, then uses the normal signing dialog for the selected wallet.
-- Primary name: registration can also set the new name as the owner's primary name. Wallet lists refresh the primary name immediately after the transaction is signed.
-- VNS profile: addresses with a primary `.vet` name can edit avatar, display name, description, email, website, and X handle from the address menu. Avatar files are uploaded to VeChain IPFS before profile records are written on-chain.
-- Fees: transactions use VeChain dynamic fee fields on Galactica-compatible nodes. Sync2 shows the current estimated fee and max fee cap, blocks signing when fee market data is unavailable, and can optionally pay through VeChain's Generic Delegator with VET, B3TR, or VTHO.
-- Private keys: wallets can import a single private key and export one address key at a time. Export is hidden for Ledger wallets, password-gated, and requires an explicit reveal and copy action.
-- Networks: built-in public nodes are limited to `mainnet.vechain.org` and `testnet.vechain.org`.
-- Explorer: mainnet links use VeChainStats, including `/transactions/` transaction URLs.
+- Upstream project: [vechain/sync2](https://github.com/vechain/sync2)
+- This release stream: [vechain-energy/sync2](https://github.com/vechain-energy/sync2)
+- Maintainer: VeChain Community
 
-## Supported Platforms
+## Product
 
-| Platform | | Link |
-| --- | --- | --- |
-| Browser (nightly/unstable) | | https://lite.sync.vecha.in |
-| Desktop | | |
-| | Windows | [Releases](https://github.com/vechain-energy/sync2/releases/latest) |
-| | macOS | [Releases](https://github.com/vechain-energy/sync2/releases/latest) |
-| | Linux | [Releases](https://github.com/vechain-energy/sync2/releases/latest) |
-| Mobile | | |
-| | Android | [Google Play](https://play.google.com/store/apps/details?id=org.vechain.sync2) |
-| | iOS | [App Store](https://apps.apple.com/app/6446363029) |
+- Wallets: create or import wallets, including single private-key accounts.
+- Hardware: sign with Ledger wallets where supported.
+- Signing: review and sign dApp certificates and transactions.
+- Names: resolve and show `.vet` and `.vet.domains` names.
+- Domains: check `.vet` availability, register names, and set a primary name.
+- Profiles: edit VNS avatar, display name, description, email, website, and X handle.
+- Swaps: quote active mainnet tokens through VeTrade.vet and BetterSwap.io.
+- Fees: show estimated fees, max fee caps, and optional Generic Delegator payment.
+- Networks: use VeChain mainnet and testnet public nodes.
+- Explorer: open mainnet transactions in VeChainStats.
 
-## Port dApps to Sync2
+## Platforms
 
-You can easily port your dApp by integrating [Connex v2](https://github.com/vechain/connex).
+| Platform | Link |
+| --- | --- |
+| Browser, nightly unstable | [lite.sync.vecha.in](https://lite.sync.vecha.in) |
+| Windows | [Latest release](https://github.com/vechain-energy/sync2/releases/latest) |
+| macOS | [Latest release](https://github.com/vechain-energy/sync2/releases/latest) |
+| Linux | [Latest release](https://github.com/vechain-energy/sync2/releases/latest) |
+| Android | [Google Play](https://play.google.com/store/apps/details?id=org.vechain.sync2) |
+| iOS | [App Store](https://apps.apple.com/app/6446363029) |
 
-## Build from source 
+## Developers
 
-### Requirements
+Requirements:
 
-- Node.js 24 LTS recommended. Node.js 22.12+ and npm 10+ are supported by `package.json`.
+- Node.js 22.12+; Node.js 24 LTS is recommended.
 - npm 10+
 
-### Toolchain
+Install:
 
-- Quasar CLI: `@quasar/app-webpack` 4
-- UI runtime: Quasar 2 and Vue 3
-- Desktop runtime: Electron 42 and electron-builder 26
-- TypeScript: 6
-- Lint: ESLint 9 flat config
-
-ESLint 10 is not used yet because `@quasar/app-webpack` 4 declares peer support for ESLint 8 and 9 only.
-
-`npm audit --omit=dev` must be clean. The full dev audit still reports low severity `elliptic` advisories through VeChain/browser crypto packages; `npm audit fix --force` downgrades Connex and is not a safe production fix.
-
-### Install the dependencies
 ```bash
 npm install
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+Run in development:
 
-* web mode
-    ```bash
-    npx quasar dev
-    ```
-* electron mode
-    ```bash
-    npx quasar dev -m electron
-    ```
-* ios mode
-    ```bash
-    npx quasar dev -m ios
-    ```
-* android mode
-    ```bash
-    npx quasar dev -m android
-    ```
+```bash
+npx quasar dev
+```
 
-### Lint the files
+Run desktop development:
+
+```bash
+npx quasar dev -m electron
+```
+
+Check code:
+
 ```bash
 npm run lint
-```
-
-### Type-check the files
-```bash
 npm run typecheck
-```
-
-### Run tests
-```bash
 npm test
 ```
 
-### Build the app for production
+Build:
+
 ```bash
 npm run build
-```
-
-### Build the PWA
-```bash
 npm run build:pwa
+npm run build:electron
 ```
-
-### Build macOS desktop packages
-```bash
-npm run build:electron:mac
-```
-
-### Desktop auto-update feed
-
-Electron releases use GitHub Releases as the update feed. The build points at
-`vechain-energy/sync2` by default. For another fork, set:
-
-```bash
-ELECTRON_RELEASE_OWNER=<owner> ELECTRON_RELEASE_REPO=<repo> npm run build:electron:mac
-```
-
-macOS auto-update only works from a signed and notarized app. The GitHub release
-workflow expects these repository secrets:
-
-```text
-MACOS_CSC_LINK
-MACOS_CSC_KEY_PASSWORD
-APPLE_API_KEY_ID
-APPLE_API_ISSUER
-APPLE_API_KEY_BASE64
-```
-
-If the macOS secrets are missing, the release workflow still builds macOS assets
-for manual download, but those assets are not suitable for auto-update.
-
-## Version release flow
-
-<details>
-  <summary>Click to get detail</summary>
-
-
-### Browser
-
-Browser version will be updated automatically by [Action](./.github/workflows/deploy-pwa-preview.yaml)
-
-### Desktop
-
-+ Bump `<version>` in [package.json](./package.json)
-+ `git tag v<version>`
-+ `git push origin v<version>`
-+ Check [Action](./.github/workflows/release.yaml) for more detailed info.
-+ The release workflow creates a draft GitHub Release and uploads built Electron binaries for Windows and macOS.
-+ Review the draft release assets.
-+ Publish the draft release. Auto-update only sees published releases.
-</details>
 
 ## License
 
-This package is licensed under the
-[GNU Lesser General Public License v3.0](https://www.gnu.org/licenses/lgpl-3.0.html), also included
-in *LICENSE* file in the repository.
+Sync2 is licensed under the
+[GNU Lesser General Public License v3.0](https://www.gnu.org/licenses/lgpl-3.0.html).
+See [LICENSE](./LICENSE).
