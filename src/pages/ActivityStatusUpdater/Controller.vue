@@ -8,13 +8,14 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import Entry from './Entry'
+import { uncompletedTxActivities } from 'pages/Activities/pending'
 
 export default defineComponent({
     components: { Entry },
     asyncComputed: {
         uncompleted(): Promise<M.Activity[]> {
             return this.$svc.activity.uncompleted()
-                .then(r => r.filter(i => i.type === 'tx'))
+                .then(uncompletedTxActivities)
         }
     }
 })

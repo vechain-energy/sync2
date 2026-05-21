@@ -96,6 +96,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { countPendingTxActivities } from 'pages/Activities/pending'
 
 export default defineComponent({
     computed: {
@@ -113,7 +114,11 @@ export default defineComponent({
     },
     asyncComputed: {
         ongoingActivitiesCount() {
-            return this.$svc.activity.uncompleted().then(r => r.length)
+            return this.$svc.activity.uncompleted().then(activities => {
+                return countPendingTxActivities(activities, activity => {
+                    return this.$svc.bc(activity.gid).thor.status.head.number
+                })
+            })
         }
     }
 })

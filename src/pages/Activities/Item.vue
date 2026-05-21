@@ -1,7 +1,9 @@
 <template>
     <q-expansion-item
         group="item"
-        expand-icon-class="hidden"
+        expand-icon="keyboard_arrow_down"
+        expanded-icon="keyboard_arrow_up"
+        expand-separator
     >
         <template v-slot:header>
             <q-item-section>
@@ -31,7 +33,7 @@
                         :color="icon.color"
                     />
                     <q-badge
-                        v-if="entry.status === 'reverted'"
+                        v-if="['reverted', 'reverted?'].includes(entry.status)"
                         color="warning"
                         text-color="white"
                         :label="$t('activities.label_reverted')"
@@ -52,7 +54,7 @@
                 </q-item-label>
             </q-item-section>
         </template>
-        <template>
+        <div class="activity-item-details">
             <q-item v-if="['success?', 'reverted?', 'sending'].includes(entry.status)">
                 <q-item-section />
                 <q-item-section />
@@ -125,7 +127,7 @@
                     </div>
                 </q-item-section>
             </q-item>
-        </template>
+        </div>
     </q-expansion-item>
 </template>
 <script lang="ts">

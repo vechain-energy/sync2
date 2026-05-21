@@ -111,7 +111,7 @@ describe('UI regression guards', () => {
     })
 
     it('parses transaction block references as hex for activity expiration checks', () => {
-        const source = sourceFile('src/pages/ActivityStatusUpdater/Entry.ts')
+        const source = sourceFile('src/pages/ActivityStatusUpdater/status.ts')
 
         assert.ok(source.includes('Number.parseInt(tx.body.blockRef.slice(2, 10), 16)'))
         assert.strictEqual(source.includes('parseInt(tx.body.blockRef.slice(0, 10))'), false)
@@ -122,11 +122,25 @@ describe('UI regression guards', () => {
         const notifier = sourceFile('src/pages/TransferNotifier.vue')
 
         assert.ok(updater.includes('headNumber(): number { return this.thor.status.head.number }'))
-        assert.ok(updater.includes('headNumber() {\n            this.$asyncComputed.task.update()'))
-        assert.ok(updater.includes('mounted() {\n        this.$asyncComputed.task.update()'))
+        assert.ok(updater.includes('headNumber() {\n            void this.updateStatus()'))
+        assert.ok(updater.includes('mounted() {\n        void this.updateStatus()'))
+        assert.strictEqual(updater.includes('asyncComputed'), false)
         assert.ok(notifier.includes('headNumber(): number { return this.thor.status.head.number }'))
         assert.ok(notifier.includes('headNumber() {\n            this.$asyncComputed.events.update()'))
         assert.ok(notifier.includes('mounted() {\n        this.$asyncComputed.events.update()'))
+    })
+
+    it('keeps activity rows expandable and the drawer badge pending-only', () => {
+        const item = sourceFile('src/pages/Activities/Item.vue')
+        const drawer = sourceFile('src/pages/Index/DrawerPanel.vue')
+        const updater = sourceFile('src/pages/ActivityStatusUpdater/Controller.vue')
+
+        assert.strictEqual(item.includes('expand-icon-class="hidden"'), false)
+        assert.ok(item.includes('expand-icon="keyboard_arrow_down"'))
+        assert.ok(item.includes('class="activity-item-details"'))
+        assert.ok(drawer.includes('countPendingTxActivities(activities'))
+        assert.ok(drawer.includes('thor.status.head.number'))
+        assert.ok(updater.includes('uncompletedTxActivities'))
     })
 
     it('keeps malformed stored wallet and activity JSON from crashing startup views', () => {
@@ -139,7 +153,7 @@ describe('UI regression guards', () => {
         assert.strictEqual(wallet.includes('JSON.parse(e.meta)'), false)
         assert.ok(activity.includes('parseStoredRecord(value)'))
         assert.strictEqual(activity.includes('JSON.parse(e.glob)'), false)
-        assert.ok(updater.includes('!/^0x[0-9a-f]+$/i.test(a.glob.encoded)'))
+        assert.ok(updater.includes('parseStoredTx(activity.glob.encoded)'))
     })
 
     it('uses the checked-in macOS icon explicitly', () => {

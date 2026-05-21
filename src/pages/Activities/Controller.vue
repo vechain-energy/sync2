@@ -31,6 +31,7 @@ import Item, { Entry } from './Item.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import { summarizeCertActivity } from './certificate'
+import { CONFIRMED_N } from '../ActivityStatusUpdater/status'
 
 export default defineComponent({
     components: {
@@ -87,7 +88,7 @@ export default defineComponent({
                 return ''
             }
             const confirms = this.$svc.bc(activity.gid).thor.status.head.number - receipt.meta.blockNumber
-            return `${confirms} / 12`
+            return `${Math.max(0, Math.min(CONFIRMED_N, confirms))} / ${CONFIRMED_N}`
         },
         status(a: M.Activity): 'reverted' | 'reverted?' | 'success' | 'success?' | 'sending' | 'expired' {
             if (a.type === 'cert') {
@@ -95,6 +96,11 @@ export default defineComponent({
             }
 
             const receipt = a.type === 'tx' ? a.glob.receipt : null
+            const headNumber = this.$svc.bc(a.gid).thor.status.head.number
+
+            if (receipt && headNumber >= receipt.meta.blockNumber + CONFIRMED_N) {
+                return receipt.reverted ? 'reverted' : 'success'
+            }
 
             if (a.status === 'completed') {
                 return receipt ? receipt.reverted ? 'reverted' : 'success' : 'expired'

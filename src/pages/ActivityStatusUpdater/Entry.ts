@@ -1,67 +1,76 @@
 import { defineComponent } from 'vue'
-import { Transaction } from 'thor-devkit'
-
-const CONFIRMED_N = 12
+import { decideTxActivityStatus, parseStoredTx } from './status'
 
 export default defineComponent({
     props: {
         activity: Object as () => M.Activity
     },
+    data() {
+        return {
+            updating: false,
+            updateAgain: false
+        }
+    },
     computed: {
         thor(): Connex.Thor { return this.$svc.bc(this.activity.gid).thor },
         headNumber(): number { return this.thor.status.head.number }
     },
-    asyncComputed: {
-        task: {
-            async get(): Promise<void> {
-                const a = this.activity
-                if (a.type !== 'tx') {
-                    return
-                }
-                if (!/^0x[0-9a-f]+$/i.test(a.glob.encoded)) {
-                    await this.$svc.activity.update(a.id, { status: 'completed' })
-                    return
-                }
-
-                const tx = Transaction.decode(Buffer.from(a.glob.encoded.slice(2), 'hex'))
-                const headNum = this.headNumber
-
-                const values: Parameters<Vue['$svc']['activity']['update']>[1] = {}
-
-                // check receipt
-                const receipt = await this.thor.transaction(tx.id!).getReceipt()
-                if (receipt) {
-                    values.glob = { ...a.glob, receipt }
-                    if (headNum >= receipt.meta.blockNumber + CONFIRMED_N) {
-                        values.status = 'completed'
-                    }
-                } else {
-                    const expired = headNum > Number.parseInt(tx.body.blockRef.slice(2, 10), 16) +
-                        tx.body.expiration +
-                        CONFIRMED_N
-
-                    if (expired) {
-                        values.status = 'completed'
-                    } else {
-                        this.$svc.bc(a.gid).commitTx(a.glob.encoded)
-                    }
-                }
-
-                // update if needed
-                if (Object.keys(values).length > 0) {
-                    await this.$svc.activity.update(a.id, values)
-                }
-            },
-            shouldUpdate() { return false }
-        }
-    },
     watch: {
         headNumber() {
-            this.$asyncComputed.task.update()
+            void this.updateStatus()
+        },
+        activity() {
+            void this.updateStatus()
         }
     },
     mounted() {
-        this.$asyncComputed.task.update()
+        void this.updateStatus()
+    },
+    methods: {
+        async updateStatus(): Promise<void> {
+            if (this.updating) {
+                this.updateAgain = true
+                return
+            }
+
+            this.updating = true
+            try {
+                do {
+                    this.updateAgain = false
+                    try {
+                        await this.updateStatusOnce()
+                    } catch (err) {
+                        console.warn('activity status update:', err)
+                    }
+                } while (this.updateAgain)
+            } finally {
+                this.updating = false
+            }
+        },
+        async updateStatusOnce(): Promise<void> {
+            const activity = this.activity
+            if (activity.type !== 'tx') {
+                return
+            }
+
+            const storedTx = parseStoredTx(activity.glob.encoded)
+            const receipt = storedTx
+                ? await this.thor.transaction(storedTx.id).getReceipt()
+                : null
+            const decision = decideTxActivityStatus({
+                glob: activity.glob,
+                headNumber: this.headNumber,
+                receipt,
+                storedTx
+            })
+
+            if (decision.shouldCommit) {
+                this.$svc.bc(activity.gid).commitTx(activity.glob.encoded)
+            }
+            if (Object.keys(decision.values).length > 0) {
+                await this.$svc.activity.update(activity.id, decision.values)
+            }
+        }
     },
     render(): null {
         return null
