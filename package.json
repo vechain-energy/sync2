@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "typecheck": "quasar prepare && tsc --noEmit",
     "test": "TS_NODE_PROJECT=test/tsconfig.json node -r ts-node/register/transpile-only test/run.ts",
+    "test:coverage": "nyc npm test",
     "postinstall": "electron-rebuild"
   },
   "dependencies": {
@@ -62,6 +63,7 @@
     "globals": "^17.6.0",
     "https-browserify": "^1.0.0",
     "more-entropy": "0.0.7",
+    "nyc": "^18.0.0",
     "postcss": "^8.5.15",
     "process": "^0.11.10",
     "qr-scanner": "^1.2.0",
@@ -91,6 +93,28 @@
     "node": ">=22.12 <29",
     "npm": ">=10",
     "yarn": ">= 1.21.1"
+  },
+  "nyc": {
+    "all": true,
+    "extension": [
+      ".ts"
+    ],
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "src/**/*.d.ts"
+    ],
+    "reporter": [
+      "text",
+      "json-summary",
+      "lcov"
+    ],
+    "check-coverage": true,
+    "lines": 80,
+    "statements": 80,
+    "functions": 75,
+    "branches": 60
   },
   "browserslist": [
     "last 10 Chrome versions",

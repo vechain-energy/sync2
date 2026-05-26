@@ -14,13 +14,26 @@ import {
     buildBetterSwapTransaction,
     buildSwapSigners,
     calculateMinimumOutput,
+    canonicalFlowAddress,
     convertApiClauseToClause,
+    createBetterSwapAggregator,
+    createVeTradeAggregator,
+    decodedStringArray,
     encodeApiFunctionCall,
+    getSwapAggregators,
+    getSwapDeadline,
+    getSwapQuotes,
+    hexToDecimalString,
     normalizeSwapTokenAddress,
-    selectBestQuote
+    selectBestQuote,
+    simulateSwapWithClauses,
+    swapNetworkOf
 } from '../src/utils/swap'
 import { buildVeTradeTransaction } from '../src/utils/swap/vetrade'
-import { BuiltSwapQuote, SwapParams, SwapQuote } from '../src/utils/swap/types'
+import { ZERO_ADDRESS, getAmountsOutABI } from '../src/utils/swap/abis'
+import { BuiltSwapQuote, SwapAggregator, SwapParams, SwapQuote } from '../src/utils/swap/types'
+import axios from 'axios'
+import { genesises } from '../src/consts'
 
 const USER = '0x9999999999999999999999999999999999999999'
 const TOKEN_A = '0x1111111111111111111111111111111111111111'
@@ -55,17 +68,56 @@ function betterQuote(fromTokenAddress: string, toTokenAddress: string): SwapQuot
     }
 }
 
+function thorWithOutputs(outputs: Connex.VM.Output[]): Connex.Thor {
+    return {
+        explain: () => ({
+            caller: () => ({
+                gas: () => ({
+                    execute: () => Promise.resolve(outputs)
+                })
+            })
+        })
+    } as unknown as Connex.Thor
+}
+
+function output(partial: Partial<Connex.VM.Output>): Connex.VM.Output {
+    return {
+        events: [],
+        transfers: [],
+        gasUsed: 1000,
+        reverted: false,
+        vmError: '',
+        revertReason: '',
+        ...partial
+    } as Connex.VM.Output
+}
+
 describe('swap helpers', () => {
     it('calculates minimum output with slippage', () => {
         assert.strictEqual(calculateMinimumOutput('1000', 1), '990')
         assert.strictEqual(calculateMinimumOutput('1000', 0.5), '995')
         assert.strictEqual(calculateMinimumOutput('1000', 3), '970')
+        assert.strictEqual(calculateMinimumOutput('1000', -1), '1000')
+        assert.strictEqual(calculateMinimumOutput('1000', 200), '0')
     })
 
     it('normalizes native VET token addresses', () => {
         assert.strictEqual(normalizeSwapTokenAddress(''), '0x')
         assert.strictEqual(normalizeSwapTokenAddress('0x0000000000000000000000000000000000000000'), '0x')
         assert.strictEqual(normalizeSwapTokenAddress(TOKEN_A), TOKEN_A)
+        assert.strictEqual(canonicalFlowAddress('0x'), ZERO_ADDRESS)
+        assert.strictEqual(canonicalFlowAddress(` ${TOKEN_A.toUpperCase()} `), TOKEN_A)
+        assert.strictEqual(swapNetworkOf(genesises.main.id), 'main')
+        assert.strictEqual(swapNetworkOf(genesises.test.id), 'unsupported')
+        assert.strictEqual(hexToDecimalString('0x10'), '16')
+        assert.strictEqual(hexToDecimalString(25), '25')
+        assert.strictEqual(getSwapDeadline(1704067200000), '1704068400')
+    })
+
+    it('decodes string arrays from named or indexed ABI outputs', () => {
+        assert.deepStrictEqual(decodedStringArray({ amounts: ['1', 2, null] }, 'amounts'), ['1', '2', '0'])
+        assert.deepStrictEqual(decodedStringArray({ 0: ['3'] }, 'amounts'), ['3'])
+        assert.deepStrictEqual(decodedStringArray({ amounts: 'bad' }, 'amounts'), [])
     })
 
     it('builds BetterSwap VET to token clause', () => {
@@ -139,6 +191,11 @@ describe('swap helpers', () => {
         assert.strictEqual(clause.to, VETRADE_SUPPORTED_ADDRESSES[0])
         assert.strictEqual(clause.value, '16')
         assert.strictEqual(clause.data, swapFunc.encode('1', '2', [TOKEN_A, TOKEN_B], USER, '123'))
+
+        assert.throws(() => encodeApiFunctionCall({
+            abi: [],
+            args: []
+        }), /Function name missing/)
     })
 
     it('filters VeTrade clauses and prepends approval for token swaps', () => {
@@ -165,6 +222,19 @@ describe('swap helpers', () => {
         assert.strictEqual(clauses[0].to, TOKEN_A)
         assert.strictEqual(clauses[0].data, approveFunc.encode(VETRADE_SUPPORTED_ADDRESSES[0], '1000000000000000000'))
         assert.strictEqual(clauses[1].to, VETRADE_SUPPORTED_ADDRESSES[0])
+
+        const vetClauses = buildVeTradeTransaction(params('0x', TOKEN_B), quote)
+        assert.strictEqual(vetClauses.length, 1)
+        assert.strictEqual(vetClauses[0].value, '1000000000000000000')
+
+        assert.throws(() => buildVeTradeTransaction(params(TOKEN_A, TOKEN_B), {
+            ...quote,
+            data: { kind: 'better-swap', path: [], routerAddress: BETTER_SWAP_ROUTER }
+        }), /Invalid VeTrade quote/)
+        assert.throws(() => buildVeTradeTransaction(params(TOKEN_A, TOKEN_B), {
+            ...quote,
+            data: { kind: 'vetrade', path: [], clauses: [] }
+        }), /No supported VeTrade clauses/)
     })
 
     it('selects the best available quote', () => {
@@ -182,6 +252,7 @@ describe('swap helpers', () => {
         ]
 
         assert.strictEqual(selectBestQuote(quotes)!.aggregatorName, 'best')
+        assert.strictEqual(selectBestQuote([]), null)
     })
 
     it('orders selected wallet signers first', () => {
@@ -197,5 +268,202 @@ describe('swap helpers', () => {
         }
 
         assert.deepStrictEqual(buildSwapSigners(wallet, TOKEN_B), [TOKEN_B, TOKEN_A])
+        assert.deepStrictEqual(buildSwapSigners(null, TOKEN_B), [])
+        assert.deepStrictEqual(buildSwapSigners(wallet, ''), [])
+    })
+
+    it('simulates swap clauses and reports failure reasons', async () => {
+        const quote = betterQuote('0x', '0x')
+        const clause = { to: BETTER_SWAP_ROUTER, value: '100', data: '0x' }
+
+        assert.deepStrictEqual(
+            await simulateSwapWithClauses(params('0x', '0x'), quote, [], thorWithOutputs([])),
+            { gasCostVTHO: 0, success: false, error: 'No swap clauses' }
+        )
+
+        assert.deepStrictEqual(
+            await simulateSwapWithClauses(
+                { ...params('0x', '0x'), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '90' },
+                [clause],
+                thorWithOutputs([output({
+                    transfers: [{ sender: BETTER_SWAP_ROUTER, recipient: USER, amount: '95' }],
+                    gasUsed: 1000
+                })])
+            ),
+            { gasCostVTHO: 2.01, success: true, error: '' }
+        )
+
+        assert.strictEqual(
+            (await simulateSwapWithClauses(
+                { ...params('0x', '0x'), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '90' },
+                [{ ...clause, value: '101' }],
+                thorWithOutputs([output({ transfers: [{ sender: BETTER_SWAP_ROUTER, recipient: USER, amount: '95' }] })])
+            )).error,
+            'Unexpected VET outflow'
+        )
+
+        assert.strictEqual(
+            (await simulateSwapWithClauses(
+                { ...params('0x', '0x'), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '90' },
+                [clause],
+                thorWithOutputs([output({ reverted: true, revertReason: 'bad swap' })])
+            )).error,
+            'bad swap'
+        )
+    })
+
+    it('aggregates quotes and selects the best successful simulation', async () => {
+        const originalWarn = console.warn
+        const aggregators: SwapAggregator[] = [
+            {
+                name: 'zero',
+                getQuote: () => Promise.resolve({ ...betterQuote(TOKEN_A, TOKEN_B), outputAmount: '0' }),
+                simulateSwap: () => Promise.reject(new Error('unused')),
+                buildSwapTransaction: () => Promise.resolve([])
+            },
+            {
+                name: 'best',
+                getQuote: () => Promise.resolve({ ...betterQuote(TOKEN_A, TOKEN_B), outputAmount: '20' }),
+                simulateSwap: () => Promise.resolve({ gasCostVTHO: 2, success: true, error: '' }),
+                buildSwapTransaction: () => Promise.resolve([])
+            },
+            {
+                name: 'failed',
+                getQuote: () => Promise.reject(new Error('down')),
+                simulateSwap: () => Promise.reject(new Error('unused')),
+                buildSwapTransaction: () => Promise.resolve([])
+            }
+        ]
+
+        console.warn = () => {}
+        try {
+            const result = await getSwapQuotes(params(TOKEN_A, TOKEN_B), thorWithOutputs([]), aggregators)
+
+            assert.strictEqual(result.quotes.length, 1)
+            assert.strictEqual(result.bestQuote!.aggregator.name, 'best')
+            assert.strictEqual(result.bestQuote!.gasCostVTHO, 2)
+        } finally {
+            console.warn = originalWarn
+        }
+    })
+
+    it('creates aggregators for supported swap networks only', () => {
+        assert.deepStrictEqual(getSwapAggregators('unsupported'), [])
+        assert.deepStrictEqual(getSwapAggregators('main').map(aggregator => aggregator.name), [
+            'VeTrade.vet',
+            'BetterSwap.io'
+        ])
+    })
+
+    it('fetches BetterSwap quotes from router output', async () => {
+        const aggregator = createBetterSwapAggregator()
+        const callArgs: unknown[] = []
+        const thor = {
+            account: (address: string) => {
+                assert.strictEqual(address, BETTER_SWAP_ROUTER)
+                return {
+                    method: (definition: typeof getAmountsOutABI) => {
+                        assert.strictEqual(definition.name, 'getAmountsOut')
+                        return {
+                            call: (...args: unknown[]) => {
+                                callArgs.push(...args)
+                                return Promise.resolve({
+                                    decoded: {
+                                        amounts: ['100', '250']
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }
+            }
+        } as unknown as Connex.Thor
+
+        const quote = await aggregator.getQuote(params('0x', TOKEN_A), thor)
+
+        assert.deepStrictEqual(callArgs, ['1000000000000000000', [BETTER_SWAP_WVET, TOKEN_A]])
+        assert.strictEqual(quote.outputAmount, '250')
+        assert.strictEqual(quote.minimumOutputAmount, '247')
+        assert.strictEqual(quote.data.kind, 'better-swap')
+    })
+
+    it('returns reverted BetterSwap quotes on router failure', async () => {
+        const originalWarn = console.warn
+        const aggregator = createBetterSwapAggregator()
+        const thor = {
+            account: () => ({
+                method: () => ({
+                    call: () => Promise.reject(new Error('router down'))
+                })
+            })
+        } as unknown as Connex.Thor
+
+        console.warn = () => {}
+        try {
+            const quote = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thor)
+
+            assert.strictEqual(quote.reverted, true)
+            assert.strictEqual(quote.outputAmount, '0')
+            assert.strictEqual(quote.revertReason, 'router down')
+        } finally {
+            console.warn = originalWarn
+        }
+    })
+
+    it('fetches VeTrade quotes and handles quote failures', async () => {
+        const originalGet = axios.get
+        const originalWarn = console.warn
+        const aggregator = createVeTradeAggregator()
+        const swapFunc = new abi.Function(swapExactTokensForTokensABI)
+
+        console.warn = () => {}
+        axios.get = ((url: string, options?: unknown) => {
+            assert.strictEqual(url, 'https://vetrade.vet/api/quote/vck')
+            assert.deepStrictEqual((options as { params: Record<string, string> }).params, {
+                fromAddress: TOKEN_A,
+                toAddress: TOKEN_B,
+                amountIn: '1000000000000000000',
+                recipient: USER,
+                slippageBps: '100',
+                network: 'main'
+            })
+
+            return Promise.resolve({
+                data: {
+                    amountOut: '300',
+                    amountOutMin: '290',
+                    path: [TOKEN_A, TOKEN_B],
+                    clauses: [{
+                        to: VETRADE_SUPPORTED_ADDRESSES[0],
+                        value: '0',
+                        functionCall: {
+                            name: 'swapExactTokensForTokens',
+                            abi: [swapExactTokensForTokensABI],
+                            args: ['1', '2', [TOKEN_A, TOKEN_B], USER, '123']
+                        }
+                    }]
+                }
+            })
+        }) as typeof axios.get
+
+        try {
+            const quote = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thorWithOutputs([]))
+
+            assert.strictEqual(quote.outputAmount, '300')
+            assert.strictEqual(quote.minimumOutputAmount, '290')
+            assert.strictEqual(quote.data.kind, 'vetrade')
+            assert.strictEqual(quote.data.clauses[0].data, swapFunc.encode('1', '2', [TOKEN_A, TOKEN_B], USER, '123'))
+
+            axios.get = (() => Promise.reject(new Error('api down'))) as typeof axios.get
+            const failed = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thorWithOutputs([]))
+            assert.strictEqual(failed.reverted, true)
+            assert.strictEqual(failed.revertReason, 'api down')
+        } finally {
+            axios.get = originalGet
+            console.warn = originalWarn
+        }
     })
 })

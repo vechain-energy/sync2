@@ -72,6 +72,7 @@ Check code:
 npm run lint
 npm run typecheck
 npm test
+npm run test:coverage
 ```
 
 Build:

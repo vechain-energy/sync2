@@ -8,10 +8,23 @@ import {
     changedVetDomainProfileRecords,
     convertVetDomainProfileUriToUrl,
     emptyVetDomainProfile,
+    getVetDomainRegistry,
+    isHttpUrl,
     normalizeVetDomainProfile,
     parseIpfsPinningResponse,
+    supportsVetDomainProfile,
+    uploadVetDomainProfileAvatar,
+    vetDomainProfileTransactionComment,
     vetDomainSetTextABI
 } from '../src/utils/vet-domain-profile'
+
+function restoreMode(value: string | undefined) {
+    if (value === undefined) {
+        delete process.env.MODE
+        return
+    }
+    process.env.MODE = value
+}
 
 describe('vet domain profile helpers', () => {
     it('normalizes profile records', () => {
@@ -79,9 +92,88 @@ describe('vet domain profile helpers', () => {
         assert.strictEqual(convertVetDomainProfileUriToUrl('bad', genesises.main.id), '')
     })
 
+    it('rejects unsupported or malformed media URIs', () => {
+        assert.strictEqual(convertVetDomainProfileUriToUrl('   ', genesises.main.id), '')
+        assert.strictEqual(convertVetDomainProfileUriToUrl('data:image/png;base64,abc', genesises.main.id), 'data:image/png;base64,abc')
+        assert.strictEqual(convertVetDomainProfileUriToUrl('ipfs://QmHash//bad', genesises.main.id), '')
+        assert.strictEqual(convertVetDomainProfileUriToUrl('ipfs://QmHash/avatar.png', '0xunsupported'), '')
+        assert.strictEqual(convertVetDomainProfileUriToUrl('ftp://example.com/a.png', genesises.main.id), '')
+    })
+
     it('parses IPFS pinning responses with stable upload errors', () => {
         assert.strictEqual(parseIpfsPinningResponse('{"IpfsHash":"QmHash"}'), 'ipfs://QmHash')
+        assert.throws(() => parseIpfsPinningResponse('{"IpfsHash":""}'), /IPFS upload did not return a hash/)
         assert.throws(() => parseIpfsPinningResponse('not-json'), /IPFS upload did not return a hash/)
         assert.throws(() => parseIpfsPinningResponse('{"Hash":"QmHash"}'), /IPFS upload did not return a hash/)
+    })
+
+    it('detects supported networks and safe profile links', () => {
+        assert.strictEqual(supportsVetDomainProfile(genesises.main.id), true)
+        assert.strictEqual(supportsVetDomainProfile(genesises.test.id), true)
+        assert.strictEqual(supportsVetDomainProfile('0xunsupported'), false)
+        assert.strictEqual(isHttpUrl('https://example.com'), true)
+        assert.strictEqual(isHttpUrl('http://example.com'), true)
+        assert.strictEqual(isHttpUrl('ipfs://QmHash'), false)
+        assert.strictEqual(isHttpUrl('bad'), false)
+        assert.strictEqual(vetDomainProfileTransactionComment('alice.vet'), 'Update VNS profile alice.vet')
+        assert.strictEqual(getVetDomainRegistry({ registry: '0x1', controller: '0x2', resolver: '0x3' }), '0x1')
+    })
+
+    it('uploads avatars through the profile pinning service', async () => {
+        const originalFetch = global.fetch
+        const previousMode = process.env.MODE
+        const calls: Array<{ input: string | URL | Request, init?: RequestInit }> = []
+
+        process.env.MODE = 'web'
+        global.fetch = ((input: string | URL | Request, init?: RequestInit) => {
+            calls.push({ input, init })
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                text: () => Promise.resolve('{"IpfsHash":"QmAvatar"}')
+            } as Response)
+        }) as typeof fetch
+
+        try {
+            const result = await uploadVetDomainProfileAvatar(new Blob(['avatar'], { type: 'image/jpeg' }), 'avatar.jpg', genesises.main.id)
+
+            assert.strictEqual(result, 'ipfs://QmAvatar')
+            assert.strictEqual(calls.length, 1)
+            assert.strictEqual(calls[0].input, 'https://api.gateway-proxy.vechain.org/api/v1/pinning/pinFileToIPFS')
+            assert.strictEqual(calls[0].init!.method, 'POST')
+            assert.strictEqual((calls[0].init!.headers as Record<string, string>)['X-Project-Id'], 'vechain-kit')
+            assert.strictEqual(calls[0].init!.body instanceof FormData, true)
+        } finally {
+            global.fetch = originalFetch
+            restoreMode(previousMode)
+        }
+    })
+
+    it('reports avatar upload failures with actionable errors', async () => {
+        const originalFetch = global.fetch
+        const previousMode = process.env.MODE
+
+        process.env.MODE = 'web'
+        global.fetch = (() => {
+            return Promise.resolve({
+                ok: false,
+                status: 503,
+                text: () => Promise.resolve('')
+            } as Response)
+        }) as typeof fetch
+
+        try {
+            await assert.rejects(
+                uploadVetDomainProfileAvatar(new Blob(['avatar']), 'avatar.jpg', '0xunsupported'),
+                /VNS profile is not supported/
+            )
+            await assert.rejects(
+                uploadVetDomainProfileAvatar(new Blob(['avatar']), 'avatar.jpg', genesises.test.id),
+                /IPFS upload failed with status 503/
+            )
+        } finally {
+            global.fetch = originalFetch
+            restoreMode(previousMode)
+        }
     })
 })
