@@ -11,6 +11,12 @@ export type EstimateGasResult = {
     feeMarket: FeeMarket
 }
 
+const defaultExplainGas = 2000 * 10000
+
+export function calcExplainGas(suggestedGas: number): number {
+    return suggestedGas > 0 ? suggestedGas : defaultExplainGas
+}
+
 async function getFeeMarket(thor: Connex.Thor): Promise<FeeMarket> {
     if (!thor.fees) {
         throw new Error(GALACTICA_NODE_REQUIRED)
@@ -45,7 +51,7 @@ export async function estimateGas(
             data: item.data || '0x'
         }
     }))
-    const offeredGas = suggestedGas ? Math.max(suggestedGas - intrinsicGas, 1) : 2000 * 10000
+    const offeredGas = calcExplainGas(suggestedGas)
     const explainer = thor.explain(clauses)
         .caller(caller)
         .gas(offeredGas)
