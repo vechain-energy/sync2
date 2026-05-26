@@ -36,6 +36,7 @@
                     v-else
                     :signer="signer"
                     :groups="signerGroups"
+                    :gid="gid"
                     @select="signer=$event"
                 />
 

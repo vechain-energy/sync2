@@ -2,10 +2,11 @@
     <div>
         <signer-item
             :text="signer"
-            :caption="group? group.name : ''"
+            :caption="groupCaption"
             :sideIcon="count > 1 ? 'unfold_more': ''"
             :clickable="count > 1"
             :gid="gid"
+            :resolveName="false"
         />
         <q-popup-proxy
             v-if="count > 1"
@@ -23,7 +24,7 @@
                         <q-item-label
                             header
                             class="ellipsis"
-                        >{{g.name}}</q-item-label>
+                        >{{groupDisplayName(g, gi)}}</q-item-label>
                         <signer-item
                             :ref="addr"
                             v-close-popup
@@ -46,6 +47,11 @@ import { defineComponent } from 'vue'
 import SignerItem from './SignerItem.vue'
 import { count } from 'src/utils/array'
 import { SignerGroup } from './models'
+import { firstVetDomainWalletName } from 'src/utils/vet-domain-wallet-name'
+
+type AsyncComputedState = Vue & {
+    groupVetNames: string[]
+}
 
 export default defineComponent({
     emits: ['select'],
@@ -62,11 +68,39 @@ export default defineComponent({
         group(): SignerGroup | null {
             return this.groups.find(g => g.addresses.includes(this.signer)) || null
         },
+        groupCaption(): string {
+            const group = this.group
+            return group ? this.groupDisplayName(group, this.groups.indexOf(group)) : ''
+        },
         count(): number {
             return count(this.groups, g => g.addresses.length)
         }
     },
+    asyncComputed: {
+        groupVetNames: {
+            async get(): Promise<string[]> {
+                if (!this.gid) {
+                    return this.groups.map(() => '')
+                }
+                try {
+                    this.$svc.bc(this.gid).vetDomainsRevision()
+                    return Promise.all(this.groups.map(async group => {
+                        const names = await this.$svc.bc(this.gid).vetDomainsNamesOf(group.addresses)
+                        return firstVetDomainWalletName(names)
+                    }))
+                } catch (err) {
+                    console.warn('signer .vet names:', err)
+                    return this.groups.map(() => '')
+                }
+            },
+            default: () => [] as string[]
+        }
+    },
     methods: {
+        groupDisplayName(group: SignerGroup, index: number): string {
+            const { groupVetNames } = this as unknown as AsyncComputedState
+            return groupVetNames[index] || group.name
+        },
         onPopupShow() {
             const item = this.$refs[this.signer] as Vue[]
             if (item) {
