@@ -143,6 +143,37 @@ describe('private key helpers', () => {
         }
     })
 
+    it('rejects backup requests that cannot expose a matching private key', () => {
+        const privateKey = parsePrivateKey(VALID_PRIVATE_KEY)
+        const umk = Buffer.alloc(32, 8)
+        const staticVault = Vault.createStatic(privateKey, umk)
+        const targetAddress = staticVault.derive(0).address
+        const ledger = testWallet(staticVault, 'ledger', [targetAddress])
+
+        assert.throws(
+            () => unlockPrivateKeyForBackup(ledger, targetAddress, 0, umk),
+            /ledger wallets do not expose private keys/
+        )
+        assert.throws(
+            () => unlockPrivateKeyForBackup({ ...ledger, meta: { ...ledger.meta, type: 'hd' }, vault: '"bad"' }, targetAddress, 0, umk),
+            /invalid vault/
+        )
+        assert.throws(
+            () => unlockPrivateKeyForBackup({ ...ledger, meta: { ...ledger.meta, type: 'hd' }, vault: '{}' }, targetAddress, 0, umk),
+            /invalid vault/
+        )
+        assert.throws(
+            () => unlockPrivateKeyForBackup({ ...ledger, meta: { ...ledger.meta, type: 'hd' } }, `0x${'9'.repeat(40)}`, 0, umk),
+            /private key could not be matched/
+        )
+        assert.throws(
+            () => unlockPrivateKeyForBackup({ ...ledger, meta: { ...ledger.meta, type: 'private-key' } }, `0x${'9'.repeat(40)}`, 0, umk),
+            /private key does not match/
+        )
+
+        privateKey.fill(0)
+    })
+
     it('guards unsupported software wallet signing inputs', () => {
         const wallet: M.Wallet = {
             id: 1,

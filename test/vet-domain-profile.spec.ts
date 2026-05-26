@@ -213,10 +213,12 @@ describe('vet domain profile helpers', () => {
         try {
             const file = new File(['avatar'], 'avatar.png', { type: 'image/png' })
             const prepared = await prepareVetDomainProfileAvatar(file)
+            const unnamed = await prepareVetDomainProfileAvatar(new File(['avatar'], '', { type: 'image/png' }))
 
             assert.strictEqual(prepared.blob, file)
             assert.strictEqual(prepared.filename, 'avatar.png')
-            assert.deepStrictEqual(revoked, ['blob:avatar'])
+            assert.strictEqual(unnamed.filename, 'avatar.png')
+            assert.deepStrictEqual(revoked, ['blob:avatar', 'blob:avatar'])
         } finally {
             URL.createObjectURL = originalCreateObjectURL
             URL.revokeObjectURL = originalRevokeObjectURL
@@ -273,6 +275,10 @@ describe('vet domain profile helpers', () => {
             assert.strictEqual(prepared.blob.type, 'image/jpeg')
             assert.deepStrictEqual(qualities, [0.9, 0.8])
 
+            const unnamed = await prepareVetDomainProfileAvatar(new File(['avatar'], '.png', { type: 'image/png' }))
+            assert.strictEqual(unnamed.filename, 'avatar.jpg')
+            assert.deepStrictEqual(qualities, [0.9, 0.8, 0.9])
+
             class BadImageMock {
                 width = 0
                 height = 0
@@ -288,6 +294,70 @@ describe('vet domain profile helpers', () => {
             await assert.rejects(
                 prepareVetDomainProfileAvatar(new File(['bad'], 'bad.txt', { type: 'text/plain' })),
                 /selected file is not a valid image/
+            )
+        } finally {
+            URL.createObjectURL = originalCreateObjectURL
+            URL.revokeObjectURL = originalRevokeObjectURL
+            globalScope.Image = originalImage
+            globalScope.document = originalDocument
+        }
+    })
+
+    it('reports avatar compression canvas failures', async () => {
+        const globalScope = globalThis as typeof globalThis & {
+            Image: typeof Image
+            document: Document
+        }
+        const originalImage = globalScope.Image
+        const originalDocument = globalScope.document
+        const originalCreateObjectURL = URL.createObjectURL
+        const originalRevokeObjectURL = URL.revokeObjectURL
+
+        class LargeImageMock {
+            width = 4000
+            height = 2000
+            onload: (() => void) | null = null
+            onerror: (() => void) | null = null
+
+            set src(_value: string) {
+                this.onload?.()
+            }
+        }
+
+        URL.createObjectURL = () => 'blob:large-avatar'
+        URL.revokeObjectURL = () => {}
+        globalScope.Image = LargeImageMock as unknown as typeof Image
+
+        try {
+            globalScope.document = {
+                createElement: () => ({
+                    width: 0,
+                    height: 0,
+                    getContext: () => null
+                } as unknown as HTMLCanvasElement)
+            } as unknown as Document
+            await assert.rejects(
+                prepareVetDomainProfileAvatar(new File(['avatar'], 'avatar.png', { type: 'image/png' })),
+                /image compression failed/
+            )
+
+            globalScope.document = {
+                createElement: () => ({
+                    width: 0,
+                    height: 0,
+                    getContext: () => ({
+                        fillStyle: '',
+                        fillRect: () => {},
+                        drawImage: () => {}
+                    } as unknown as CanvasRenderingContext2D),
+                    toBlob: (callback: BlobCallback) => {
+                        callback(null)
+                    }
+                } as unknown as HTMLCanvasElement)
+            } as unknown as Document
+            await assert.rejects(
+                prepareVetDomainProfileAvatar(new File(['avatar'], 'avatar.png', { type: 'image/png' })),
+                /image compression failed/
             )
         } finally {
             URL.createObjectURL = originalCreateObjectURL
@@ -348,6 +418,59 @@ describe('vet domain profile helpers', () => {
             assert.strictEqual(result, 'ipfs://QmNode')
             assert.strictEqual(requestedHost, 'api.gateway-proxy.vechain.org')
             assert.strictEqual(requestBody.includes('filename="bad__name.png"'), true)
+        } finally {
+            moduleWithLoad._load = originalLoad
+            restoreMode(previousMode)
+        }
+    })
+
+    it('reports Electron avatar upload HTTP failures', async () => {
+        const moduleWithLoad = require('module') as ModuleWithLoad
+        const originalLoad = moduleWithLoad._load
+        const previousMode = process.env.MODE
+        let requestBody = ''
+
+        type MockResponse = {
+            statusCode?: number
+            on: (event: 'data' | 'end', handler: (chunk?: Buffer | string) => void) => void
+        }
+
+        process.env.MODE = 'electron'
+        moduleWithLoad._load = (request, parent, isMain) => {
+            if (request === 'https') {
+                return {
+                    request: (
+                        _options: { hostname?: string },
+                        callback: (res: MockResponse) => void
+                    ) => {
+                        return {
+                            on: () => {},
+                            end: (body: Buffer) => {
+                                requestBody = body.toString('utf8')
+                                const handlers: Partial<Record<'data' | 'end', (chunk?: Buffer | string) => void>> = {}
+                                callback({
+                                    on: (event, handler) => {
+                                        handlers[event] = handler
+                                    }
+                                })
+                                handlers.data?.('bad')
+                                handlers.end?.()
+                            }
+                        }
+                    }
+                }
+            }
+
+            return originalLoad(request, parent, isMain)
+        }
+
+        try {
+            await assert.rejects(
+                uploadVetDomainProfileAvatar(new Blob(['avatar']), '', genesises.main.id),
+                /IPFS upload failed with status 0/
+            )
+            assert.strictEqual(requestBody.includes('filename="avatar"'), true)
+            assert.strictEqual(requestBody.includes('Content-Type: application/octet-stream'), true)
         } finally {
             moduleWithLoad._load = originalLoad
             restoreMode(previousMode)

@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
 import { Transaction, secp256k1 } from 'thor-devkit'
-import { countPendingTxActivities } from '../src/pages/Activities/pending'
+import { countPendingTxActivities, uncompletedTxActivities } from '../src/pages/Activities/pending'
 import { CONFIRMED_N, decideTxActivityStatus, parseStoredTx } from '../src/pages/ActivityStatusUpdater/status'
 
 const signerKey = Buffer.from('1'.repeat(64), 'hex')
@@ -114,6 +114,13 @@ describe('activity tx status helpers', () => {
         assert.deepStrictEqual(decision.values, {
             glob: { ...txGlob(), receipt: foundReceipt }
         })
+
+        assert.deepStrictEqual(decideTxActivityStatus({
+            glob: txGlob({ receipt: foundReceipt }),
+            headNumber: foundReceipt.meta.blockNumber + CONFIRMED_N - 1,
+            receipt: foundReceipt,
+            storedTx
+        }).values, {})
     })
 
     it('completes a tx at the confirmation threshold', () => {
@@ -164,6 +171,12 @@ describe('activity tx status helpers', () => {
 
 describe('pending activity helpers', () => {
     it('counts only unmined and unexpired tx activities', () => {
+        assert.deepStrictEqual(uncompletedTxActivities([
+            txActivity(1, ''),
+            txActivity(2, 'completed'),
+            certActivity(3, '')
+        ]).map(activity => activity.id), [1])
+
         assert.strictEqual(countPendingTxActivities([
             txActivity(1, ''),
             txActivity(2, 'completed'),

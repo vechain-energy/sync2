@@ -54,18 +54,25 @@ describe('vet domain registration helpers', () => {
         assert.strictEqual(yearsToDuration(2), 63072000)
         assert.throws(() => yearsToDuration(0), /invalid duration/)
         assert.strictEqual(sumVetDomainPrice({ base: '10', premium: '5' }), '15')
+        assert.strictEqual(sumVetDomainPrice({ base: '', premium: '' }), '0')
     })
 
     it('decodes controller call outputs', () => {
         assert.strictEqual(decodedBoolean({ 0: true }), true)
         assert.strictEqual(decodedBoolean({ 0: false }), false)
         assert.strictEqual(decodedNumber({ 0: '10' }), 10)
+        assert.strictEqual(decodedNumber({ 0: 10 }), 10)
+        assert.strictEqual(decodedNumber({ 0: {} }), 0)
         assert.strictEqual(decodedString({ commitment: '0x1234' }, 'commitment'), '0x1234')
+        assert.strictEqual(decodedString({ 0: '0x5678' }, 'commitment'), '0x5678')
+        assert.strictEqual(decodedString({ 0: 1234 }, 'commitment'), '')
         assert.deepStrictEqual(decodedVetDomainPrice({ 0: ['100', '7'] }), { base: '100', premium: '7' })
         const namedPrice = ['100', '7'] as unknown[] & { base: string; premium: string }
         namedPrice.base = '100'
         namedPrice.premium = '7'
         assert.deepStrictEqual(decodedVetDomainPrice({ 0: namedPrice }), { base: '100', premium: '7' })
+        assert.deepStrictEqual(decodedVetDomainPrice({ base: 100, premium: 7 }), { base: '100', premium: '7' })
+        assert.deepStrictEqual(decodedVetDomainPrice({ 0: {} }), { base: '0', premium: '0' })
     })
 
     it('builds resolver data for primary name registration', () => {

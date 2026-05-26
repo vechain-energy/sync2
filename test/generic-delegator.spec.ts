@@ -103,6 +103,10 @@ describe('generic delegator helpers', () => {
         assert.strictEqual(vtho.gas, 67582)
         assert.strictEqual(vtho.amountWei, '836327250000000000')
         assert.strictEqual(tokenAmountToWei('1.000000000000000001', 18), '1000000000000000001')
+        assert.strictEqual(parseGenericDelegatorEstimate({
+            ...estimateResponse,
+            serviceFee: undefined
+        }, 'VET', 'regular').serviceFee, 0)
     })
 
     it('rejects malformed Generic Delegator estimates and signatures', () => {
@@ -112,6 +116,10 @@ describe('generic delegator helpers', () => {
         )
         assert.throws(
             () => parseGenericDelegatorEstimate({ transactionCost: {}, estimatedGas: {} }, 'VET', 'regular'),
+            /valid Generic Delegator fee estimate/
+        )
+        assert.throws(
+            () => parseGenericDelegatorEstimate({ transactionCost: null, estimatedGas: {} }, 'VET', 'regular'),
             /valid Generic Delegator fee estimate/
         )
         assert.throws(
@@ -173,6 +181,21 @@ describe('generic delegator helpers', () => {
                 }
             ], 'B3TR', b3tr, '10').toString(),
             '25'
+        )
+        assert.strictEqual(
+            calcGenericGasTokenRequiredBalance([{
+                to: null,
+                value: 0
+            } as Connex.Vendor.TxMessage[0]], 'B3TR', b3tr, '10').toString(),
+            '10'
+        )
+        assert.strictEqual(
+            calcGenericGasTokenRequiredBalance([{
+                to: '0x0000000000000000000000000000000000000001',
+                value: '',
+                data: '0x'
+            }], 'VET', getGenericGasTokenSpec(genesises.test.id, [], 'VET')!, '10').toString(),
+            '10'
         )
     })
 

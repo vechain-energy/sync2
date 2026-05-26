@@ -33,7 +33,9 @@ describe('signer groups', () => {
         const groups = buildSignerGroups([wallet, otherWallet], undefined, [
             otherWallet.meta.addresses[0],
             wallet.meta.addresses[1],
-            wallet.meta.addresses[0]
+            wallet.meta.addresses[0],
+            wallet.meta.addresses[0].toUpperCase(),
+            '0x9999999999999999999999999999999999999999'
         ])
 
         assert.deepStrictEqual(groups, [

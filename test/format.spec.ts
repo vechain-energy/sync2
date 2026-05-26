@@ -19,6 +19,16 @@ describe('format helpers', () => {
             dec: '2010',
             sep: '.'
         })
+        assert.deepStrictEqual(formatAmount('1201', { unit: 3, fullPrecision: true }), {
+            int: '1',
+            dec: '201',
+            sep: '.'
+        })
+        assert.deepStrictEqual(formatAmount('1201', { unit: 3 }), {
+            int: '1',
+            dec: '201',
+            sep: '.'
+        })
     })
 
     it('rejects invalid amount input and converts decimal strings to wei', () => {
