@@ -68,6 +68,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function numberField(source: Record<string, unknown>, key: string): number | null {
     const value = source[key]
+    return numberValue(value)
+}
+
+function numberValue(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
@@ -143,18 +147,17 @@ export function parseGenericDelegatorEstimate(
 
     const transactionCost = response.transactionCost
     const estimatedGas = response.estimatedGas
-    const key = tokenKey(token)
-    if (!isRecord(transactionCost) || !isRecord(estimatedGas)) {
-        throw new Error('you need a valid Generic Delegator fee estimate')
-    }
+    let amount = numberValue(transactionCost)
+    let gas = numberValue(estimatedGas)
+    if (amount === null && gas === null && isRecord(transactionCost) && isRecord(estimatedGas)) {
+        const speedCost = transactionCost[speed]
+        if (!isRecord(speedCost)) {
+            throw new Error('you need a valid Generic Delegator fee estimate')
+        }
 
-    const speedCost = transactionCost[speed]
-    if (!isRecord(speedCost)) {
-        throw new Error('you need a valid Generic Delegator fee estimate')
+        amount = numberField(speedCost, tokenKey(token))
+        gas = numberField(estimatedGas, tokenKey(token))
     }
-
-    const amount = numberField(speedCost, key)
-    const gas = numberField(estimatedGas, key)
     if (amount === null || gas === null) {
         throw new Error('you need a valid Generic Delegator fee estimate')
     }

@@ -50,6 +50,30 @@ const estimateResponse = {
     serviceFee: 0.1
 }
 
+const flatVetEstimateResponse = {
+    vthoPerGasAtSpeed: 0.00001125,
+    estimatedGas: 96668,
+    rate: 0.0873267067747842,
+    transactionCost: 0.09591879455336123,
+    serviceFee: 0.1
+}
+
+const flatB3trEstimateResponse = {
+    vthoPerGasAtSpeed: 0.00001125,
+    estimatedGas: 106261,
+    rate: 0.04342866222150514,
+    transactionCost: 0.05243535907967871,
+    serviceFee: 0.1
+}
+
+const flatVthoEstimateResponse = {
+    vthoPerGasAtSpeed: 0.00001125,
+    estimatedGas: 104784,
+    rate: 1.1,
+    transactionCost: 1.30966902,
+    serviceFee: 0.1
+}
+
 function tokenTransferClause(token: M.TokenSpec, to: string, amount: string): Connex.Vendor.TxMessage[0] {
     return {
         to: token.address,
@@ -87,7 +111,21 @@ describe('generic delegator helpers', () => {
         )
     })
 
-    it('parses regular, medium, and high token estimates', () => {
+    it('parses current token-specific Generic Delegator estimates', () => {
+        const vet = parseGenericDelegatorEstimate(flatVetEstimateResponse, 'VET', 'regular')
+        const b3tr = parseGenericDelegatorEstimate(flatB3trEstimateResponse, 'B3TR', 'regular')
+        const vtho = parseGenericDelegatorEstimate(flatVthoEstimateResponse, 'VTHO', 'regular')
+
+        assert.strictEqual(vet.gas, 96668)
+        assert.strictEqual(vet.amountWei, '95918794553361230')
+        assert.strictEqual(b3tr.gas, 106261)
+        assert.strictEqual(b3tr.amountWei, '52435359079678710')
+        assert.strictEqual(vtho.gas, 104784)
+        assert.strictEqual(vtho.amountWei, '1309669020000000000')
+        assert.strictEqual(vet.serviceFee, 0.1)
+    })
+
+    it('parses legacy aggregate regular, medium, and high token estimates', () => {
         assert.strictEqual(speedFromFeePriority(100), 'regular')
         assert.strictEqual(speedFromFeePriority(150), 'medium')
         assert.strictEqual(speedFromFeePriority(200), 'high')
@@ -126,6 +164,20 @@ describe('generic delegator helpers', () => {
             () => parseGenericDelegatorEstimate({
                 transactionCost: { regular: { vet: '1' } },
                 estimatedGas: { vet: 21000 }
+            }, 'VET', 'regular'),
+            /valid Generic Delegator fee estimate/
+        )
+        assert.throws(
+            () => parseGenericDelegatorEstimate({
+                transactionCost: 0.1,
+                estimatedGas: { vet: 21000 }
+            }, 'VET', 'regular'),
+            /valid Generic Delegator fee estimate/
+        )
+        assert.throws(
+            () => parseGenericDelegatorEstimate({
+                transactionCost: { regular: { vet: 0.1 } },
+                estimatedGas: 21000
             }, 'VET', 'regular'),
             /valid Generic Delegator fee estimate/
         )
