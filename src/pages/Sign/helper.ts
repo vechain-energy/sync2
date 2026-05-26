@@ -12,9 +12,18 @@ export type EstimateGasResult = {
 }
 
 const defaultExplainGas = 2000 * 10000
+const gasBufferNumerator = 110
+const gasBufferDenominator = 100
 
-export function calcExplainGas(suggestedGas: number): number {
-    return suggestedGas > 0 ? suggestedGas : defaultExplainGas
+export function calcBufferedGas(gas: number): number {
+    return gas > 0 ? Math.ceil(gas * gasBufferNumerator / gasBufferDenominator) : gas
+}
+
+export function calcExplainGas(suggestedGas: number, applyBuffer = true): number {
+    if (suggestedGas <= 0) {
+        return defaultExplainGas
+    }
+    return applyBuffer ? calcBufferedGas(suggestedGas) : suggestedGas
 }
 
 async function getFeeMarket(thor: Connex.Thor): Promise<FeeMarket> {
@@ -42,7 +51,8 @@ export async function estimateGas(
     clauses: Connex.VM.Clause[],
     suggestedGas: number,
     caller: string,
-    gasPayer?: string
+    gasPayer?: string,
+    applySuggestedGasBuffer = true
 ): Promise<EstimateGasResult> {
     const intrinsicGas = Transaction.intrinsicGas(clauses.map(item => {
         return {
@@ -51,7 +61,7 @@ export async function estimateGas(
             data: item.data || '0x'
         }
     }))
-    const offeredGas = calcExplainGas(suggestedGas)
+    const offeredGas = calcExplainGas(suggestedGas, applySuggestedGasBuffer)
     const explainer = thor.explain(clauses)
         .caller(caller)
         .gas(offeredGas)
@@ -62,10 +72,10 @@ export async function estimateGas(
 
     const outputs = await explainer.execute()
 
-    let gas = suggestedGas
+    let gas = suggestedGas > 0 ? offeredGas : 0
     if (!gas) {
         const execGas = outputs.reduce((sum, out) => sum + out.gasUsed, 0)
-        gas = intrinsicGas + (execGas ? (execGas + 15000) : 0)
+        gas = calcBufferedGas(intrinsicGas + (execGas ? (execGas + 15000) : 0))
     }
 
     const feeMarket = await getFeeMarket(thor)

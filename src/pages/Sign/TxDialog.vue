@@ -548,7 +548,8 @@ export default defineComponent({
                 this.displayMessage,
                 this.isGenericFeeMode ? (this.genericDelegatorEstimate ? this.genericDelegatorEstimate.gas : 0) : (this.req.options.gas || 0),
                 this.signer,
-                this.req.options.delegator && this.req.options.delegator.signer)
+                this.req.options.delegator && this.req.options.delegator.signer,
+                !this.isGenericFeeMode)
         },
         tokens: {
             async get(): Promise<M.TokenSpec[]> {

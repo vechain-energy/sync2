@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
 import { Transaction } from 'thor-devkit'
-import { calcExplainGas, estimateGas } from '../src/pages/Sign/helper'
+import { calcBufferedGas, calcExplainGas, estimateGas } from '../src/pages/Sign/helper'
 
 type CapturedGas = {
     gas: number
@@ -61,9 +61,10 @@ function fakeThor(captured: CapturedGas, outputs: Connex.VM.Output[]): Connex.Th
 }
 
 describe('sign helper gas estimation', () => {
-    it('simulates dapp-provided gas without subtracting intrinsic gas', async () => {
+    it('simulates dapp-provided gas with a safety buffer without subtracting intrinsic gas', async () => {
         const suggestedGas = 1037016
         const intrinsicGas = Transaction.intrinsicGas([claimLikeTransactionClause])
+        const bufferedGas = calcBufferedGas(suggestedGas)
         const captured = { gas: 0 }
 
         const result = await estimateGas(
@@ -73,11 +74,30 @@ describe('sign helper gas estimation', () => {
             caller
         )
 
-        assert.strictEqual(calcExplainGas(suggestedGas), suggestedGas)
+        assert.strictEqual(bufferedGas, 1140718)
+        assert.strictEqual(calcExplainGas(suggestedGas), bufferedGas)
         assert.notStrictEqual(captured.gas, suggestedGas - intrinsicGas)
+        assert.strictEqual(captured.gas, bufferedGas)
+        assert.strictEqual(result.gas, bufferedGas)
+        assert.strictEqual(result.reverted, false)
+    })
+
+    it('can keep provided gas unbuffered when external fee estimates must match', async () => {
+        const suggestedGas = 1037016
+        const captured = { gas: 0 }
+
+        const result = await estimateGas(
+            fakeThor(captured, [fakeOutput(1000488)]),
+            [claimLikeClause],
+            suggestedGas,
+            caller,
+            undefined,
+            false
+        )
+
+        assert.strictEqual(calcExplainGas(suggestedGas, false), suggestedGas)
         assert.strictEqual(captured.gas, suggestedGas)
         assert.strictEqual(result.gas, suggestedGas)
-        assert.strictEqual(result.reverted, false)
     })
 
     it('keeps intrinsic padding when Sync2 estimates missing gas', async () => {
@@ -93,6 +113,6 @@ describe('sign helper gas estimation', () => {
         )
 
         assert.strictEqual(captured.gas, calcExplainGas(0))
-        assert.strictEqual(result.gas, intrinsicGas + gasUsed + 15000)
+        assert.strictEqual(result.gas, calcBufferedGas(intrinsicGas + gasUsed + 15000))
     })
 })
