@@ -157,6 +157,31 @@ describe('activity tx status helpers', () => {
         const storedTx = parseStoredTx('0x123')
 
         assert.strictEqual(storedTx, null)
+        assert.strictEqual(parseStoredTx('0x12'), null)
+
+        const decoder = Transaction as unknown as {
+            decode: (raw: Buffer, unsigned?: boolean) => {
+                id: string
+                body: {
+                    blockRef: string
+                    expiration: number
+                }
+            }
+        }
+        const originalDecode = decoder.decode
+        decoder.decode = () => ({
+            id: '',
+            body: {
+                blockRef: '0x0000000000000000',
+                expiration: 18
+            }
+        })
+        try {
+            assert.strictEqual(parseStoredTx(encodedTx(100, 18)), null)
+        } finally {
+            decoder.decode = originalDecode
+        }
+
         assert.deepStrictEqual(decideTxActivityStatus({
             glob: txGlob({ encoded: '0x123' }),
             headNumber: 0,

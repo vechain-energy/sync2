@@ -178,6 +178,11 @@ describe('scroll divider directive', () => {
 
             assert.strictEqual(el.style.borderBottom, '1px solid rgba(0,0,0,0.12)')
             assert.strictEqual(el.style.borderTop, '1px solid rgba(0,0,0,0.06)')
+
+            const both = new FakeScrollElement()
+            both.scrollTop = 75
+            directive.mounted(both as unknown as HTMLElement, { modifiers: { top: false, both: true } })
+            assert.strictEqual(both.style.borderTop, '1px solid rgba(0,0,0,0.12)')
         } finally {
             if (originalWindow) {
                 globalScope.window = originalWindow

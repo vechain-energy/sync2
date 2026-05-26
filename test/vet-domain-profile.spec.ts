@@ -429,6 +429,7 @@ describe('vet domain profile helpers', () => {
         const originalLoad = moduleWithLoad._load
         const previousMode = process.env.MODE
         let requestBody = ''
+        let statusCode: number | undefined
 
         type MockResponse = {
             statusCode?: number
@@ -449,6 +450,7 @@ describe('vet domain profile helpers', () => {
                                 requestBody = body.toString('utf8')
                                 const handlers: Partial<Record<'data' | 'end', (chunk?: Buffer | string) => void>> = {}
                                 callback({
+                                    statusCode,
                                     on: (event, handler) => {
                                         handlers[event] = handler
                                     }
@@ -471,6 +473,12 @@ describe('vet domain profile helpers', () => {
             )
             assert.strictEqual(requestBody.includes('filename="avatar"'), true)
             assert.strictEqual(requestBody.includes('Content-Type: application/octet-stream'), true)
+
+            statusCode = 200
+            await assert.rejects(
+                uploadVetDomainProfileAvatar(new Blob(['avatar']), 'avatar.jpg', genesises.main.id),
+                /IPFS upload did not return a hash/
+            )
         } finally {
             moduleWithLoad._load = originalLoad
             restoreMode(previousMode)

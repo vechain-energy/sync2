@@ -105,6 +105,8 @@ describe('sign request models', () => {
     })
 
     it('rejects malformed transaction requests', () => {
+        assert.throws(() => RelayedRequest.validate([]), /request requires object type/)
+
         assert.throws(() => RelayedRequest.validate({
             gid,
             type: 'tx',

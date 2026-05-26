@@ -19,6 +19,11 @@ describe('format helpers', () => {
             dec: '2010',
             sep: '.'
         })
+        assert.deepStrictEqual(formatAmount('1234', { unit: 3, fixed: 2, fullPrecision: true }), {
+            int: '1',
+            dec: '234',
+            sep: '.'
+        })
         assert.deepStrictEqual(formatAmount('1201', { unit: 3, fullPrecision: true }), {
             int: '1',
             dec: '201',

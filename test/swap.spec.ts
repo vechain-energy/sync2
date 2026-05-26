@@ -337,7 +337,8 @@ describe('swap helpers', () => {
             { ...betterQuote(TOKEN_A, TOKEN_B), aggregator, aggregatorName: 'low', outputAmount: '10' },
             { ...betterQuote(TOKEN_A, TOKEN_B), aggregator, aggregatorName: 'bad', outputAmount: '99', reverted: true },
             { ...betterQuote(TOKEN_A, TOKEN_B), aggregator, aggregatorName: 'best', outputAmount: '11' },
-            { ...betterQuote(TOKEN_A, TOKEN_B), aggregator, aggregatorName: 'zero', outputAmount: '0' }
+            { ...betterQuote(TOKEN_A, TOKEN_B), aggregator, aggregatorName: 'zero', outputAmount: '0' },
+            { ...betterQuote(TOKEN_A, TOKEN_B), aggregator, aggregatorName: 'empty', outputAmount: '' }
         ]
 
         assert.strictEqual(selectBestQuote(quotes)!.aggregatorName, 'best')
@@ -471,6 +472,18 @@ describe('swap helpers', () => {
         assert.strictEqual(
             (await simulateSwapWithClauses(
                 { ...params(TOKEN_A, TOKEN_B), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '0' },
+                [clause],
+                thorWithOutputs([output({
+                    events: [transferLog(TOKEN_A, USER, BETTER_SWAP_ROUTER, '101')]
+                })])
+            )).error,
+            'Unexpected token outflow'
+        )
+
+        assert.strictEqual(
+            (await simulateSwapWithClauses(
+                { ...params(TOKEN_A, TOKEN_B), amountIn: '100' },
                 { ...quote, minimumOutputAmount: '200' },
                 [clause],
                 thorWithOutputs([output({
@@ -484,12 +497,45 @@ describe('swap helpers', () => {
         )
     })
 
+    it('handles decoded transfer logs with missing named fields', async () => {
+        const eventPrototype = abi.Event.prototype as unknown as {
+            decode: (data: string, topics: string[]) => Record<string | number, unknown>
+        }
+        const originalDecode = eventPrototype.decode
+        const decodedLogs: Array<Record<string | number, unknown>> = [
+            { _from: 1, _to: 1 },
+            { _from: USER, _to: 1, 2: '100' },
+            { _from: USER, _to: BETTER_SWAP_ROUTER }
+        ]
+        eventPrototype.decode = () => decodedLogs.shift() || {}
+
+        try {
+            assert.deepStrictEqual(
+                await simulateSwapWithClauses(
+                    { ...params(TOKEN_A, TOKEN_B), amountIn: '100' },
+                    { ...betterQuote(TOKEN_A, TOKEN_B), minimumOutputAmount: undefined as unknown as string },
+                    [{ to: BETTER_SWAP_ROUTER, value: '', data: '0x' }],
+                    thorWithOutputs([output({
+                        events: [
+                            { address: TOKEN_A, topics: [], data: '0x' } as Connex.VM.Event,
+                            { address: TOKEN_A, topics: [], data: '0x' } as Connex.VM.Event,
+                            { address: TOKEN_A, topics: [], data: '0x' } as Connex.VM.Event
+                        ]
+                    })])
+                ),
+                { gasCostVTHO: 2.01, success: true, error: '' }
+            )
+        } finally {
+            eventPrototype.decode = originalDecode
+        }
+    })
+
     it('aggregates quotes and selects the best successful simulation', async () => {
         const originalWarn = console.warn
         const aggregators: SwapAggregator[] = [
             {
                 name: 'zero',
-                getQuote: () => Promise.resolve({ ...betterQuote(TOKEN_A, TOKEN_B), outputAmount: '0' }),
+                getQuote: () => Promise.resolve({ ...betterQuote(TOKEN_A, TOKEN_B), outputAmount: '' }),
                 simulateSwap: () => Promise.reject(new Error('unused')),
                 buildSwapTransaction: () => Promise.resolve([])
             },
@@ -557,6 +603,12 @@ describe('swap helpers', () => {
         assert.strictEqual(quote.outputAmount, '250')
         assert.strictEqual(quote.minimumOutputAmount, '247')
         assert.strictEqual(quote.data.kind, 'better-swap')
+        assert.strictEqual((await aggregator.buildSwapTransaction(params('0x', TOKEN_A), quote)).length, 1)
+        assert.strictEqual((await aggregator.simulateSwap(
+            { ...params('0x', TOKEN_A), amountIn: '100' },
+            { ...quote, minimumOutputAmount: '0' },
+            thorWithOutputs([output({ transfers: [{ sender: BETTER_SWAP_ROUTER, recipient: USER, amount: '1' }] })])
+        )).success, true)
 
         callArgs.length = 0
         const vetQuote = await aggregator.getQuote(params(TOKEN_A, '0x'), thor)
@@ -687,6 +739,17 @@ describe('swap helpers', () => {
             assert.strictEqual(fallbackQuote.outputAmount, '0')
             assert.strictEqual(fallbackQuote.minimumOutputAmount, '0')
             assert.deepStrictEqual(fallbackQuote.data.path, [])
+            assert.strictEqual((await aggregator.buildSwapTransaction(params(TOKEN_A, TOKEN_B), quote)).length, 2)
+            assert.strictEqual((await aggregator.simulateSwap(
+                { ...params(TOKEN_A, TOKEN_B), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '0' },
+                thorWithOutputs([output({
+                    events: [
+                        transferLog(TOKEN_A, USER, VETRADE_SUPPORTED_ADDRESSES[0], '100'),
+                        transferLog(TOKEN_B, VETRADE_SUPPORTED_ADDRESSES[0], USER, '1')
+                    ]
+                })])
+            )).success, true)
 
             axios.get = (() => Promise.reject('api down')) as typeof axios.get
             const nonError = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thorWithOutputs([]))

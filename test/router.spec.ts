@@ -10,6 +10,7 @@ type FakeRouter = {
     install: (app: FakeApp) => void
     history?: { kind: string, base?: string }
     routes?: unknown[]
+    scrollBehavior?: () => { left: number; top: number }
 }
 
 type FakeApp = {
@@ -41,9 +42,10 @@ describe('router boot helper', () => {
             }
             if (request === 'vue-router') {
                 return {
-                    createRouter: (options: { history: { kind: string, base?: string }, routes: unknown[] }) => ({
+                    createRouter: (options: { history: { kind: string, base?: string }, routes: unknown[], scrollBehavior: () => { left: number; top: number } }) => ({
                         history: options.history,
                         routes: options.routes,
+                        scrollBehavior: options.scrollBehavior,
                         install: (app: FakeApp) => {
                             app.used.push('router')
                         }
@@ -83,6 +85,7 @@ describe('router boot helper', () => {
 
             hashRouter.install(hashApp)
             assert.deepStrictEqual(hashRouter.history, { kind: 'hash', base: '/wallet/' })
+            assert.deepStrictEqual(hashRouter.scrollBehavior?.(), { left: 0, top: 0 })
             assert.deepStrictEqual(hashApp.used, ['stack', 'router'])
 
             process.env.VUE_ROUTER_MODE = 'history'

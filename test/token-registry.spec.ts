@@ -1,7 +1,12 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
+import * as Module from 'module'
 import axios from 'axios'
 import { TokenRegistry } from '../src/boot/services/config/token-registry'
+
+type ModuleWithLoad = typeof Module & {
+    _load: (request: string, parent: NodeModule | null, isMain: boolean) => unknown
+}
 
 describe('token registry helpers', () => {
     it('normalizes malformed registry payloads', () => {
@@ -16,7 +21,7 @@ describe('token registry helpers', () => {
 
         assert.deepStrictEqual(TokenRegistry.normalize({
             updated: 12,
-            main: [token, { symbol: 'BAD' }],
+            main: [token, null, { symbol: 'BAD' }],
             test: [{ ...token, decimals: Number.NaN }]
         }), {
             updated: 12,
@@ -43,7 +48,9 @@ describe('token registry helpers', () => {
 
         axios.get = ((url: string, options?: unknown) => {
             calls.push(url)
-            assert.strictEqual((options as { timeout?: number }).timeout, 30000)
+            const requestOptions = options as { timeout?: number; transformResponse?: (data: string) => string }
+            assert.strictEqual(requestOptions.timeout, 30000)
+            assert.strictEqual(requestOptions.transformResponse?.('raw'), 'raw')
 
             return Promise.resolve({
                 data: JSON.stringify([
@@ -70,6 +77,26 @@ describe('token registry helpers', () => {
     })
 
     it('builds token icon URLs', () => {
+        const moduleWithLoad = require('module') as ModuleWithLoad
+        const originalLoad = moduleWithLoad._load
+
+        moduleWithLoad._load = (request, parent, isMain) => {
+            if (request === 'assets/vet.svg') {
+                return 'vet.svg'
+            }
+            if (request === 'assets/vtho.svg') {
+                return 'vtho.svg'
+            }
+            return originalLoad(request, parent, isMain)
+        }
+
+        try {
+            assert.strictEqual(TokenRegistry.permanents[0].iconSrc, 'vet.svg')
+            assert.strictEqual(TokenRegistry.permanents[1].iconSrc, 'vtho.svg')
+        } finally {
+            moduleWithLoad._load = originalLoad
+        }
+
         assert.strictEqual(
             TokenRegistry.iconSrc('icons/token.png'),
             'https://vechain.github.io/token-registry/assets/icons/token.png'

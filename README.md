@@ -75,7 +75,7 @@ npm test
 npm run test:coverage
 ```
 
-Coverage gates are 95% for lines, statements, functions, and branches.
+Coverage gates are 100% for lines, statements, functions, and branches.
 
 Build:
 

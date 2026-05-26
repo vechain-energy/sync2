@@ -1,9 +1,9 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
 import { BigNumber } from 'bignumber.js'
-import { address, secp256k1, Transaction } from 'thor-devkit'
+import { address, HDNode, secp256k1, Transaction } from 'thor-devkit'
 import { genesises } from '../src/consts'
-import { Vault } from '../src/core/vault'
+import { Vault, encrypt } from '../src/core/vault'
 import { buildDynamicFeeTxBody } from '../src/pages/Sign/fee-market'
 import { isSoftwareWalletType, signHashWithSoftwareWallet } from '../src/pages/Sign/software-signer'
 import { unlockPrivateKeyForBackup } from '../src/utils/private-key-backup'
@@ -46,6 +46,7 @@ describe('private key helpers', () => {
     })
 
     it('rejects invalid private keys', () => {
+        assert.strictEqual(isPrivateKey(`0x${VALID_PRIVATE_KEY}`), true)
         assert.strictEqual(isPrivateKey('0x1234'), false)
         assert.strictEqual(isPrivateKey(`0x${'00'.repeat(32)}`), false)
         assert.strictEqual(isPrivateKey(`0x${CURVE_ORDER}`), false)
@@ -149,6 +150,11 @@ describe('private key helpers', () => {
         const staticVault = Vault.createStatic(privateKey, umk)
         const targetAddress = staticVault.derive(0).address
         const ledger = testWallet(staticVault, 'ledger', [targetAddress])
+        const invalidEntity = JSON.parse(staticVault.encode()) as Record<string, unknown>
+        invalidEntity.cipherGlob = JSON.stringify(encrypt(Buffer.from([1]), umk))
+        const hdVault = Vault.createHD(TEST_MNEMONIC, umk)
+        const invalidPathEntity = JSON.parse(hdVault.encode()) as Record<string, unknown>
+        invalidPathEntity.path = 'bad path'
 
         assert.throws(
             () => unlockPrivateKeyForBackup(ledger, targetAddress, 0, umk),
@@ -167,9 +173,52 @@ describe('private key helpers', () => {
             /private key could not be matched/
         )
         assert.throws(
+            () => unlockPrivateKeyForBackup(
+                testWallet(Vault.decode(JSON.stringify(invalidPathEntity)), 'hd', [hdVault.derive(0).address]),
+                `0x${'8'.repeat(40)}`,
+                0,
+                umk
+            ),
+            /private key could not be matched/
+        )
+        assert.throws(
             () => unlockPrivateKeyForBackup({ ...ledger, meta: { ...ledger.meta, type: 'private-key' } }, `0x${'9'.repeat(40)}`, 0, umk),
             /private key does not match/
         )
+        assert.throws(
+            () => unlockPrivateKeyForBackup(
+                { ...ledger, meta: { ...ledger.meta, type: 'private-key' }, vault: JSON.stringify(invalidEntity) },
+                targetAddress,
+                0,
+                umk
+            ),
+            /private key does not match/
+        )
+
+        const hdNode = HDNode as unknown as {
+            fromMnemonic: (words: string[], path: string) => {
+                publicKey?: Buffer
+                chainCode?: Buffer
+                derive: (index: number) => { privateKey: Buffer | null }
+            }
+        }
+        const originalFromMnemonic = hdNode.fromMnemonic
+        hdNode.fromMnemonic = () => ({
+            derive: () => ({ privateKey: null })
+        })
+        try {
+            assert.throws(
+                () => unlockPrivateKeyForBackup(
+                    testWallet(hdVault, 'hd', [hdVault.derive(0).address]),
+                    `0x${'7'.repeat(40)}`,
+                    0,
+                    umk
+                ),
+                /private key could not be matched/
+            )
+        } finally {
+            hdNode.fromMnemonic = originalFromMnemonic
+        }
 
         privateKey.fill(0)
     })
