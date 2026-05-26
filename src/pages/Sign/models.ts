@@ -1,3 +1,5 @@
+import { BigNumber } from 'bignumber.js'
+
 type TxPayload = {
     message: Connex.Vendor.TxMessage
     options: Connex.Signer.TxOptions
@@ -28,6 +30,7 @@ export namespace RelayedRequest {
     const txIdPattern = /^0x[0-9a-f]{64}$/i
     const dataPattern = /^0x[0-9a-f]*$/i
     const unsignedIntegerPattern = /^(0|[1-9]\d*)$/
+    const hexIntegerPattern = /^0x[0-9a-f]+$/i
 
     function fail(message: string): never {
         throw new Error(message)
@@ -94,10 +97,13 @@ export namespace RelayedRequest {
             fail('value requires a non-negative safe integer')
         }
         const text = requireString(value, 'value')
-        if (!unsignedIntegerPattern.test(text)) {
-            fail('value requires a non-negative integer string')
+        if (unsignedIntegerPattern.test(text)) {
+            return text
         }
-        return text
+        if (hexIntegerPattern.test(text)) {
+            return new BigNumber(text).toFixed(0)
+        }
+        fail('value requires a non-negative integer string or hex quantity')
     }
 
     function validateClause(value: unknown, index: number): Connex.Vendor.TxMessage[0] {
