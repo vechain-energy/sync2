@@ -10,12 +10,15 @@ import {
     genericDelegatorEstimateUrl,
     genericDelegatorSignUrl,
     genericFeeModeFor,
+    genericGasTokenFromFeeMode,
     getGenericDelegatorUrl,
     getGenericGasTokenSpec,
     parseGenericDelegatorDepositAccount,
     parseGenericDelegatorEstimate,
+    parseGenericDelegatorSignature,
     shouldShowGenericFeeOptions,
-    speedFromFeePriority
+    speedFromFeePriority,
+    tokenAmountToWei
 } from '../src/pages/Sign/generic-delegator'
 
 const depositAccount = '0xf077b491b355e64048ce21e3a6fc4751eeea77fa'
@@ -99,6 +102,40 @@ describe('generic delegator helpers', () => {
         assert.strictEqual(b3tr.amountWei, '27316085679048967')
         assert.strictEqual(vtho.gas, 67582)
         assert.strictEqual(vtho.amountWei, '836327250000000000')
+        assert.strictEqual(tokenAmountToWei('1.000000000000000001', 18), '1000000000000000001')
+        assert.strictEqual(parseGenericDelegatorEstimate({
+            ...estimateResponse,
+            serviceFee: undefined
+        }, 'VET', 'regular').serviceFee, 0)
+    })
+
+    it('rejects malformed Generic Delegator estimates and signatures', () => {
+        assert.throws(
+            () => parseGenericDelegatorEstimate(null, 'VET', 'regular'),
+            /valid Generic Delegator fee estimate/
+        )
+        assert.throws(
+            () => parseGenericDelegatorEstimate({ transactionCost: {}, estimatedGas: {} }, 'VET', 'regular'),
+            /valid Generic Delegator fee estimate/
+        )
+        assert.throws(
+            () => parseGenericDelegatorEstimate({ transactionCost: null, estimatedGas: {} }, 'VET', 'regular'),
+            /valid Generic Delegator fee estimate/
+        )
+        assert.throws(
+            () => parseGenericDelegatorEstimate({
+                transactionCost: { regular: { vet: '1' } },
+                estimatedGas: { vet: 21000 }
+            }, 'VET', 'regular'),
+            /valid Generic Delegator fee estimate/
+        )
+
+        const signature = `0x${'11'.repeat(65)}`
+        assert.deepStrictEqual(parseGenericDelegatorSignature({ signature }), Buffer.from('11'.repeat(65), 'hex'))
+        assert.throws(
+            () => parseGenericDelegatorSignature({ signature: '0x1234' }),
+            /valid Generic Delegator signature/
+        )
     })
 
     it('builds VET payment clauses', () => {
@@ -136,17 +173,58 @@ describe('generic delegator helpers', () => {
         )
         assert.strictEqual(
             calcGenericGasTokenRequiredBalance([
-                tokenTransferClause(b3tr, '0x0000000000000000000000000000000000000001', '15')
+                tokenTransferClause(b3tr, '0x0000000000000000000000000000000000000001', '15'),
+                {
+                    to: b3tr.address,
+                    value: 0,
+                    data: '0xnot-valid'
+                }
             ], 'B3TR', b3tr, '10').toString(),
             '25'
+        )
+        assert.strictEqual(
+            calcGenericGasTokenRequiredBalance([{
+                to: null,
+                value: 0
+            } as Connex.Vendor.TxMessage[0]], 'B3TR', b3tr, '10').toString(),
+            '10'
+        )
+        assert.strictEqual(
+            calcGenericGasTokenRequiredBalance([{
+                to: '0x0000000000000000000000000000000000000001',
+                value: '',
+                data: '0x'
+            }], 'VET', getGenericGasTokenSpec(genesises.test.id, [], 'VET')!, '10').toString(),
+            '10'
         )
     })
 
     it('keeps standard VTHO as default and hides generic mode for dApp delegation', () => {
         assert.strictEqual(STANDARD_FEE_MODE, 'standard-vtho')
         assert.strictEqual(genericFeeModeFor('VET'), 'generic-vet')
+        assert.strictEqual(genericFeeModeFor('B3TR'), 'generic-b3tr')
+        assert.strictEqual(genericFeeModeFor('VTHO'), 'generic-vtho')
+        assert.strictEqual(genericGasTokenFromFeeMode('generic-vet'), 'VET')
+        assert.strictEqual(genericGasTokenFromFeeMode('generic-b3tr'), 'B3TR')
+        assert.strictEqual(genericGasTokenFromFeeMode('generic-vtho'), 'VTHO')
+        assert.strictEqual(genericGasTokenFromFeeMode('standard-vtho'), null)
         assert.strictEqual(shouldShowGenericFeeOptions(genesises.main.id, false), true)
         assert.strictEqual(shouldShowGenericFeeOptions(genesises.main.id, true), false)
         assert.strictEqual(shouldShowGenericFeeOptions('0x0', false), false)
+    })
+
+    it('prefers stored token specs and rejects unsupported networks', () => {
+        const custom: M.TokenSpec = {
+            gid: genesises.main.id,
+            name: 'Better Token',
+            symbol: 'B3TR',
+            address: '0x0000000000000000000000000000000000000001',
+            decimals: 18,
+            iconSrc: 'https://example.com/b3tr.png',
+            permanent: false
+        }
+
+        assert.strictEqual(getGenericGasTokenSpec(genesises.main.id, [custom], 'B3TR'), custom)
+        assert.strictEqual(getGenericGasTokenSpec('0x0', [], 'B3TR'), null)
     })
 })

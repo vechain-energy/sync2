@@ -15,5 +15,6 @@ describe('new password helpers', () => {
     it('rejects mismatched confirmation values', () => {
         assert.strictEqual(validateNewPasswordInput('', '123456'), 'mismatch')
         assert.strictEqual(validateNewPasswordInput('654321', '123456'), 'mismatch')
+        assert.strictEqual(validateNewPasswordInput('123456', '123456'), '')
     })
 })

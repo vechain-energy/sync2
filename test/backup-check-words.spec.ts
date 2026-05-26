@@ -26,4 +26,11 @@ describe('backup word verification helpers', () => {
 
         assert.deepStrictEqual([...choices].sort((a, b) => a - b), [0, 1, 2, 3, 4, 5])
     })
+
+    it('uses Math.random when no random source is provided', () => {
+        const choices = buildMnemonicChoiceIndexes(words(6), 0)
+
+        assert.strictEqual(choices.length, MNEMONIC_GROUP_SIZE * 2)
+        assert.strictEqual(new Set(choices).size, choices.length)
+    })
 })

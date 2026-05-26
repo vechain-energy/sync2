@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
 import { Transaction, secp256k1 } from 'thor-devkit'
-import { countPendingTxActivities } from '../src/pages/Activities/pending'
+import { countPendingTxActivities, uncompletedTxActivities } from '../src/pages/Activities/pending'
 import { CONFIRMED_N, decideTxActivityStatus, parseStoredTx } from '../src/pages/ActivityStatusUpdater/status'
 
 const signerKey = Buffer.from('1'.repeat(64), 'hex')
@@ -114,6 +114,13 @@ describe('activity tx status helpers', () => {
         assert.deepStrictEqual(decision.values, {
             glob: { ...txGlob(), receipt: foundReceipt }
         })
+
+        assert.deepStrictEqual(decideTxActivityStatus({
+            glob: txGlob({ receipt: foundReceipt }),
+            headNumber: foundReceipt.meta.blockNumber + CONFIRMED_N - 1,
+            receipt: foundReceipt,
+            storedTx
+        }).values, {})
     })
 
     it('completes a tx at the confirmation threshold', () => {
@@ -150,6 +157,31 @@ describe('activity tx status helpers', () => {
         const storedTx = parseStoredTx('0x123')
 
         assert.strictEqual(storedTx, null)
+        assert.strictEqual(parseStoredTx('0x12'), null)
+
+        const decoder = Transaction as unknown as {
+            decode: (raw: Buffer, unsigned?: boolean) => {
+                id: string
+                body: {
+                    blockRef: string
+                    expiration: number
+                }
+            }
+        }
+        const originalDecode = decoder.decode
+        decoder.decode = () => ({
+            id: '',
+            body: {
+                blockRef: '0x0000000000000000',
+                expiration: 18
+            }
+        })
+        try {
+            assert.strictEqual(parseStoredTx(encodedTx(100, 18)), null)
+        } finally {
+            decoder.decode = originalDecode
+        }
+
         assert.deepStrictEqual(decideTxActivityStatus({
             glob: txGlob({ encoded: '0x123' }),
             headNumber: 0,
@@ -164,6 +196,12 @@ describe('activity tx status helpers', () => {
 
 describe('pending activity helpers', () => {
     it('counts only unmined and unexpired tx activities', () => {
+        assert.deepStrictEqual(uncompletedTxActivities([
+            txActivity(1, ''),
+            txActivity(2, 'completed'),
+            certActivity(3, '')
+        ]).map(activity => activity.id), [1])
+
         assert.strictEqual(countPendingTxActivities([
             txActivity(1, ''),
             txActivity(2, 'completed'),

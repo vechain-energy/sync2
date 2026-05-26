@@ -33,7 +33,9 @@ describe('signer groups', () => {
         const groups = buildSignerGroups([wallet, otherWallet], undefined, [
             otherWallet.meta.addresses[0],
             wallet.meta.addresses[1],
-            wallet.meta.addresses[0]
+            wallet.meta.addresses[0],
+            wallet.meta.addresses[0].toUpperCase(),
+            '0x9999999999999999999999999999999999999999'
         ])
 
         assert.deepStrictEqual(groups, [
@@ -73,5 +75,33 @@ describe('signer groups', () => {
             selectSigner(groups, wallet.meta.addresses[1]),
             wallet.meta.addresses[1]
         )
+    })
+
+    it('returns all wallets when signers are unrestricted and falls back safely', () => {
+        assert.deepStrictEqual(buildSignerGroups([wallet, otherWallet]), [
+            {
+                name: 'Wallet',
+                addresses: wallet.meta.addresses
+            },
+            {
+                name: 'Other',
+                addresses: otherWallet.meta.addresses
+            }
+        ])
+        assert.deepStrictEqual(buildSignerGroups([wallet], '0x9999999999999999999999999999999999999999'), [{
+            name: '',
+            addresses: ['0x9999999999999999999999999999999999999999']
+        }])
+        const changingAddresses = [wallet.meta.addresses[0]]
+        changingAddresses.find = () => undefined
+        assert.deepStrictEqual(buildSignerGroups([{
+            ...wallet,
+            meta: {
+                ...wallet.meta,
+                addresses: changingAddresses
+            }
+        }], undefined, [wallet.meta.addresses[0]]), [])
+        assert.strictEqual(selectSigner([], wallet.meta.addresses[0]), '')
+        assert.strictEqual(selectSigner(buildSignerGroups([wallet]), otherWallet.meta.addresses[0]), wallet.meta.addresses[0])
     })
 })

@@ -72,7 +72,10 @@ Check code:
 npm run lint
 npm run typecheck
 npm test
+npm run test:coverage
 ```
+
+Coverage gates are 100% for lines, statements, functions, and branches.
 
 Build:
 
