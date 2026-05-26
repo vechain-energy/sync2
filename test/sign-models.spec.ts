@@ -2,19 +2,22 @@
 import * as assert from 'assert'
 import * as fs from 'fs'
 import * as path from 'path'
-import { blake2b256 } from 'thor-devkit'
 import { RelayedRequest } from '../src/pages/Sign/models'
 
 const gid = `0x${'1'.repeat(64)}`
 const address = `0x${'2'.repeat(40)}`
 const txId = `0x${'3'.repeat(64)}`
-const vedelegateRelayBody = [
-    '{"type":"tx","gid":"0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a","payload":',
-    '{"message":[{"to":"0x642a263BeE274109A2513f219E9DC975D64E4ebE","value":"0x0",',
-    '"data":"0xfbca6ba60000000000000000000000000000000000000000000000000000019742ceda5a",',
-    '"comment":"Execute maintenance actions"}],"options":{"signer":"0x105199a26b10e55300cb71b46c5b5e867b7df427",',
-    '"gas":8000000}},"nonce":"521474c2bdefd09a9c470c0906dc5cab"}'
-].join('')
+const abiString = JSON.stringify({
+    type: 'function',
+    name: 'claimRewards',
+    constant: false,
+    payable: false,
+    inputs: [{
+        type: 'uint256',
+        name: '_tokenId'
+    }],
+    outputs: []
+})
 
 describe('sign request models', () => {
     it('uses the validated relay URL for fetch and status callbacks', () => {
@@ -58,22 +61,43 @@ describe('sign request models', () => {
         assert.strictEqual(request.payload.options.link, 'https://example.com/tx/{txid}')
     })
 
-    it('validates vedelegate transaction requests with hex clause values', () => {
-        assert.strictEqual(
-            blake2b256(vedelegateRelayBody).toString('hex'),
-            '6d35662694cbdfb07d162cd84d5cc7779fdf86c0472262cb079cb05d4770d0db'
-        )
-
-        const request = RelayedRequest.validate(JSON.parse(vedelegateRelayBody))
+    it('validates transaction requests with hex clause values and JSON string ABI hints', () => {
+        const request = RelayedRequest.validate({
+            gid,
+            type: 'tx',
+            payload: {
+                message: [{
+                    to: address,
+                    value: '0x0',
+                    data: '0x0962ef790000000000000000000000000000000000000000000000000000000000000001',
+                    comment: 'Claim rewards',
+                    abi: abiString
+                }],
+                options: {
+                    signer: address,
+                    gas: 1037016
+                }
+            }
+        })
 
         if (request.type !== 'tx') {
             assert.fail('expected tx request')
         }
         assert.strictEqual(request.payload.message[0].value, '0')
-        assert.strictEqual(request.payload.message[0].data, '0xfbca6ba60000000000000000000000000000000000000000000000000000019742ceda5a')
-        assert.strictEqual(request.payload.message[0].comment, 'Execute maintenance actions')
-        assert.strictEqual(request.payload.options.signer, '0x105199a26b10e55300cb71b46c5b5e867b7df427')
-        assert.strictEqual(request.payload.options.gas, 8000000)
+        assert.strictEqual(request.payload.message[0].comment, 'Claim rewards')
+        assert.deepStrictEqual(request.payload.message[0].abi, {
+            type: 'function',
+            name: 'claimRewards',
+            constant: false,
+            payable: false,
+            inputs: [{
+                type: 'uint256',
+                name: '_tokenId'
+            }],
+            outputs: []
+        })
+        assert.strictEqual(request.payload.options.signer, address)
+        assert.strictEqual(request.payload.options.gas, 1037016)
     })
 
     it('normalizes non-zero hex clause values', () => {

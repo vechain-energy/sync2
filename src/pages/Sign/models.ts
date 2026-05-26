@@ -106,6 +106,22 @@ export namespace RelayedRequest {
         fail('value requires a non-negative integer string or hex quantity')
     }
 
+    function requireAbi(value: unknown, label: string): object {
+        if (isRecord(value)) {
+            return value
+        }
+        if (typeof value === 'string') {
+            try {
+                const parsed = JSON.parse(value)
+                if (isRecord(parsed)) {
+                    return parsed
+                }
+            } catch {
+            }
+        }
+        fail(`${label} requires object type or JSON object string`)
+    }
+
     function validateClause(value: unknown, index: number): Connex.Vendor.TxMessage[0] {
         const clause = requireRecord(value, `message[${index}]`)
         const to = clause.to
@@ -130,10 +146,7 @@ export namespace RelayedRequest {
             validated.comment = requireString(clause.comment, `message[${index}].comment`)
         }
         if (clause.abi !== undefined) {
-            if (!isRecord(clause.abi)) {
-                fail(`message[${index}].abi requires object type`)
-            }
-            validated.abi = clause.abi
+            validated.abi = requireAbi(clause.abi, `message[${index}].abi`)
         }
         return validated
     }
