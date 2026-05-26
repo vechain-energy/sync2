@@ -24,13 +24,14 @@ import {
     getSwapDeadline,
     getSwapQuotes,
     hexToDecimalString,
+    normalizeApiFunctionDefinition,
     normalizeSwapTokenAddress,
     selectBestQuote,
     simulateSwapWithClauses,
     swapNetworkOf
 } from '../src/utils/swap'
 import { buildVeTradeTransaction } from '../src/utils/swap/vetrade'
-import { ZERO_ADDRESS, getAmountsOutABI } from '../src/utils/swap/abis'
+import { ZERO_ADDRESS, getAmountsOutABI, transferEventABI } from '../src/utils/swap/abis'
 import { BuiltSwapQuote, SwapAggregator, SwapParams, SwapQuote } from '../src/utils/swap/types'
 import axios from 'axios'
 import { genesises } from '../src/consts'
@@ -90,6 +91,40 @@ function output(partial: Partial<Connex.VM.Output>): Connex.VM.Output {
         revertReason: '',
         ...partial
     } as Connex.VM.Output
+}
+
+const transferEvent = new abi.Event(transferEventABI)
+
+function eventTopicAddress(address: string): string {
+    return `0x${address.toLowerCase().replace(/^0x/, '').padStart(64, '0')}`
+}
+
+function eventUint256Data(value: string): string {
+    return `0x${BigInt(value).toString(16).padStart(64, '0')}`
+}
+
+function transferLog(token: string, from: string, to: string, value: string): Connex.VM.Event {
+    return {
+        address: token,
+        topics: [
+            transferEvent.signature,
+            eventTopicAddress(from),
+            eventTopicAddress(to)
+        ],
+        data: eventUint256Data(value)
+    } as Connex.VM.Event
+}
+
+function thorRejectingSimulation(reason: unknown): Connex.Thor {
+    return {
+        explain: () => ({
+            caller: () => ({
+                gas: () => ({
+                    execute: () => Promise.reject(reason)
+                })
+            })
+        })
+    } as unknown as Connex.Thor
 }
 
 describe('swap helpers', () => {
@@ -161,6 +196,14 @@ describe('swap helpers', () => {
             clauses[1].data,
             swapFunc.encode('1000000000000000000', '1980000000000000000', [TOKEN_A, TOKEN_B], USER, '123')
         )
+
+        const defaultDeadlineClauses = buildBetterSwapTransaction(params(TOKEN_A, TOKEN_B), quote)
+        assert.strictEqual(defaultDeadlineClauses.length, 2)
+
+        assert.throws(() => buildBetterSwapTransaction(params(TOKEN_A, TOKEN_B), {
+            ...quote,
+            data: { kind: 'vetrade', clauses: [], path: [] }
+        }), /Invalid BetterSwap quote/)
     })
 
     it('normalizes and encodes VeTrade API clauses', () => {
@@ -196,6 +239,48 @@ describe('swap helpers', () => {
             abi: [],
             args: []
         }), /Function name missing/)
+    })
+
+    it('normalizes VeTrade API function definitions from ABI shapes', () => {
+        const stateCases = [
+            { value: 'pure', constant: true, payable: false },
+            { value: 'view', constant: true, payable: false },
+            { value: 'constant', constant: false, payable: false },
+            { value: 'payable', constant: false, payable: true },
+            { value: 'nonpayable', constant: false, payable: false },
+            { value: 'weird', constant: false, payable: false }
+        ]
+
+        for (const item of stateCases) {
+            const normalized = normalizeApiFunctionDefinition({
+                name: 'quote',
+                abi: [{
+                    type: 'function',
+                    name: 'quote',
+                    stateMutability: item.value
+                }],
+                args: []
+            })
+
+            assert.strictEqual(
+                normalized.stateMutability,
+                item.value === 'weird' ? 'nonpayable' : item.value
+            )
+            assert.strictEqual(normalized.constant, item.constant)
+            assert.strictEqual(normalized.payable, item.payable)
+            assert.deepStrictEqual(normalized.inputs, [])
+            assert.deepStrictEqual(normalized.outputs, [])
+        }
+
+        const fallback = normalizeApiFunctionDefinition({
+            functionName: 'quote',
+            abi: [{ name: 'amountIn', type: 'uint256' }],
+            args: ['1']
+        })
+
+        assert.strictEqual(fallback.name, 'quote')
+        assert.strictEqual(fallback.inputs.length, 1)
+        assert.strictEqual(fallback.stateMutability, 'nonpayable')
     })
 
     it('filters VeTrade clauses and prepends approval for token swaps', () => {
@@ -234,6 +319,10 @@ describe('swap helpers', () => {
         assert.throws(() => buildVeTradeTransaction(params(TOKEN_A, TOKEN_B), {
             ...quote,
             data: { kind: 'vetrade', path: [], clauses: [] }
+        }), /No supported VeTrade clauses/)
+        assert.throws(() => buildVeTradeTransaction(params(TOKEN_A, TOKEN_B), {
+            ...quote,
+            data: { kind: 'vetrade', path: [], clauses: [{ to: '', value: 0, data: '0x' }] }
         }), /No supported VeTrade clauses/)
     })
 
@@ -313,6 +402,86 @@ describe('swap helpers', () => {
             )).error,
             'bad swap'
         )
+
+        assert.strictEqual(
+            (await simulateSwapWithClauses(
+                { ...params('0x', '0x'), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '90' },
+                [clause],
+                thorWithOutputs([output({ reverted: true, revertReason: '', vmError: 'vm fail' })])
+            )).error,
+            'vm fail'
+        )
+
+        assert.strictEqual(
+            (await simulateSwapWithClauses(
+                { ...params('0x', '0x'), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '90' },
+                [clause],
+                thorWithOutputs([output({ reverted: true, revertReason: '', vmError: '' })])
+            )).error,
+            'Transaction reverted'
+        )
+
+        assert.deepStrictEqual(
+            await simulateSwapWithClauses(
+                { ...params('0x', '0x'), amountIn: '100' },
+                quote,
+                [clause],
+                thorRejectingSimulation('bad')
+            ),
+            { gasCostVTHO: 0, success: false, error: 'Simulation failed' }
+        )
+    })
+
+    it('simulates token transfer logs and rejects unsafe token flows', async () => {
+        const quote = betterQuote(TOKEN_A, TOKEN_B)
+        const clause = { to: BETTER_SWAP_ROUTER, value: '', data: '0x' }
+
+        assert.deepStrictEqual(
+            await simulateSwapWithClauses(
+                { ...params(TOKEN_A, TOKEN_B), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '90' },
+                [clause],
+                thorWithOutputs([output({
+                    events: [
+                        transferLog(TOKEN_A, USER, BETTER_SWAP_ROUTER, '100'),
+                        transferLog(TOKEN_B, BETTER_SWAP_ROUTER, USER, '95'),
+                        transferLog(TOKEN_A, BETTER_SWAP_ROUTER, TOKEN_B, '3'),
+                        { address: TOKEN_A, topics: [], data: '0x' } as Connex.VM.Event
+                    ],
+                    transfers: [{ sender: BETTER_SWAP_ROUTER, recipient: TOKEN_A, amount: '1000' }]
+                })])
+            ),
+            { gasCostVTHO: 2.01, success: true, error: '' }
+        )
+
+        assert.strictEqual(
+            (await simulateSwapWithClauses(
+                { ...params(TOKEN_A, TOKEN_B), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '0' },
+                [clause],
+                thorWithOutputs([output({
+                    events: [transferLog(TOKEN_B, USER, BETTER_SWAP_ROUTER, '1')]
+                })])
+            )).error,
+            'Unexpected token outflow'
+        )
+
+        assert.strictEqual(
+            (await simulateSwapWithClauses(
+                { ...params(TOKEN_A, TOKEN_B), amountIn: '100' },
+                { ...quote, minimumOutputAmount: '200' },
+                [clause],
+                thorWithOutputs([output({
+                    events: [
+                        transferLog(TOKEN_A, USER, BETTER_SWAP_ROUTER, '100'),
+                        transferLog(TOKEN_B, BETTER_SWAP_ROUTER, USER, '100')
+                    ]
+                })])
+            )).error,
+            'Expected at least 200 out'
+        )
     })
 
     it('aggregates quotes and selects the best successful simulation', async () => {
@@ -388,6 +557,35 @@ describe('swap helpers', () => {
         assert.strictEqual(quote.outputAmount, '250')
         assert.strictEqual(quote.minimumOutputAmount, '247')
         assert.strictEqual(quote.data.kind, 'better-swap')
+
+        callArgs.length = 0
+        const vetQuote = await aggregator.getQuote(params(TOKEN_A, '0x'), thor)
+        assert.deepStrictEqual(callArgs, ['1000000000000000000', [TOKEN_A, BETTER_SWAP_WVET]])
+        assert.strictEqual(vetQuote.outputAmount, '250')
+    })
+
+    it('handles empty BetterSwap router outputs', async () => {
+        const aggregator = createBetterSwapAggregator()
+        const decodedOutputs: Array<Record<string | number, unknown>> = [
+            {},
+            { amounts: [] },
+            { amounts: ['100', { value: 'bad' }] },
+            { 0: [100, 250] }
+        ]
+        const thor = {
+            account: () => ({
+                method: () => ({
+                    call: () => Promise.resolve({
+                        decoded: decodedOutputs.shift() || {}
+                    })
+                })
+            })
+        } as unknown as Connex.Thor
+
+        assert.strictEqual((await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thor)).outputAmount, '0')
+        assert.strictEqual((await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thor)).outputAmount, '0')
+        assert.strictEqual((await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thor)).outputAmount, '0')
+        assert.strictEqual((await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thor)).outputAmount, '250')
     })
 
     it('returns reverted BetterSwap quotes on router failure', async () => {
@@ -408,6 +606,16 @@ describe('swap helpers', () => {
             assert.strictEqual(quote.reverted, true)
             assert.strictEqual(quote.outputAmount, '0')
             assert.strictEqual(quote.revertReason, 'router down')
+
+            const nonErrorThor = {
+                account: () => ({
+                    method: () => ({
+                        call: () => Promise.reject('router down')
+                    })
+                })
+            } as unknown as Connex.Thor
+            const nonError = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), nonErrorThor)
+            assert.strictEqual(nonError.revertReason, 'Quote failed')
         } finally {
             console.warn = originalWarn
         }
@@ -461,6 +669,29 @@ describe('swap helpers', () => {
             const failed = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thorWithOutputs([]))
             assert.strictEqual(failed.reverted, true)
             assert.strictEqual(failed.revertReason, 'api down')
+
+            axios.get = (() => Promise.resolve({
+                data: {
+                    clauses: [{
+                        to: VETRADE_SUPPORTED_ADDRESSES[0],
+                        value: '',
+                        functionCall: {
+                            functionName: 'swapExactTokensForTokens',
+                            abi: [swapExactTokensForTokensABI],
+                            args: ['1', '2', [TOKEN_A, TOKEN_B], USER, '123']
+                        }
+                    }]
+                }
+            })) as typeof axios.get
+            const fallbackQuote = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thorWithOutputs([]))
+            assert.strictEqual(fallbackQuote.outputAmount, '0')
+            assert.strictEqual(fallbackQuote.minimumOutputAmount, '0')
+            assert.deepStrictEqual(fallbackQuote.data.path, [])
+
+            axios.get = (() => Promise.reject('api down')) as typeof axios.get
+            const nonError = await aggregator.getQuote(params(TOKEN_A, TOKEN_B), thorWithOutputs([]))
+            assert.strictEqual(nonError.reverted, true)
+            assert.strictEqual(nonError.revertReason, 'Quote failed')
         } finally {
             axios.get = originalGet
             console.warn = originalWarn

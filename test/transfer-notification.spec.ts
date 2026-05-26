@@ -14,5 +14,16 @@ describe('transfer notification helpers', () => {
 
         assert.strictEqual(notification.html, false)
         assert.strictEqual(notification.message, 'Received 1.00 <img src=x onerror=alert(1)>')
+
+        assert.strictEqual(
+            transferNotification(
+                'out',
+                '250000000',
+                8,
+                'VET',
+                { received: 'Received', sent: 'Sent' }
+            ).message,
+            'Sent 2.50 VET'
+        )
     })
 })

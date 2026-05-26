@@ -48,5 +48,24 @@ describe('fee market helpers', () => {
         assert.strictEqual(body.maxFeePerGas, '0xd2')
         assert.strictEqual(Object.prototype.hasOwnProperty.call(body, 'gasPriceCoef'), false)
         assert.strictEqual(new Transaction(body).encode()[0], 0x51)
+
+        const fallbackBody = buildDynamicFeeTxBody(
+            '0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a',
+            '0x017b6e328c3e15b0d24376289af68e70326fbb37b339a341e06c3d000fb17ff3',
+            [{
+                to: '0x0000000000000000000000000000000000000001',
+                value: '',
+                data: ''
+            }],
+            21000,
+            new BigNumber(10),
+            new BigNumber(210),
+            '0x0000000000000000000000000000000000000000000000000000000000000000',
+            '0x01'
+        )
+
+        assert.strictEqual(fallbackBody.clauses[0].value, '0x0')
+        assert.strictEqual(fallbackBody.clauses[0].data, '0x')
+        assert.strictEqual(fallbackBody.dependsOn, '0x0000000000000000000000000000000000000000000000000000000000000000')
     })
 })

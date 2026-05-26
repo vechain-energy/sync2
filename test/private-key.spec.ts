@@ -5,7 +5,7 @@ import { address, secp256k1, Transaction } from 'thor-devkit'
 import { genesises } from '../src/consts'
 import { Vault } from '../src/core/vault'
 import { buildDynamicFeeTxBody } from '../src/pages/Sign/fee-market'
-import { signHashWithSoftwareWallet } from '../src/pages/Sign/software-signer'
+import { isSoftwareWalletType, signHashWithSoftwareWallet } from '../src/pages/Sign/software-signer'
 import { unlockPrivateKeyForBackup } from '../src/utils/private-key-backup'
 import {
     formatPrivateKey,
@@ -141,6 +141,36 @@ describe('private key helpers', () => {
             privateKey.fill(0)
             key.fill(0)
         }
+    })
+
+    it('guards unsupported software wallet signing inputs', () => {
+        const wallet: M.Wallet = {
+            id: 1,
+            gid: genesises.main.id,
+            vault: '',
+            meta: {
+                name: 'Ledger',
+                type: 'ledger',
+                addresses: []
+            }
+        }
+
+        assert.strictEqual(isSoftwareWalletType('hd'), true)
+        assert.strictEqual(isSoftwareWalletType('private-key'), true)
+        assert.strictEqual(isSoftwareWalletType('ledger'), false)
+        assert.throws(
+            () => signHashWithSoftwareWallet(wallet, '0x0', Buffer.alloc(32), Buffer.alloc(32)),
+            /unsupported wallet type 'ledger'/
+        )
+        assert.throws(
+            () => signHashWithSoftwareWallet(
+                { ...wallet, meta: { ...wallet.meta, type: 'private-key' } },
+                '0x0',
+                Buffer.alloc(32),
+                Buffer.alloc(32)
+            ),
+            /signer not found/
+        )
     })
 
     it('signs dynamic fee transactions with private-key wallets', () => {

@@ -35,8 +35,10 @@ describe('vet domain wallet selection', () => {
     it('keeps the hidden wallet and owner address in the same wallet', () => {
         assert.strictEqual(findVetDomainWallet([walletA, walletB], 2), walletB)
         assert.strictEqual(findVetDomainWallet([walletA, walletB], 99), walletA)
+        assert.strictEqual(findVetDomainWallet([], 99), null)
         assert.strictEqual(resolveVetDomainAddress(walletB, walletA.meta.addresses[0]), walletB.meta.addresses[0])
         assert.strictEqual(resolveVetDomainAddress(walletA, walletA.meta.addresses[1]), walletA.meta.addresses[1])
+        assert.strictEqual(resolveVetDomainAddress({ ...walletA, meta: { ...walletA.meta, addresses: [] } }, walletA.meta.addresses[0]), '')
         assert.strictEqual(resolveVetDomainAddress(null, walletA.meta.addresses[0]), '')
     })
 })
