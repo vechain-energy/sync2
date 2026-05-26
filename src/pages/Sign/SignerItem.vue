@@ -12,7 +12,10 @@
         </q-item-section>
         <q-item-section no-wrap>
             <q-item-label class="ellipsis">
-                <address-label :addr="text" :gid="gid" />
+                <template v-if="resolveName">
+                    <address-label :addr="text" :gid="gid" />
+                </template>
+                <template v-else>{{displayText}}</template>
             </q-item-label>
             <q-item-label
                 class="ellipsis"
@@ -43,11 +46,22 @@ export default defineComponent({
         text: String,
         gid: String,
         caption: String,
-        sideIcon: String
+        sideIcon: String,
+        resolveName: {
+            type: Boolean,
+            default: true
+        }
     },
     computed: {
         isTextAddress() {
             return address.test(this.text)
+        },
+        displayText(): string {
+            if (!address.test(this.text)) {
+                return this.text || ''
+            }
+            const checksumed = address.toChecksumed(this.text)
+            return checksumed.slice(0, 6) + '⋯' + checksumed.slice(-6)
         }
     }
 })

@@ -71,6 +71,25 @@ describe('UI regression guards', () => {
         assert.ok(models.includes('caption?: string'))
     })
 
+    it('shows primary .vet names for signer wallet groups', () => {
+        const selector = sourceFile('src/pages/Sign/SignerSelector.vue')
+        const item = sourceFile('src/pages/Sign/SignerItem.vue')
+        const certDialog = sourceFile('src/pages/Sign/CertDialog.vue')
+
+        assert.ok(selector.includes("import { firstVetDomainWalletName } from 'src/utils/vet-domain-wallet-name'"))
+        assert.ok(selector.includes('groupVetNames: {'))
+        assert.ok(selector.includes('this.$svc.bc(this.gid).vetDomainsRevision()'))
+        assert.ok(selector.includes('this.$svc.bc(this.gid).vetDomainsNamesOf(group.addresses)'))
+        assert.ok(selector.includes('return firstVetDomainWalletName(names)'))
+        assert.ok(selector.includes('return groupVetNames[index] || group.name'))
+        assert.ok(selector.includes(':caption="groupCaption"'))
+        assert.ok(selector.includes(':resolveName="false"'))
+        assert.ok(selector.includes('{{groupDisplayName(g, gi)}}'))
+        assert.ok(item.includes('resolveName: {'))
+        assert.ok(item.includes("return checksumed.slice(0, 6) + '⋯' + checksumed.slice(-6)"))
+        assert.ok(certDialog.includes(':gid="gid"'))
+    })
+
     it('keeps generic fee controls from overlapping fee token information', () => {
         const source = sourceFile('src/pages/Sign/GasFeeBar.vue')
 
