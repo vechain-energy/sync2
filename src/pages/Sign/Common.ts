@@ -4,6 +4,7 @@ import { Transaction, Certificate, blake2b256 } from 'thor-devkit'
 import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
 import { isSoftwareWalletType, signHashWithSoftwareWallet } from './software-signer'
 import { buildSignerGroups, selectSigner } from './signer-groups'
+import { normalizeLedgerSignature } from 'src/utils/ledger-signature'
 
 type SignableTransaction = Transaction<Transaction.LegacyBody | Transaction.DynamicFeeBody>
 
@@ -52,14 +53,14 @@ export default defineComponent({
                 return signHashWithSoftwareWallet(wallet, signer, umk, tx.signingHash())
             } else if (wallet.meta.type === 'ledger') {
                 const tx = await buildTx()
-                return this.$dialog({
+                return normalizeLedgerSignature(await this.$dialog({
                     component: LedgerSignDialog,
                     arg: {
                         signer,
                         index: wallet.meta.addresses.indexOf(signer),
                         tx: tx.encode()
                     }
-                })
+                }))
             } else {
                 throw new Error(`unsupported wallet type '${wallet.meta.type}'`)
             }
@@ -71,14 +72,14 @@ export default defineComponent({
 
                 return signHashWithSoftwareWallet(wallet, cert.signer, umk, blake2b256(Certificate.encode(cert)))
             } else if (wallet.meta.type === 'ledger') {
-                return this.$dialog({
+                return normalizeLedgerSignature(await this.$dialog({
                     component: LedgerSignDialog,
                     arg: {
                         signer: cert.signer,
                         index: wallet.meta.addresses.indexOf(cert.signer),
                         cert: Buffer.from(Certificate.encode(cert), 'utf8')
                     }
-                })
+                }))
             } else {
                 throw new Error(`unsupported wallet type '${wallet.meta.type}'`)
             }

@@ -26,6 +26,7 @@ import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { HDNode } from 'thor-devkit'
 import Deferred from 'src/utils/deferred'
 import { sleep } from 'src/utils/sleep'
+import { normalizeLedgerSignature } from 'src/utils/ledger-signature'
 import Steps from './Steps.vue'
 
 type Status = 'connected' | 'handshaked' | 'signed'
@@ -142,7 +143,7 @@ export default defineComponent({
                         ])
                         this.status = 'signed'
                         await sleep(1000)
-                        this.$emit('ok', sig)
+                        this.$emit('ok', normalizeLedgerSignature(sig))
                     } else if (cert) {
                         const sig = await Promise.race([
                             app.signJSON(path, cert),
@@ -150,7 +151,7 @@ export default defineComponent({
                         ])
                         this.status = 'signed'
                         await sleep(1000)
-                        this.$emit('ok', sig)
+                        this.$emit('ok', normalizeLedgerSignature(sig))
                     } else {
                         this.error = new Error(this.$t('ledger.msg_unknown_data').toString())
                     }
