@@ -139,7 +139,7 @@ export default defineComponent({
             const request = RelayedRequest.validate(JSON.parse(resp.data))
             request.origin = resp.headers['x-data-origin']
             this.$gtag.event('connex-sign', { event_label: request.origin })
-            this.postStatus(ACCEPTED_SUFFIX, {})
+            void this.postStatus(ACCEPTED_SUFFIX, {})
             return request
         }
     },

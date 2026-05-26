@@ -218,4 +218,11 @@ describe('UI regression guards', () => {
         assert.ok(inspectClause.includes('clauseNumber(): number'))
         assert.strictEqual(inspectClause.includes('Clause · {{index+1}}'), false)
     })
+
+    it('uses clause comments as transaction request summary fallback', () => {
+        const summary = sourceFile('src/pages/Sign/Summary.vue')
+
+        assert.ok(summary.includes('txSummaryText(): string'))
+        assert.ok(summary.includes("tx.message.find(clause => !!clause.comment)?.comment || 'N/A'"))
+    })
 })

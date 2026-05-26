@@ -89,7 +89,7 @@ export default defineComponent({
             if (req.type === 'tx') {
                 return {
                     caption: this.$t('sign.label_request_summary').toString(),
-                    text: (req.payload as M.TxRequest).options?.comment || 'N/A'
+                    text: this.txSummaryText
                 }
             } else if (req.type === 'cert') {
                 const msg = (req.payload as M.CertRequest).message
@@ -106,6 +106,14 @@ export default defineComponent({
                 }
             }
             return null
+        },
+        txSummaryText(): string {
+            const req = this.request
+            if (req.type !== 'tx') {
+                return ''
+            }
+            const tx = req.payload as M.TxRequest
+            return tx.options?.comment || tx.message.find(clause => !!clause.comment)?.comment || 'N/A'
         },
         items(): Array<Item> {
             const items = [{
