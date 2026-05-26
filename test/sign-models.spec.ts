@@ -82,9 +82,15 @@ describe('sign request models', () => {
             type: 'tx',
             payload: {
                 message: [{
+                    to: null,
+                    value: 10,
+                    data: '0x',
+                    abi: {
+                        name: 'transfer'
+                    }
+                }, {
                     to: address,
-                    value: '0x10',
-                    data: '0x'
+                    value: '0x10'
                 }],
                 options: {}
             }
@@ -93,7 +99,9 @@ describe('sign request models', () => {
         if (request.type !== 'tx') {
             assert.fail('expected tx request')
         }
-        assert.strictEqual(request.payload.message[0].value, '16')
+        assert.strictEqual(request.payload.message[0].to, null)
+        assert.strictEqual(request.payload.message[0].value, 10)
+        assert.strictEqual(request.payload.message[1].value, '16')
     })
 
     it('rejects malformed transaction requests', () => {
@@ -144,6 +152,82 @@ describe('sign request models', () => {
                 options: {}
             }
         }), /hex quantity/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid,
+            type: 'tx',
+            payload: {
+                message: [{
+                    to: 'not-address',
+                    value: '1'
+                }],
+                options: {}
+            }
+        }), /invalid message\[0\]\.to/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid,
+            type: 'tx',
+            payload: {
+                message: [{
+                    to: address,
+                    value: Number.MAX_SAFE_INTEGER + 1
+                }],
+                options: {}
+            }
+        }), /non-negative safe integer/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid,
+            type: 'tx',
+            payload: {
+                message: [{
+                    to: address,
+                    value: '1',
+                    abi: 'bad'
+                }],
+                options: {}
+            }
+        }), /abi requires object type/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid,
+            type: 'tx',
+            payload: {
+                message: [{
+                    to: address,
+                    value: '1'
+                }],
+                options: {
+                    gas: 0
+                }
+            }
+        }), /gas requires a positive safe integer/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid: '0x0',
+            type: 'tx',
+            payload: {
+                message: [{
+                    to: address,
+                    value: '1'
+                }],
+                options: {}
+            }
+        }), /invalid gid/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid,
+            origin: {},
+            type: 'tx',
+            payload: {
+                message: [{
+                    to: address,
+                    value: '1'
+                }],
+                options: {}
+            }
+        }), /origin requires string type/)
     })
 
     it('rejects unsafe relayed request links', () => {
@@ -218,5 +302,28 @@ describe('sign request models', () => {
                 options: {}
             }
         }), /unsupported certificate payload type/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid,
+            type: 'cert',
+            payload: {
+                message: {
+                    purpose: 'agreement',
+                    payload: {
+                        type: 'text',
+                        content: 1
+                    }
+                },
+                options: {
+                    signer: 'not-address'
+                }
+            }
+        }), /content requires string type/)
+
+        assert.throws(() => RelayedRequest.validate({
+            gid,
+            type: 'unknown',
+            payload: {}
+        }), /unsupported type/)
     })
 })
