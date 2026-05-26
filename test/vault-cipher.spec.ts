@@ -1,6 +1,13 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
-import { Vault, decrypt, encrypt } from '../src/core/vault'
+import * as Module from 'module'
+import { Vault, decrypt, encrypt, kdfDecrypt, kdfEncrypt, secureRNG } from '../src/core/vault'
+
+type ModuleWithLoad = typeof Module & {
+    _load: (request: string, parent: NodeModule | null, isMain: boolean) => unknown
+}
+
+type WorkerMessage = [number, string, unknown[]]
 
 const TEST_MNEMONIC = [
     'ignore', 'empty', 'bird', 'silly',
@@ -40,5 +47,60 @@ describe('vault cipher helpers', () => {
         await assert.rejects(Vault.generateMnemonic(12), /invalid arg/)
         await assert.rejects(Vault.generateMnemonic(36), /invalid arg/)
         await assert.rejects(Vault.generateMnemonic(18), /invalid arg/)
+    })
+
+    it('calls the worker for random bytes and password KDF operations', async () => {
+        const moduleWithLoad = require('module') as ModuleWithLoad
+        const originalLoad = moduleWithLoad._load
+        let mode: 'resolve' | 'idle' = 'resolve'
+        let lastWorker: Worker | null = null
+
+        class WorkerMock {
+            onmessage: ((event: MessageEvent) => void) | null = null
+            onerror: ((event: ErrorEvent) => void) | null = null
+
+            constructor() {
+                lastWorker = this as unknown as Worker
+            }
+
+            postMessage(message: unknown): void {
+                if (mode === 'idle') {
+                    return
+                }
+
+                const [seq, cmd, args] = message as WorkerMessage
+                const result = cmd === 'secureRNG'
+                    ? new Uint8Array(Number(args[0])).fill(5)
+                    : cmd === 'kdfEstimateN'
+                        ? 2
+                        : new Uint8Array(32).fill(7)
+
+                this.onmessage?.({ data: [seq, result, null] } as MessageEvent)
+            }
+        }
+
+        moduleWithLoad._load = (request, parent, isMain) => {
+            if (request === 'worker-loader!./worker') {
+                return WorkerMock
+            }
+
+            return originalLoad(request, parent, isMain)
+        }
+
+        try {
+            assert.deepStrictEqual(await secureRNG(4), Buffer.from([5, 5, 5, 5]))
+
+            const glob = await kdfEncrypt(Buffer.from('worker secret'), 'password')
+            assert.strictEqual(glob.kdf.n, 2)
+            assert.strictEqual((await kdfDecrypt(glob, 'password')).toString('utf8'), 'worker secret')
+
+            mode = 'idle'
+            const pending = secureRNG(2)
+            const worker = lastWorker!
+            worker.onerror?.({ message: '' } as ErrorEvent)
+            await assert.rejects(pending, /vault worker error/)
+        } finally {
+            moduleWithLoad._load = originalLoad
+        }
     })
 })
