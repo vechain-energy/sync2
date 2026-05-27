@@ -44,15 +44,15 @@
                     <gas-fee-bar
                         :fee="displayFee"
                         :maxFee="displayMaxFee"
-                        :isDelegation="isDappDelegation"
+                        :isDelegation="isDappFeeDelegation"
                         :feeToken="feeToken"
                         :caption="feeCaption"
                     >
                         <div class="row no-wrap items-center q-gutter-x-sm">
                             <q-btn-dropdown
-                                v-if="showGenericFeeOptions"
+                                v-if="showFeeOptions"
                                 class="fee-token-btn"
-                                toggle-aria-label="Fee token"
+                                toggle-aria-label="Fee payer"
                                 size="sm"
                                 color="secondary"
                                 outline
@@ -82,7 +82,7 @@
                                 </template>
                                 <q-card class="fee-token-menu">
                                     <div class="fee-token-menu-header">
-                                        {{$t('sign.label_fee_token')}}
+                                        {{$t('sign.label_fee_payer')}}
                                     </div>
                                     <q-list separator>
                                         <q-item
@@ -97,14 +97,19 @@
                                                 class="fee-token-option-avatar"
                                             >
                                                 <token-avatar
-                                                    v-if="vthoToken"
+                                                    v-if="!isDappFeeDelegation && vthoToken"
                                                     :spec="vthoToken"
                                                     size="sm"
+                                                />
+                                                <q-icon
+                                                    v-else
+                                                    name="local_gas_station"
+                                                    size="20px"
                                                 />
                                             </q-item-section>
                                             <q-item-section class="fee-token-option-body">
                                                 <div class="fee-token-option-line">
-                                                    <q-item-label class="fee-token-option-title">VTHO</q-item-label>
+                                                    <q-item-label class="fee-token-option-title">{{standardFeeTitle}}</q-item-label>
                                                 </div>
                                                 <q-item-label
                                                     caption
@@ -115,7 +120,7 @@
                                                             :value="fee"
                                                             :decimals="18"
                                                         />
-                                                        {{$t('sign.label_fee_token_standard')}}
+                                                        {{standardFeeStatus}}
                                                     </template>
                                                     <q-spinner-dots
                                                         v-else
@@ -192,6 +197,79 @@
                                                 />
                                             </q-item-section>
                                         </q-item>
+                                        <q-item-label
+                                            v-if="localGasPayerFeeOptions.length > 0"
+                                            header
+                                            class="fee-token-menu-section"
+                                        >
+                                            {{$t('sign.label_fee_payer_account')}}
+                                        </q-item-label>
+                                        <q-item
+                                            v-for="option in localGasPayerFeeOptions"
+                                            :key="`local-${option.address}`"
+                                            class="fee-token-option"
+                                            clickable
+                                            v-close-popup
+                                            :active="isSelectedLocalGasPayer(option.address)"
+                                            @click="selectLocalGasPayer(option.address)"
+                                        >
+                                            <q-item-section
+                                                avatar
+                                                class="fee-token-option-avatar"
+                                            >
+                                                <address-avatar
+                                                    :addr="option.address"
+                                                    :gid="gid"
+                                                    size="sm"
+                                                />
+                                            </q-item-section>
+                                            <q-item-section class="fee-token-option-body">
+                                                <div class="fee-token-option-line">
+                                                    <q-item-label class="fee-token-option-title">
+                                                        <address-label
+                                                            :addr="option.address"
+                                                            :gid="gid"
+                                                        />
+                                                    </q-item-label>
+                                                </div>
+                                                <q-item-label
+                                                    caption
+                                                    :class="[
+                                                        'fee-token-option-status',
+                                                        { 'text-negative': option.balanceLow }
+                                                    ]"
+                                                >
+                                                    <template v-if="option.ready">
+                                                        <amount-label
+                                                            :value="option.fee"
+                                                            :decimals="18"
+                                                        />
+                                                        VTHO · {{option.status}}
+                                                    </template>
+                                                    <q-spinner-dots
+                                                        v-else
+                                                        color="primary"
+                                                    />
+                                                </q-item-label>
+                                                <q-item-label
+                                                    caption
+                                                    class="fee-token-option-wallet"
+                                                >
+                                                    {{option.walletName}}
+                                                </q-item-label>
+                                            </q-item-section>
+                                            <q-item-section
+                                                side
+                                                class="fee-token-option-check"
+                                            >
+                                                <q-icon
+                                                    v-if="isSelectedLocalGasPayer(option.address)"
+                                                    name="check"
+                                                    color="primary"
+                                                    size="18px"
+                                                />
+                                            </q-item-section>
+                                        </q-item>
                                     </q-list>
                                 </q-card>
                             </q-btn-dropdown>
@@ -244,6 +322,8 @@ import GasFeeBar from './GasFeeBar.vue'
 import ClauseCard from './ClauseCard'
 import TokenAvatar from 'src/components/TokenAvatar.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
+import AddressAvatar from 'src/components/AddressAvatar.vue'
+import AddressLabel from 'src/components/AddressLabel.vue'
 import { Transaction } from 'thor-devkit'
 import { BigNumber } from 'bignumber.js'
 import { randomBytes } from 'crypto'
@@ -282,6 +362,13 @@ import {
     shouldShowGenericFeeOptions,
     speedFromFeePriority
 } from './generic-delegator'
+import {
+    FeeMode,
+    LOCAL_ACCOUNT_FEE_MODE,
+    LocalGasPayerOption,
+    buildLocalGasPayerOptions,
+    isLocalGasPayerMode
+} from './local-gas-payer'
 
 type GenericFeeOption = {
     token: GenericGasToken
@@ -291,6 +378,16 @@ type GenericFeeOption = {
     status: string
     balanceLow: boolean
 }
+
+type LocalGasPayerFeeOption = LocalGasPayerOption & {
+    balance: string
+    fee: string
+    ready: boolean
+    status: string
+    balanceLow: boolean
+}
+
+type LocalGasPayerBalanceMap = Record<string, string>
 
 type AsyncComputedState = {
     $asyncComputed: {
@@ -310,22 +407,24 @@ type AsyncComputedState = {
 
 type TxDialogState = Vue & {
     feePriority: number
-    feeMode: GenericFeeMode
+    feeMode: FeeMode
     feeTokenMenuOpen: boolean
+    selectedLocalGasPayer: string
 }
 
 export default defineComponent({
     extends: Common,
     emits: ['hide', 'ok'],
-    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, TokenAvatar, AmountLabel },
+    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, TokenAvatar, AmountLabel, AddressAvatar, AddressLabel },
     props: {
         req: Object as () => M.TxRequest
     },
-    data(): { feePriority: number; feeMode: GenericFeeMode; feeTokenMenuOpen: boolean } {
+    data(): { feePriority: number; feeMode: FeeMode; feeTokenMenuOpen: boolean; selectedLocalGasPayer: string } {
         return {
             feePriority: FeePriority.Regular,
             feeMode: STANDARD_FEE_MODE,
-            feeTokenMenuOpen: false
+            feeTokenMenuOpen: false,
+            selectedLocalGasPayer: ''
         }
     },
     computed: {
@@ -367,12 +466,37 @@ export default defineComponent({
         showGenericFeeOptions(): boolean {
             return shouldShowGenericFeeOptions(this.gid, this.isDappDelegation)
         },
+        showFeeOptions(): boolean {
+            return this.showGenericFeeOptions || this.localGasPayerOptions.length > 0
+        },
         selectedGenericGasToken(): GenericGasToken | null {
             const vm = this as unknown as TxDialogState
+            if (isLocalGasPayerMode(vm.feeMode)) {
+                return null
+            }
             return genericGasTokenFromFeeMode(vm.feeMode)
         },
         isGenericFeeMode(): boolean {
             return !!this.selectedGenericGasToken
+        },
+        isLocalGasPayerMode(): boolean {
+            const vm = this as unknown as TxDialogState
+            return isLocalGasPayerMode(vm.feeMode)
+        },
+        localGasPayerOptions(): LocalGasPayerOption[] {
+            return buildLocalGasPayerOptions(this.wallets || [], this.signer)
+        },
+        selectedLocalGasPayerOption(): LocalGasPayerOption | null {
+            const vm = this as unknown as TxDialogState
+            const selected = vm.selectedLocalGasPayer.toLowerCase()
+            return this.localGasPayerOptions.find(option => option.address.toLowerCase() === selected) || null
+        },
+        localGasPayerWallet(): M.Wallet | null {
+            const option = this.selectedLocalGasPayerOption
+            if (!option) {
+                return null
+            }
+            return (this.wallets || []).find(wallet => wallet.id === option.walletId) || null
         },
         genericFeeSpeed() {
             const vm = this as unknown as TxDialogState
@@ -415,10 +539,25 @@ export default defineComponent({
         displayMaxFee(): string | null {
             return this.isGenericFeeMode ? null : this.maxFee
         },
+        standardFeeTitle(): string {
+            return this.isDappFeeDelegation ? this.$t('sign.label_fee_payer_dapp').toString() : 'VTHO'
+        },
+        standardFeeStatus(): string {
+            return this.isDappFeeDelegation ? this.$t('sign.msg_fee_delegation').toString() : this.$t('sign.label_fee_token_standard').toString()
+        },
         feeCaption(): string {
-            return this.isGenericFeeMode ? this.$t('sign.msg_generic_delegation').toString() : ''
+            if (this.isGenericFeeMode) {
+                return this.$t('sign.msg_generic_delegation').toString()
+            }
+            return this.isLocalGasPayerMode ? this.$t('sign.msg_account_fee_delegation').toString() : ''
         },
         feeModeLabel(): string {
+            if (this.isLocalGasPayerMode) {
+                return this.$t('sign.label_fee_payer_account').toString()
+            }
+            if (this.isDappFeeDelegation) {
+                return this.$t('sign.label_fee_payer_dapp').toString()
+            }
             return this.selectedGenericGasToken || 'VTHO'
         },
         genericFeeWarning(): Error | null {
@@ -443,6 +582,38 @@ export default defineComponent({
         },
         genericFeeBalanceLow(): boolean {
             return !!this.genericFeeWarning
+        },
+        localGasPayerBalance(): string {
+            const option = this.selectedLocalGasPayerOption
+            return option ? (this.localGasPayerBalances[option.address.toLowerCase()] || '') : ''
+        },
+        localGasPayerBalanceLow(): boolean {
+            return !!this.maxFee && !!this.localGasPayerBalance && new BigNumber(this.localGasPayerBalance).isLessThan(this.maxFee)
+        },
+        localGasPayerWarning(): Error | null {
+            if (!this.isLocalGasPayerMode || !this.localGasPayerBalanceLow) {
+                return null
+            }
+            return {
+                name: this.$t('sign.label_insufficient_vtho').toString(),
+                message: this.$t('sign.msg_insufficient_local_vtho').toString()
+            }
+        },
+        localGasPayerFeeOptions(): LocalGasPayerFeeOption[] {
+            const fee = this.maxFee || ''
+            return this.localGasPayerOptions.map(option => {
+                const balance = this.localGasPayerBalances[option.address.toLowerCase()] || ''
+                const ready = !!fee && !!balance
+                const balanceLow = ready && new BigNumber(balance).isLessThan(fee)
+                return {
+                    ...option,
+                    balance,
+                    fee,
+                    ready,
+                    status: balanceLow ? this.$t('sign.msg_local_fee_balance_low').toString() : this.$t('sign.msg_local_fee_balance_ok').toString(),
+                    balanceLow
+                }
+            })
         },
         genericFeeOptions(): GenericFeeOption[] {
             return GENERIC_GAS_TOKENS.reduce((items: GenericFeeOption[], token) => {
@@ -475,11 +646,20 @@ export default defineComponent({
             }, [])
         },
         signActionDisabled(): boolean {
-            return this.isGenericFeeMode && (
-                !this.genericDelegatorEstimate ||
-                !this.genericDelegatorDepositAccount ||
-                !this.selectedGenericTokenSpec ||
-                this.genericFeeBalanceLow
+            if (this.isGenericFeeMode) {
+                return (
+                    !this.genericDelegatorEstimate ||
+                    !this.genericDelegatorDepositAccount ||
+                    !this.selectedGenericTokenSpec ||
+                    this.genericFeeBalanceLow
+                )
+            }
+            return this.isLocalGasPayerMode && (
+                !this.selectedLocalGasPayerOption ||
+                !this.localGasPayerWallet ||
+                !this.maxFee ||
+                !this.localGasPayerBalance ||
+                this.localGasPayerBalanceLow
             )
         },
         criticalError(): Error | null {
@@ -518,13 +698,17 @@ export default defineComponent({
             }
             this.energyWarning && ret.push(this.energyWarning)
             this.genericFeeWarning && ret.push(this.genericFeeWarning)
+            this.localGasPayerWarning && ret.push(this.localGasPayerWarning)
             return ret
         },
         isDelegation(): boolean {
-            return this.isDappDelegation || this.isGenericFeeMode
+            return this.isDappFeeDelegation || this.isGenericFeeMode || this.isLocalGasPayerMode
         },
         isDappDelegation(): boolean {
             return !!this.req.options.delegator
+        },
+        isDappFeeDelegation(): boolean {
+            return this.isDappDelegation && !this.isLocalGasPayerMode
         },
         signActionLabel(): string {
             return this.req.actionLabel || this.$t('sign.action_sign').toString()
@@ -543,12 +727,16 @@ export default defineComponent({
             if (!this.wallet || this.thor.status.head.number === 0) {
                 return Promise.resolve(null)
             }
+            const requestDelegator = this.isDappFeeDelegation ? this.req.options.delegator : undefined
+            const gasPayer = this.selectedLocalGasPayerOption
+                ? this.selectedLocalGasPayerOption.address
+                : requestDelegator && requestDelegator.signer
             return estimateGas(
                 this.thor,
                 this.displayMessage,
                 this.isGenericFeeMode ? (this.genericDelegatorEstimate ? this.genericDelegatorEstimate.gas : 0) : (this.req.options.gas || 0),
                 this.signer,
-                this.req.options.delegator && this.req.options.delegator.signer,
+                gasPayer,
                 !this.isGenericFeeMode)
         },
         tokens: {
@@ -624,14 +812,34 @@ export default defineComponent({
             },
             default: () => ({})
         },
+        localGasPayerBalances: {
+            async get(): Promise<LocalGasPayerBalanceMap> {
+                if (this.localGasPayerOptions.length === 0) {
+                    return {}
+                }
+                const entries = await Promise.all(this.localGasPayerOptions.map(async option => {
+                    const acc = await this.thor.account(option.address).get()
+                    return {
+                        address: option.address.toLowerCase(),
+                        balance: acc.energy
+                    }
+                }))
+                return entries.reduce((result: LocalGasPayerBalanceMap, entry) => {
+                    result[entry.address] = entry.balance
+                    return result
+                }, {})
+            },
+            default: () => ({})
+        },
         async energyWarning(): Promise<Error | null> {
             const est = this.estimation
             const fee = this.maxFee
-            if (this.isGenericFeeMode || !est || !fee || (this.req.options.delegator && !this.req.options.delegator.signer)) {
+            const requestDelegator = this.isDappFeeDelegation ? this.req.options.delegator : undefined
+            if (this.isGenericFeeMode || this.isLocalGasPayerMode || !est || !fee || (requestDelegator && !requestDelegator.signer)) {
                 return null
             }
             const signer = this.signer
-            const gasPayer = (this.req.options.delegator && this.req.options.delegator.signer) || signer
+            const gasPayer = (requestDelegator && requestDelegator.signer) || signer
             const acc = await this.thor.account(gasPayer).get()
 
             let energyBalance = new BigNumber(acc.energy)
@@ -658,6 +866,19 @@ export default defineComponent({
         showGenericFeeOptions(show: boolean) {
             if (!show) {
                 const vm = this as unknown as TxDialogState
+                if (!isLocalGasPayerMode(vm.feeMode)) {
+                    vm.feeMode = STANDARD_FEE_MODE
+                }
+            }
+        },
+        localGasPayerOptions(options: LocalGasPayerOption[]) {
+            const vm = this as unknown as TxDialogState
+            if (!isLocalGasPayerMode(vm.feeMode)) {
+                return
+            }
+            const hasSelected = options.some(option => option.address.toLowerCase() === vm.selectedLocalGasPayer.toLowerCase())
+            if (!hasSelected) {
+                vm.selectedLocalGasPayer = ''
                 vm.feeMode = STANDARD_FEE_MODE
             }
         }
@@ -686,6 +907,15 @@ export default defineComponent({
             const vm = this as unknown as TxDialogState
             vm.feeMode = mode
         },
+        selectLocalGasPayer(address: string) {
+            const vm = this as unknown as TxDialogState
+            vm.selectedLocalGasPayer = address
+            vm.feeMode = LOCAL_ACCOUNT_FEE_MODE
+        },
+        isSelectedLocalGasPayer(address: string): boolean {
+            const vm = this as unknown as TxDialogState
+            return isLocalGasPayerMode(vm.feeMode) && vm.selectedLocalGasPayer.toLowerCase() === address.toLowerCase()
+        },
         async onClickSign() {
             try {
                 await this.sign()
@@ -705,6 +935,8 @@ export default defineComponent({
             const genericToken = this.selectedGenericGasToken
             const genericEstimate = this.genericDelegatorEstimate
             const genericUrl = this.genericDelegatorUrl
+            const localGasPayerOption = this.selectedLocalGasPayerOption
+            const localGasPayerWallet = this.localGasPayerWallet
 
             if (!est || !wallet || !priorityFeePerGas || !maxFeePerGas) {
                 return
@@ -720,6 +952,20 @@ export default defineComponent({
                 this.$q.notify({
                     type: 'negative',
                     message: this.genericFeeWarning.message
+                })
+                return
+            }
+            if (this.isLocalGasPayerMode && (!localGasPayerOption || !localGasPayerWallet)) {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.$t('sign.msg_local_fee_unavailable').toString()
+                })
+                return
+            }
+            if (this.isLocalGasPayerMode && this.localGasPayerWarning) {
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.localGasPayerWarning.message
                 })
                 return
             }
@@ -749,7 +995,7 @@ export default defineComponent({
                 )
 
                 return this.$loading(async () => {
-                    const delegator = this.req.options.delegator
+                    const delegator = this.isDappFeeDelegation ? this.req.options.delegator : undefined
                     if (delegator) {
                         tx = new Transaction({ ...txBody, reserved: { features: Transaction.DELEGATED_MASK } })
                         try {
@@ -761,7 +1007,7 @@ export default defineComponent({
                         } catch {
                             throw new Error(this.$t('sign.msg_delegation_failed').toString())
                         }
-                    } else if (genericToken) {
+                    } else if (genericToken || localGasPayerOption) {
                         tx = new Transaction({ ...txBody, reserved: { features: Transaction.DELEGATED_MASK } })
                     } else {
                         tx = new Transaction(txBody)
@@ -787,6 +1033,14 @@ export default defineComponent({
                     })
                 } catch {
                     throw new Error(this.$t('sign.msg_generic_delegation_failed').toString())
+                }
+            } else if (localGasPayerOption && localGasPayerWallet) {
+                try {
+                    delegatorSig = await this.$loading(async () => {
+                        return this.signSoftwareHash(localGasPayerWallet, localGasPayerOption.address, tx.signingHash(signer))
+                    })
+                } catch {
+                    throw new Error(this.$t('sign.msg_local_delegation_failed').toString())
                 }
             }
 
@@ -856,6 +1110,15 @@ export default defineComponent({
     text-transform: uppercase;
 }
 
+.fee-token-menu-section {
+    padding: 10px 14px 4px;
+    color: #555;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
 .fee-token-option {
     min-height: 60px;
     padding: 8px 10px 8px 12px;
@@ -898,6 +1161,14 @@ export default defineComponent({
     font-size: 0.78rem;
     font-variant-numeric: tabular-nums;
     line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fee-token-option-wallet {
+    overflow: hidden;
+    font-size: 0.72rem;
+    line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
 }

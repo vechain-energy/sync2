@@ -16,6 +16,7 @@ import {
 } from '../src/utils/private-key'
 
 const VALID_PRIVATE_KEY = '0000000000000000000000000000000000000000000000000000000000000001'
+const VALID_PAYER_PRIVATE_KEY = '0000000000000000000000000000000000000000000000000000000000000002'
 const CURVE_ORDER = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'
 const TEST_MNEMONIC = [
     'ignore', 'empty', 'bird', 'silly',
@@ -289,5 +290,37 @@ describe('private key helpers', () => {
 
         assert.strictEqual(body.type, Transaction.Type.DynamicFee)
         assert.strictEqual(recovered, signer)
+    })
+
+    it('signs VIP-191 transactions with a local gas payer hash', () => {
+        const umk = Buffer.alloc(32, 2)
+        const originVault = Vault.createStatic(parsePrivateKey(VALID_PRIVATE_KEY), umk)
+        const payerVault = Vault.createStatic(parsePrivateKey(VALID_PAYER_PRIVATE_KEY), umk)
+        const signer = originVault.derive(0).address
+        const payer = payerVault.derive(0).address
+        const originWallet = testWallet(originVault, 'private-key', [signer])
+        const payerWallet = testWallet(payerVault, 'private-key', [payer])
+        const body = buildDynamicFeeTxBody(
+            genesises.main.id,
+            '0x017b6e328c3e15b0d24376289af68e70326fbb37b339a341e06c3d000fb17ff3',
+            [{
+                to: '0x0000000000000000000000000000000000000001',
+                value: '1',
+                data: '0x'
+            }],
+            21000,
+            new BigNumber(10),
+            new BigNumber(210),
+            undefined,
+            '0x01'
+        )
+        const tx = new Transaction({ ...body, reserved: { features: Transaction.DELEGATED_MASK } })
+
+        const originSig = signHashWithSoftwareWallet(originWallet, signer, umk, tx.signingHash())
+        const payerSig = signHashWithSoftwareWallet(payerWallet, payer, umk, tx.signingHash(signer))
+        tx.signature = Buffer.concat([originSig, payerSig])
+
+        assert.strictEqual(tx.origin, signer)
+        assert.strictEqual(tx.delegator, payer)
     })
 })
