@@ -67,11 +67,35 @@
                             <q-tab-panel name="decoded">
                                 <div v-if="decodedObject"
                                     class="monospace q-pa-sm tab-content" >
-                                    <strong>function {{decodedObject.name}}({{ decodedObject.params.map(i => i.name + ': ' +i.type).join(', ') }})</strong>
-                                    <div class="q-pt-xs" v-for="p in decodedObject.params" :key="p.name + p.value">
-                                        <span class="text-grey-7">{{p.name}}: </span>
-                                        <span>{{p.value}}</span>
-                                    </div>
+                                    <template v-if="decodedObject.kind === 'smart-wallet-instruction'">
+                                        <strong>Smart wallet instruction</strong>
+                                        <div class="q-pt-xs">
+                                            <span class="text-grey-7">target: </span>
+                                            <span>{{decodedObject.target}}</span>
+                                        </div>
+                                        <div class="q-pt-xs">
+                                            <span class="text-grey-7">value: </span>
+                                            <span>{{decodedObject.value}}</span>
+                                        </div>
+                                        <div class="q-pt-xs">
+                                            <span class="text-grey-7">operation: </span>
+                                            <span>{{decodedObject.operation}}</span>
+                                        </div>
+                                        <div class="q-pt-md">
+                                            <strong>function {{formatFunction(decodedObject.call)}}</strong>
+                                        </div>
+                                        <div class="q-pt-xs" v-for="p in decodedObject.call.params" :key="paramKey(p)">
+                                            <span class="text-grey-7">{{p.name}}: </span>
+                                            <span>{{p.value}}</span>
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <strong>function {{formatFunction(decodedObject)}}</strong>
+                                        <div class="q-pt-xs" v-for="p in decodedObject.params" :key="paramKey(p)">
+                                            <span class="text-grey-7">{{p.name}}: </span>
+                                            <span>{{p.value}}</span>
+                                        </div>
+                                    </template>
                                 </div>
                                 <template v-else>Unable to decode data</template>
                             </q-tab-panel>
@@ -92,27 +116,7 @@ import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
-import { abi } from 'thor-devkit'
-import axios from 'axios'
-import { parseStoredJson } from 'src/utils/json'
-
-async function queryAbi(signature: string): Promise<abi.Function.Definition | null> {
-    let abiItem = parseStoredJson<abi.Function.Definition | null>(localStorage.getItem(signature) || '', null)
-    if (!abiItem) {
-        try {
-            const response = await axios.get(`https://b32.vecha.in/q/${signature}.json`, { timeout: 3 * 1000 })
-            const abis = Array.isArray(response.data) ? response.data : []
-            abiItem = abis[0] || null
-            if (abiItem) {
-                localStorage.setItem(signature, JSON.stringify(abiItem))
-            }
-        } catch {
-            abiItem = null
-        }
-    }
-
-    return abiItem
-}
+import { decodeClauseData, DecodedCall, DecodedClauseData, DecodedParam } from './clause-decoder'
 
 export default defineComponent({
     emits: ['hide'],
@@ -138,44 +142,16 @@ export default defineComponent({
         show() { (this.$refs.dialog as QDialog).show() },
         // method is REQUIRED by $q.dialog
         hide() { (this.$refs.dialog as QDialog).hide() },
-        decodeDataToReadable(abiItem: abi.Function.Definition, data: string) {
-            const decodedData = abi.decodeParameters(abiItem.inputs, `0x${data}`)
-            return {
-                name: abiItem.name,
-                params: abiItem.inputs.map((p, i) => {
-                    return {
-                        name: p.name,
-                        type: p.type,
-                        value: decodedData[i]
-                    }
-                })
-            }
+        formatFunction(decodedCall: DecodedCall): string {
+            return `${decodedCall.name}(${decodedCall.params.map(i => i.name + ': ' + i.type).join(', ')})`
+        },
+        paramKey(param: DecodedParam): string {
+            return `${param.name}:${param.type}:${String(param.value)}`
         }
     },
     asyncComputed: {
-        async decodedObject(): Promise<object|null> {
-            if (!this.clause.data || this.clause.data.length <= 10) {
-                return null
-            }
-
-            const signature = this.clause.data.slice(0, 10)
-            const data = this.clause.data.slice(10)
-
-            if (this.clause.abi) {
-                try {
-                    return this.decodeDataToReadable(this.clause.abi as abi.Function.Definition, data)
-                } catch { }
-            }
-
-            // double check
-            const abiItem = await queryAbi(signature)
-            if (abiItem) {
-                try {
-                    return this.decodeDataToReadable(abiItem, data)
-                } catch { }
-            }
-
-            return null
+        async decodedObject(): Promise<DecodedClauseData|null> {
+            return decodeClauseData(this.clause)
         }
     },
     computed: {
