@@ -41,7 +41,19 @@
                 placeholder="0.00"
                 outlined
                 spellcheck="false"
-            />
+            >
+                <template v-slot:append>
+                    <q-btn
+                        type="button"
+                        dense
+                        flat
+                        color="primary"
+                        :disable="!canSetMax"
+                        :label="$t('send.action_max')"
+                        @click="setMaxAmount"
+                    />
+                </template>
+            </q-input>
         </page-content>
         <page-action>
             <q-btn
@@ -77,6 +89,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { abi, address } from 'thor-devkit'
+import { BigNumber } from 'bignumber.js'
 import { abis } from 'src/consts'
 import To from './To.vue'
 import TokenSelector from './TokenSelector.vue'
@@ -84,7 +97,7 @@ import { AddressGroup } from './models'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
-import { toWei } from 'src/utils/format'
+import { rawTokenAmountToInput, toWei } from 'src/utils/format'
 import { isVetDomainName } from 'src/utils/vet-domains'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
 import { parseRouteInteger } from 'src/utils/route'
@@ -154,6 +167,21 @@ export default defineComponent({
                 })
             },
             default: () => []
+        },
+        currentBalance: {
+            async get(): Promise<string> {
+                const token = this.currentToken
+                if (!token || !this.address) {
+                    return '0'
+                }
+                try {
+                    return await this.$svc.bc(token.gid).balanceOf(this.address, token)
+                } catch (error) {
+                    console.warn('load send balance:', error)
+                    return '0'
+                }
+            },
+            default: '0'
         }
     },
     computed: {
@@ -187,6 +215,9 @@ export default defineComponent({
         },
         currentToken(): M.TokenSpec | undefined {
             return this.tokenList.find(item => item.symbol === this.sym)
+        },
+        canSetMax(): boolean {
+            return new BigNumber(this.currentBalance || 0).isGreaterThan(0)
         },
         from(): string {
             const index = this.addressIndexNumber
@@ -223,6 +254,14 @@ export default defineComponent({
         },
         checkSumAddress(v: string): boolean {
             return !(v !== v.toLowerCase() && address.toChecksumed(v) !== v)
+        },
+        setMaxAmount(): void {
+            const token = this.currentToken
+            if (!token || !this.canSetMax) {
+                return
+            }
+            this.amount = rawTokenAmountToInput(this.currentBalance, token.decimals)
+            this.errors.amount = ''
         },
         balanceCheck(v: string): boolean {
             const token = this.currentToken

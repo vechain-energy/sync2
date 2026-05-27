@@ -2,7 +2,9 @@
     <q-expansion-item
         group="log-item"
         v-bind="$attrs"
-        expand-icon-class="hidden"
+        expand-icon="keyboard_arrow_down"
+        expanded-icon="keyboard_arrow_up"
+        expand-separator
     >
         <template v-slot:header>
             <q-item-section avatar>
@@ -37,12 +39,94 @@
                 </span>
             </q-item-section>
         </template>
-        <template>
-            <q-item>
-                <q-item-section />
+        <div class="asset-log-details text-caption">
+            <q-item dense>
+                <q-item-section class="asset-log-detail-label">
+                    {{$t('asset.label_from')}}
+                </q-item-section>
+                <q-item-section
+                    side
+                    class="asset-log-detail-value"
+                >
+                    <address-label :addr="log.sender" :gid="token.gid" />
+                </q-item-section>
+            </q-item>
+            <q-item dense>
+                <q-item-section class="asset-log-detail-label">
+                    {{$t('asset.label_to')}}
+                </q-item-section>
+                <q-item-section
+                    side
+                    class="asset-log-detail-value"
+                >
+                    <address-label :addr="log.recipient" :gid="token.gid" />
+                </q-item-section>
+            </q-item>
+            <q-item dense>
+                <q-item-section class="asset-log-detail-label">
+                    {{$t('asset.label_amount')}}
+                </q-item-section>
+                <q-item-section
+                    side
+                    class="asset-log-detail-value"
+                >
+                    <span>
+                        <amount-label
+                            :value="amount"
+                            :decimals="token.decimals"
+                        >--.--</amount-label>
+                        {{token.symbol}}
+                    </span>
+                </q-item-section>
+            </q-item>
+            <q-item dense>
+                <q-item-section class="asset-log-detail-label">
+                    {{$t('asset.label_token')}}
+                </q-item-section>
+                <q-item-section
+                    side
+                    class="asset-log-detail-value"
+                >
+                    {{token.symbol}}
+                </q-item-section>
+            </q-item>
+            <q-item dense>
+                <q-item-section class="asset-log-detail-label">
+                    {{$t('asset.label_time')}}
+                </q-item-section>
+                <q-item-section
+                    side
+                    class="asset-log-detail-value"
+                >
+                    {{formatFullDate(log.meta.blockTimestamp)}}
+                </q-item-section>
+            </q-item>
+            <q-item dense>
+                <q-item-section class="asset-log-detail-label">
+                    {{$t('asset.label_block')}}
+                </q-item-section>
+                <q-item-section
+                    side
+                    class="asset-log-detail-value"
+                >
+                    {{log.meta.blockNumber}}
+                </q-item-section>
+            </q-item>
+            <q-item dense>
+                <q-item-section class="asset-log-detail-label">
+                    {{$t('asset.label_tx_hash')}}
+                </q-item-section>
+                <q-item-section
+                    side
+                    class="asset-log-detail-value asset-log-hash"
+                >
+                    {{shortTxID}}
+                </q-item-section>
+            </q-item>
+            <q-item dense>
                 <q-item-section />
                 <q-item-section side>
-                    <div class="q-gutter-md">
+                    <div class="asset-log-actions">
                         <q-btn
                             rounded
                             @click="copy(log.meta.txID)"
@@ -65,7 +149,7 @@
                     </div>
                 </q-item-section>
             </q-item>
-        </template>
+        </div>
     </q-expansion-item>
 </template>
 <script lang="ts">
@@ -115,11 +199,18 @@ export default defineComponent({
         },
         logTxExplorerUrl(): string {
             return txExplorerUrl(this.log.token.gid, this.log.meta.txID)
+        },
+        shortTxID(): string {
+            const txID = this.log.meta.txID
+            return txID.length > 20 ? `${txID.slice(0, 10)}...${txID.slice(-8)}` : txID
         }
     },
     methods: {
         formatDate(timestamp: number) {
             return formatDate(timestamp * 1000, { relative: true })
+        },
+        formatFullDate(timestamp: number) {
+            return formatDate(timestamp * 1000)
         },
         viewOnExplorer() {
             this.logTxExplorerUrl && openURL(this.logTxExplorerUrl)
@@ -138,3 +229,42 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.asset-log-details
+    padding-top: 6px
+    padding-bottom: 8px
+    line-height: 1.35
+
+.asset-log-details :deep(.q-item)
+    min-height: 26px
+    padding-top: 1px
+    padding-bottom: 1px
+
+.asset-log-details :deep(.q-item__section--side)
+    padding-left: 12px
+
+.asset-log-detail-label
+    flex: 0 0 84px
+    color: #616161
+
+.asset-log-detail-value
+    min-width: 0
+    max-width: calc(100% - 96px)
+    white-space: normal
+    text-align: left
+
+.asset-log-hash
+    font-family: monospace
+
+.asset-log-actions
+    display: flex
+    gap: 16px
+    justify-content: flex-end
+
+@media (max-width: 420px)
+    .asset-log-detail-label
+        flex-basis: 72px
+
+    .asset-log-detail-value
+        max-width: calc(100% - 80px)
+</style>

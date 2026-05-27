@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import * as assert from 'assert'
-import { formatAmount, formatDate, toWei } from '../src/utils/format'
+import { formatAmount, formatDate, rawTokenAmountToInput, toWei } from '../src/utils/format'
 
 describe('format helpers', () => {
     it('formats finite token amounts with units and fixed precision', () => {
@@ -40,6 +40,15 @@ describe('format helpers', () => {
         assert.strictEqual(formatAmount('not-a-number'), null)
         assert.strictEqual(formatAmount('Infinity'), null)
         assert.strictEqual(toWei('1.2345', 3), '1234')
+    })
+
+    it('converts raw token balances to full precision input strings', () => {
+        assert.strictEqual(rawTokenAmountToInput('1000000000000000000', 18), '1')
+        assert.strictEqual(rawTokenAmountToInput('123450000', 6), '123.45')
+        assert.strictEqual(rawTokenAmountToInput('1', 18), '0.000000000000000001')
+        assert.strictEqual(rawTokenAmountToInput('0', 18), '0')
+        assert.strictEqual(rawTokenAmountToInput('1000', 0), '1000')
+        assert.strictEqual(rawTokenAmountToInput('not-a-number', 18), '0')
     })
 
     it('formats relative dates only inside the relative window', () => {

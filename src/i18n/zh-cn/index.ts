@@ -172,6 +172,13 @@ export default {
     asset: {
         title: '资产',
         label_history: '转账记录',
+        label_from: '发送方',
+        label_to: '接收方',
+        label_amount: '数额',
+        label_token: '代币',
+        label_time: '时间',
+        label_block: '区块',
+        label_tx_hash: '交易哈希',
         msg_no_history: '无记录',
         msg_no_more: '- 完 - ',
         msg_history_load_error: 'you need to check the network and try again. 无法加载转账记录。',
@@ -189,6 +196,7 @@ export default {
         msg_vet_domain_unresolved: 'you need to check the name or switch network',
         msg_select_wallet: '发送前请先打开钱包',
         msg_no_asset: '发送前请先启用资产',
+        action_max: '最大',
         action_send: '发送'
     },
     swap: {

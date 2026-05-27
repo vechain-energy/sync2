@@ -173,6 +173,13 @@ export default {
     asset: {
         title: 'Asset',
         label_history: 'History',
+        label_from: 'From',
+        label_to: 'To',
+        label_amount: 'Amount',
+        label_token: 'Token',
+        label_time: 'Time',
+        label_block: 'Block',
+        label_tx_hash: 'Tx Hash',
         msg_no_history: 'No transfer history',
         msg_no_more: '- The End - ',
         msg_history_load_error: 'you need to check the network and try again. History could not be loaded.',
@@ -190,6 +197,7 @@ export default {
         msg_vet_domain_unresolved: 'you need to check the name or switch network',
         msg_select_wallet: 'you need to open a wallet before sending',
         msg_no_asset: 'you need to enable an asset before sending',
+        action_max: 'MAX',
         action_send: 'Send'
     },
     swap: {

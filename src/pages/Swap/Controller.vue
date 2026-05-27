@@ -269,7 +269,7 @@ import { buildSignerGroups } from 'src/pages/Sign/signer-groups'
 import { genesises } from 'src/consts'
 import { dialogErrorMessage } from 'src/utils/dialog-error'
 import { sanitizeDecimalInput } from 'src/utils/decimal-input'
-import { toWei } from 'src/utils/format'
+import { rawTokenAmountToInput, toWei } from 'src/utils/format'
 import {
     BuiltSwapQuote,
     SwapParams,
@@ -310,14 +310,6 @@ type SwapData = {
     statusClass: string
     quoteTimer: number
     quoteRequestKey: string
-}
-
-function shortRawAmount(raw: string, decimals: number): string {
-    const value = new BigNumber(raw || 0).div(`1${'0'.repeat(decimals)}`)
-    if (!value.isFinite()) {
-        return '0'
-    }
-    return value.toFixed(decimals).replace(/\.?0+$/, '')
 }
 
 function trimFormattedDecimal(value: string): string {
@@ -590,7 +582,7 @@ export default defineComponent({
             if (!this.fromToken) {
                 return
             }
-            this.amount = shortRawAmount(this.fromBalance, this.fromToken.decimals)
+            this.amount = rawTokenAmountToInput(this.fromBalance, this.fromToken.decimals)
             this.scheduleQuote()
         },
         swapTokens() {

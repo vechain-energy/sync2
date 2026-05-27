@@ -18,6 +18,7 @@ old built-in dApp browser. dApps connect from normal browsers through
 ## Product
 
 - Wallets: create or import wallets, including single private-key accounts.
+- Send: transfer full token balances with MAX and inspect transfer history details.
 - Hardware: sign with Ledger wallets where supported.
 - Signing: review and sign dApp certificates and transactions.
 - Names: resolve and show `.vet` and `.vet.domains` names.

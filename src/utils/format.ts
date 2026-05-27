@@ -65,6 +65,20 @@ export function toWei(v: string, decimals: number) {
         .toFixed(0, BigNumber.ROUND_FLOOR)
 }
 
+export function rawTokenAmountToInput(raw: BigNumber.Value, decimals: number): string {
+    const decimalPlaces = Number.isInteger(decimals) && decimals > 0 ? decimals : 0
+    try {
+        const value = new BigNumber(raw || 0).div(`1${'0'.repeat(decimalPlaces)}`)
+        if (!value.isFinite() || value.isNegative()) {
+            return '0'
+        }
+        const fixed = value.toFixed(decimalPlaces, BigNumber.ROUND_FLOOR)
+        return fixed.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '') || '0'
+    } catch {
+        return '0'
+    }
+}
+
 export type FormatDateOptions = {
     relative?: boolean
 }

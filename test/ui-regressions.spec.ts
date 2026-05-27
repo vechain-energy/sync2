@@ -164,6 +164,50 @@ describe('UI regression guards', () => {
         assert.ok(updater.includes('uncompletedTxActivities'))
     })
 
+    it('keeps Send MAX balance-backed and non-submitting', () => {
+        const send = sourceFile('src/pages/Send/Controller.vue')
+
+        assert.ok(send.includes(':label="$t(\'send.action_max\')"'))
+        assert.ok(send.includes('type="button"'))
+        assert.ok(send.includes('currentBalance: {'))
+        assert.ok(send.includes('this.$svc.bc(token.gid).balanceOf(this.address, token)'))
+        assert.ok(send.includes('canSetMax(): boolean'))
+        assert.ok(send.includes('setMaxAmount(): void'))
+        assert.ok(send.includes('rawTokenAmountToInput(this.currentBalance, token.decimals)'))
+        assert.ok(send.includes("this.errors.amount = ''"))
+    })
+
+    it('shows full transfer details from asset history rows', () => {
+        const logItem = sourceFile('src/pages/Asset/LogItem.vue')
+
+        assert.strictEqual(logItem.includes('expand-icon-class="hidden"'), false)
+        assert.ok(logItem.includes('expand-icon="keyboard_arrow_down"'))
+        assert.ok(logItem.includes('expanded-icon="keyboard_arrow_up"'))
+        assert.ok(logItem.includes('asset-log-details'))
+        for (const key of [
+            'asset.label_from',
+            'asset.label_to',
+            'asset.label_amount',
+            'asset.label_token',
+            'asset.label_time',
+            'asset.label_block',
+            'asset.label_tx_hash'
+        ]) {
+            assert.ok(logItem.includes(key))
+        }
+        assert.ok(logItem.includes('copy(log.meta.txID)'))
+        assert.ok(logItem.includes('viewOnExplorer'))
+        assert.ok(logItem.includes('text-caption'))
+        assert.ok(logItem.includes('asset-log-hash'))
+        assert.ok(logItem.includes('shortTxID(): string'))
+        assert.ok(logItem.includes('txID.slice(0, 10)'))
+        assert.ok(logItem.includes('txID.slice(-8)'))
+        assert.ok(logItem.includes('min-height: 26px'))
+        assert.ok(logItem.includes('line-height: 1.35'))
+        assert.ok(logItem.includes('white-space: normal'))
+        assert.strictEqual(logItem.includes('text-overflow: ellipsis'), false)
+    })
+
     it('keeps malformed stored wallet and activity JSON from crashing startup views', () => {
         const wallet = sourceFile('src/boot/services/wallet.ts')
         const activity = sourceFile('src/boot/services/activity.ts')
