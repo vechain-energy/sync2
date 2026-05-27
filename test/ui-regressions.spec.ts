@@ -121,13 +121,13 @@ describe('UI regression guards', () => {
 
         assert.ok(source.includes("import {\n    FeeMode,\n    LOCAL_ACCOUNT_FEE_MODE,\n    LocalGasPayerOption,\n    buildLocalGasPayerOptions,\n    isLocalGasPayerMode\n} from './local-gas-payer'"))
         assert.ok(source.includes('localGasPayerOptions(): LocalGasPayerOption[]'))
-        assert.ok(source.includes("return buildLocalGasPayerOptions(this.wallets || [], this.signer)"))
+        assert.ok(source.includes("return buildLocalGasPayerOptions(this.wallets || [], this.effectiveSigner)"))
         assert.ok(source.includes('v-for="option in localGasPayerFeeOptions"'))
         assert.ok(source.includes('@click="selectLocalGasPayer(option.address)"'))
         assert.ok(source.includes('isDappFeeDelegation(): boolean'))
         assert.ok(source.includes('return this.isDappDelegation && !this.isLocalGasPayerMode'))
         assert.ok(source.includes('const delegator = this.isDappFeeDelegation ? this.req.options.delegator : undefined'))
-        assert.ok(source.includes('tx.signingHash(signer)'))
+        assert.ok(source.includes('tx.signingHash(txOrigin)'))
         assert.ok(source.includes('this.localGasPayerWarning && ret.push(this.localGasPayerWarning)'))
     })
 

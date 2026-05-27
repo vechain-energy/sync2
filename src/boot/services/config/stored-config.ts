@@ -1,5 +1,6 @@
 import { isRecord, parseStoredArray, parseStoredJson, parseStoredRecord } from 'src/utils/json'
 import { TokenRegistry } from './token-registry'
+import { SmartAccountCache, normalizeSmartAccountCache } from 'src/utils/smart-accounts'
 
 function isStoredNode(value: unknown): value is M.Node {
     if (!isRecord(value) || !isRecord(value.genesis)) {
@@ -28,4 +29,8 @@ export function parseStoredStringMap(value: string): Record<string, string> {
 
 export function parseStoredTokenRegistry(value: string): TokenRegistry {
     return TokenRegistry.normalize(parseStoredJson<unknown>(value, null))
+}
+
+export function parseStoredSmartAccountCache(value: string): SmartAccountCache {
+    return normalizeSmartAccountCache(parseStoredJson<unknown>(value, null))
 }

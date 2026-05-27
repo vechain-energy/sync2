@@ -1,8 +1,24 @@
 import { SignerGroup } from './models'
 
-export function buildSignerGroups(wallets: M.Wallet[], enforcedSigner?: string, signers?: string[]): SignerGroup[] {
+function smartAccountsForWallet(wallet: M.Wallet, smartAccounts: M.SmartAccount[]): M.SmartAccount[] {
+    return smartAccounts.filter(account => account.walletId === wallet.id)
+}
+
+function addressesForWallet(wallet: M.Wallet, smartAccounts: M.SmartAccount[]): string[] {
+    const walletSmartAccounts = smartAccountsForWallet(wallet, smartAccounts)
+    if (walletSmartAccounts.length === 0) {
+        return wallet.meta.addresses
+    }
+    return [
+        ...wallet.meta.addresses,
+        ...walletSmartAccounts.map(account => account.address)
+    ]
+}
+
+export function buildSignerGroups(wallets: M.Wallet[], enforcedSigner?: string, signers?: string[], smartAccounts: M.SmartAccount[] = []): SignerGroup[] {
     if (enforcedSigner) {
-        const wallet = wallets.find(item => item.meta.addresses.includes(enforcedSigner))
+        const normalizedSigner = enforcedSigner.toLowerCase()
+        const wallet = wallets.find(item => addressesForWallet(item, smartAccounts).some(address => address.toLowerCase() === normalizedSigner))
         return [{
             name: wallet ? wallet.meta.name : '',
             addresses: [enforcedSigner]
@@ -13,7 +29,7 @@ export function buildSignerGroups(wallets: M.Wallet[], enforcedSigner?: string, 
         return wallets.map(wallet => {
             return {
                 name: wallet.meta.name,
-                addresses: wallet.meta.addresses
+                addresses: addressesForWallet(wallet, smartAccounts)
             }
         })
     }
@@ -28,12 +44,12 @@ export function buildSignerGroups(wallets: M.Wallet[], enforcedSigner?: string, 
             continue
         }
 
-        const wallet = wallets.find(item => item.meta.addresses.some(addr => addr.toLowerCase() === normalizedSigner))
+        const wallet = wallets.find(item => addressesForWallet(item, smartAccounts).some(addr => addr.toLowerCase() === normalizedSigner))
         if (!wallet) {
             continue
         }
 
-        const address = wallet.meta.addresses.find(addr => addr.toLowerCase() === normalizedSigner)
+        const address = addressesForWallet(wallet, smartAccounts).find(addr => addr.toLowerCase() === normalizedSigner)
         if (!address) {
             continue
         }

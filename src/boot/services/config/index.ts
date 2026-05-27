@@ -4,7 +4,8 @@ import { genesises } from 'src/consts'
 import { TokenRegistry } from './token-registry'
 import { unique } from 'src/utils/array'
 import { presetNodes } from './preset-nodes'
-import { parseStoredNodes, parseStoredStringArray, parseStoredStringMap, parseStoredTokenRegistry } from './stored-config'
+import { SmartAccountCache } from 'src/utils/smart-accounts'
+import { parseStoredNodes, parseStoredSmartAccountCache, parseStoredStringArray, parseStoredStringMap, parseStoredTokenRegistry } from './stored-config'
 
 export function build(storage: Storage) {
     const t = delegateTable<Storage.ConfigEntity, Storage.ConfigEntity>(
@@ -13,7 +14,7 @@ export function build(storage: Storage) {
         m => m
     )
     type Key = 'nodes' | 'activeNodeMap' | 'userMasterKeyGlob' |
-        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on'
+        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'smartAccounts'
 
     const getSubKey = async (key: Key, subKey: string) => {
         const row = (await t.all().where({ key, subKey }).query())[0]
@@ -98,6 +99,12 @@ export function build(storage: Storage) {
         },
         saveRecentRecipients(gid: string, val: string[]) {
             return setSubKey('recentRecipients', gid, JSON.stringify(val))
+        },
+        getSmartAccountCache(key: string) {
+            return getSubKey('smartAccounts', key).then(parseStoredSmartAccountCache)
+        },
+        saveSmartAccountCache(key: string, val: SmartAccountCache) {
+            return setSubKey('smartAccounts', key, JSON.stringify(val))
         },
         getLanguage() {
             return get('language')

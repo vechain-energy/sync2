@@ -35,13 +35,18 @@ export default defineBoot(async ({ app }) => {
     }
 
     let activeNodes = await getActiveNodes()
-    const bc = Blockchain.build(gid => {
-        const node = activeNodes.find(n => n.genesis.id === gid)
-        if (!node) {
-            throw new Error('no proper node found')
-        }
-        return node
-    })
+    const bc = Blockchain.build(
+        gid => {
+            const node = activeNodes.find(n => n.genesis.id === gid)
+            if (!node) {
+                throw new Error('no proper node found')
+            }
+            return node
+        },
+        {
+            getSmartAccountCache: key => config.getSmartAccountCache(key),
+            saveSmartAccountCache: (key, val) => config.saveSmartAccountCache(key, val)
+        })
 
     // watch and update active nodes
     void (async () => {

@@ -19,16 +19,40 @@ export default defineComponent({
         }
     },
     computed: {
+        isTxRequest(): boolean {
+            return Array.isArray((this.req as M.TxRequest).message)
+        },
+        selectedSmartAccount(): M.SmartAccount | null {
+            const signer = this.signer.toLowerCase()
+            return (this.smartAccounts || []).find(account => account.address.toLowerCase() === signer) || null
+        },
+        effectiveSigner(): string {
+            return this.selectedSmartAccount ? this.selectedSmartAccount.owner : this.signer
+        },
         wallet(): M.Wallet | null {
+            const smartAccount = this.selectedSmartAccount
+            if (smartAccount) {
+                return (this.wallets || []).find(w => w.id === smartAccount.walletId) || null
+            }
             return (this.wallets || []).find(w => w.meta.addresses.includes(this.signer)) || null
         },
         signerGroups(): SignerGroup[] {
-            return buildSignerGroups(this.wallets || [], this.req.options.signer, this.req.signers)
+            return buildSignerGroups(this.wallets || [], this.req.options.signer, this.req.signers, this.isTxRequest ? (this.smartAccounts || []) : [])
         }
     },
     asyncComputed: {
         wallets(): Promise<M.Wallet[] | null> {
             return this.$svc.wallet.getByGid(this.gid)
+        },
+        smartAccounts: {
+            async get(): Promise<M.SmartAccount[]> {
+                if (!this.isTxRequest || !this.wallets) {
+                    return []
+                }
+                const accounts = await Promise.all(this.wallets.map(wallet => this.$svc.bc(this.gid).smartAccountsOf(wallet)))
+                return accounts.flat()
+            },
+            default: () => [] as M.SmartAccount[]
         }
     },
     watch: {
@@ -45,6 +69,7 @@ export default defineComponent({
             localStorage.setItem(`last-signer-${this.gid}`, this.signer)
         },
         async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<SignableTransaction>): Promise<Buffer> {
+            signer = this.selectedSmartAccount ? this.selectedSmartAccount.owner : signer
             if (isSoftwareWalletType(wallet.meta.type)) {
                 // acquire user master key
                 const umk = await this.$authenticate()

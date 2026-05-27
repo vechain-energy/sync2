@@ -153,6 +153,12 @@ export default defineComponent({
             },
             default: () => []
         },
+        smartAccounts: {
+            async get(): Promise<M.SmartAccount[]> {
+                return this.wallet ? this.$svc.bc(this.wallet.gid).smartAccountsOf(this.wallet) : []
+            },
+            default: () => [] as M.SmartAccount[]
+        },
         primaryName: {
             async get(): Promise<string> {
                 const wallet = this.wallet
@@ -175,7 +181,13 @@ export default defineComponent({
         },
         address(): string {
             const index = this.addressIndexNumber
-            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
+            return this.wallet && index !== null ? this.addresses[index] || '' : ''
+        },
+        addresses(): string[] {
+            return this.wallet ? [
+                ...this.wallet.meta.addresses,
+                ...this.smartAccounts.map(account => account.address)
+            ] : []
         },
         canShowAddress(): boolean {
             return !!this.wallet && !!this.address

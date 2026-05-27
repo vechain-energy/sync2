@@ -17,8 +17,8 @@
             :style="pageStyles"
         >
             <div
-                v-for="(address,i) in wallet.meta.addresses"
-                :key="address"
+                v-for="(addressEntry,i) in addressEntries"
+                :key="addressEntry.address"
                 class="q-pa-sm inline-block"
                 :style="cellStyles"
             >
@@ -27,16 +27,17 @@
                     v-slot="{entry}"
                 >
                     <async-resolve
-                        :promise="entry.isIntersecting? $svc.bc(wallet.gid).thor.account(address).get() : null"
+                        :promise="entry.isIntersecting? $svc.bc(wallet.gid).thor.account(addressEntry.address).get() : null"
                         v-slot="{data}"
                     >
                         <q-responsive :ratio="3.370 / 2.125">
                             <AddressCard
                                 :style="cardStyles"
                                 :index="i"
-                                :address="address"
+                                :address="addressEntry.address"
                                 :gid="wallet.gid"
                                 :account="data"
+                                :smart-account="addressEntry.smartAccount"
                                 @click="onClickCard(i)"
                             />
                         </q-responsive>
@@ -64,13 +65,27 @@ export default defineComponent({
     data: () => {
         return { availableWidth: 0 }
     },
+    asyncComputed: {
+        smartAccounts: {
+            async get(): Promise<M.SmartAccount[]> {
+                return this.wallet ? this.$svc.bc(this.wallet.gid).smartAccountsOf(this.wallet) : []
+            },
+            default: () => [] as M.SmartAccount[]
+        }
+    },
     computed: {
+        addressEntries(): Array<{ address: string; smartAccount: boolean }> {
+            return [
+                ...this.wallet.meta.addresses.map(address => ({ address, smartAccount: false })),
+                ...this.smartAccounts.map(account => ({ address: account.address, smartAccount: true }))
+            ]
+        },
         cols(): number {
             const n = Math.floor(this.availableWidth / CELL_WIDTH_S)
             return Math.max(Math.min(n, MAX_COL), 1)
         },
         rows(): number {
-            return Math.ceil(this.wallet.meta.addresses.length / this.cols)
+            return Math.ceil(this.addressEntries.length / this.cols)
         },
         pageWidth(): number {
             const cols = this.cols

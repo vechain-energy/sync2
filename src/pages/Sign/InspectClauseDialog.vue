@@ -68,7 +68,7 @@
                                 <div v-if="decodedObject"
                                     class="monospace q-pa-sm tab-content" >
                                     <template v-if="decodedObject.kind === 'smart-wallet-instruction'">
-                                        <strong>Smart wallet instruction</strong>
+                                        <strong>Smart wallet instruction · {{decodedObject.wrapperName}}</strong>
                                         <div class="q-pt-xs">
                                             <span class="text-grey-7">target: </span>
                                             <span>{{decodedObject.target}}</span>
@@ -77,9 +77,13 @@
                                             <span class="text-grey-7">value: </span>
                                             <span>{{decodedObject.value}}</span>
                                         </div>
-                                        <div class="q-pt-xs">
+                                        <div class="q-pt-xs" v-if="decodedObject.operation !== undefined">
                                             <span class="text-grey-7">operation: </span>
                                             <span>{{decodedObject.operation}}</span>
+                                        </div>
+                                        <div class="q-pt-xs" v-for="p in decodedObject.metaParams" :key="paramKey(p)">
+                                            <span class="text-grey-7">{{p.name}}: </span>
+                                            <span>{{p.value}}</span>
                                         </div>
                                         <div class="q-pt-md">
                                             <strong>function {{formatFunction(decodedObject.call)}}</strong>
@@ -87,6 +91,31 @@
                                         <div class="q-pt-xs" v-for="p in decodedObject.call.params" :key="paramKey(p)">
                                             <span class="text-grey-7">{{p.name}}: </span>
                                             <span>{{p.value}}</span>
+                                        </div>
+                                    </template>
+                                    <template v-else-if="decodedObject.kind === 'smart-wallet-batch'">
+                                        <strong>Smart wallet batch · {{decodedObject.wrapperName}}</strong>
+                                        <div class="q-pt-xs" v-for="p in decodedObject.metaParams" :key="paramKey(p)">
+                                            <span class="text-grey-7">{{p.name}}: </span>
+                                            <span>{{p.value}}</span>
+                                        </div>
+                                        <div class="q-pt-md" v-for="(instruction, instructionIndex) in decodedObject.instructions" :key="instructionKey(instruction, instructionIndex)">
+                                            <strong>Instruction {{instructionIndex + 1}}</strong>
+                                            <div class="q-pt-xs">
+                                                <span class="text-grey-7">target: </span>
+                                                <span>{{instruction.target}}</span>
+                                            </div>
+                                            <div class="q-pt-xs">
+                                                <span class="text-grey-7">value: </span>
+                                                <span>{{instruction.value}}</span>
+                                            </div>
+                                            <div class="q-pt-xs">
+                                                <strong>function {{formatFunction(instruction.call)}}</strong>
+                                            </div>
+                                            <div class="q-pt-xs" v-for="p in instruction.call.params" :key="paramKey(p)">
+                                                <span class="text-grey-7">{{p.name}}: </span>
+                                                <span>{{p.value}}</span>
+                                            </div>
                                         </div>
                                     </template>
                                     <template v-else>
@@ -116,7 +145,7 @@ import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
-import { decodeClauseData, DecodedCall, DecodedClauseData, DecodedParam } from './clause-decoder'
+import { decodeClauseData, DecodedCall, DecodedClauseData, DecodedParam, DecodedSmartWalletInstruction } from './clause-decoder'
 
 export default defineComponent({
     emits: ['hide'],
@@ -147,6 +176,9 @@ export default defineComponent({
         },
         paramKey(param: DecodedParam): string {
             return `${param.name}:${param.type}:${String(param.value)}`
+        },
+        instructionKey(instruction: DecodedSmartWalletInstruction, index: number): string {
+            return `${index}:${instruction.target}:${String(instruction.value)}:${instruction.call.name}`
         }
     },
     asyncComputed: {

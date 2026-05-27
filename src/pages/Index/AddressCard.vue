@@ -36,6 +36,12 @@
                 <q-item-label>
                     <!-- index -->
                     <span class="index">{{index+1}}</span>
+                    <q-badge
+                        v-if="smartAccount"
+                        class="q-mr-xs"
+                        color="primary"
+                        label="SMART"
+                    />
                     <!-- address -->
                     <address-label
                         class="address-card__address"
@@ -70,6 +76,7 @@ export default defineComponent({
         address: String,
         gid: String,
         index: Number,
+        smartAccount: Boolean,
         account: Object as () => (Connex.Thor.Account | null)
     },
     computed: {

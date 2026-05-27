@@ -13,6 +13,18 @@ import {
     vetDomainTextABI
 } from 'src/utils/vet-domain-profile'
 import { reactive } from 'vue'
+import {
+    SMART_ACCOUNT_SCAN_CHUNK,
+    SMART_ACCOUNT_SCAN_PAGE_SIZE,
+    SmartAccount,
+    SmartAccountCache,
+    accountCreatedEventABI,
+    decodeAccountCreatedEvent,
+    mergeSmartAccounts,
+    smartAccountCacheKey,
+    smartAccountFactoryABIs,
+    smartAccountFactoryByGid
+} from 'src/utils/smart-accounts'
 
 const VetDomainsResolverByGid: Record<string, string> = {
     // MainNet Resolver Utility
@@ -62,7 +74,27 @@ const vetDomainsGetNamesABI = {
     type: 'function'
 }
 
-function serve(gid: string, pool: ReturnType<typeof createPool>) {
+type SmartAccountCacheStore = {
+    getSmartAccountCache(key: string): Promise<SmartAccountCache>
+    saveSmartAccountCache(key: string, val: SmartAccountCache): Promise<void>
+}
+
+function decodedAddress(output: Connex.VM.Output & Connex.Thor.Account.WithDecoded, key: string): string {
+    const value = output.decoded[key] || output.decoded[0]
+    return typeof value === 'string' ? value.toLowerCase() : ''
+}
+
+function decodedNumber(output: Connex.VM.Output & Connex.Thor.Account.WithDecoded, key: string): number {
+    const value = output.decoded[key] || output.decoded[0]
+    const parsed = typeof value === 'string' || typeof value === 'number' ? Number(value) : 0
+    return Number.isFinite(parsed) ? parsed : 0
+}
+
+function decodedBoolean(output: Connex.VM.Output & Connex.Thor.Account.WithDecoded, key: string): boolean {
+    return output.decoded[key] === true || output.decoded[1] === true
+}
+
+function serve(gid: string, pool: ReturnType<typeof createPool>, cacheStore: SmartAccountCacheStore) {
     const namesByAddress = new Map<string, string>()
     const addressesByName = new Map<string, string>()
     const resolverByName = new Map<string, string>()
@@ -115,6 +147,91 @@ function serve(gid: string, pool: ReturnType<typeof createPool>) {
             namesByAddress.set(resolvedAddress.toLowerCase(), resolvedName)
             addressesByName.set(resolvedName, resolvedAddress)
             touchVetDomains()
+        },
+        async smartAccountsOf(wallet: M.Wallet): Promise<SmartAccount[]> {
+            if (!smartAccountFactoryByGid[gid]) {
+                return []
+            }
+            const accounts = await Promise.all(wallet.meta.addresses.map(owner => this.refreshSmartAccounts(wallet, owner)))
+            return mergeSmartAccounts(accounts.flat()).filter(account => account.deployed)
+        },
+        async refreshSmartAccounts(wallet: M.Wallet, owner: string): Promise<SmartAccount[]> {
+            const factory = smartAccountFactoryByGid[gid]
+            if (!factory) {
+                return []
+            }
+
+            const ownerAddress = owner.toLowerCase()
+            const cacheKey = smartAccountCacheKey(gid, ownerAddress, factory)
+            const cached = await cacheStore.getSmartAccountCache(cacheKey)
+            const discovered: SmartAccount[] = [...cached.accounts]
+
+            try {
+                const accountOutput = await this.thor.account(factory)
+                    .method(smartAccountFactoryABIs.getAccountAddress)
+                    .call(ownerAddress)
+                const accountAddress = decodedAddress(accountOutput, 'account')
+                if (accountAddress) {
+                    const versionOutput = await this.thor.account(factory)
+                        .method(smartAccountFactoryABIs.getAccountVersion)
+                        .call(accountAddress, ownerAddress)
+                    discovered.push({
+                        address: accountAddress,
+                        owner: ownerAddress,
+                        walletId: wallet.id,
+                        gid,
+                        version: decodedNumber(versionOutput, 'accountVersion'),
+                        salt: '0',
+                        source: 'default',
+                        deployed: decodedBoolean(versionOutput, 'isDeployed')
+                    })
+                }
+            } catch (err) {
+                console.warn('smart account default lookup:', err)
+            }
+
+            const headNumber = this.thor.status.head.number
+            let scannedTo = cached.scannedTo
+            for (let from = Math.max(scannedTo + 1, 0); from <= headNumber; from += SMART_ACCOUNT_SCAN_CHUNK) {
+                const to = Math.min(from + SMART_ACCOUNT_SCAN_CHUNK - 1, headNumber)
+                let offset = 0
+                for (; ;) {
+                    const events = await this.thor.account(factory)
+                        .event(accountCreatedEventABI)
+                        .filter([{}])
+                        .range({ unit: 'block', from, to })
+                        .order('asc')
+                        .apply(offset, SMART_ACCOUNT_SCAN_PAGE_SIZE)
+                    for (const event of events) {
+                        const decoded = decodeAccountCreatedEvent(event)
+                        if (decoded && decoded.owner.toLowerCase() === ownerAddress) {
+                            const state = await this.thor.account(decoded.account).get()
+                            discovered.push({
+                                address: decoded.account,
+                                owner: ownerAddress,
+                                walletId: wallet.id,
+                                gid,
+                                version: 0,
+                                salt: decoded.salt,
+                                source: 'event',
+                                deployed: state.hasCode
+                            })
+                        }
+                    }
+                    if (events.length < SMART_ACCOUNT_SCAN_PAGE_SIZE) {
+                        break
+                    }
+                    offset += events.length
+                }
+                scannedTo = to
+            }
+
+            const nextCache = {
+                accounts: mergeSmartAccounts(discovered),
+                scannedTo
+            }
+            await cacheStore.saveSmartAccountCache(cacheKey, nextCache)
+            return nextCache.accounts.filter(account => account.deployed)
         },
         async vetDomainsAddressesOf(names: string[]): Promise<string[]> {
             const resolver = VetDomainsResolverByGid[gid]
@@ -252,13 +369,13 @@ function serve(gid: string, pool: ReturnType<typeof createPool>) {
     }
 }
 
-export function build(resolveNode: (gid: string) => M.Node) {
+export function build(resolveNode: (gid: string) => M.Node, cacheStore: SmartAccountCacheStore) {
     const pool = createPool(resolveNode)
     const cache = new Map<string, ReturnType<typeof serve>>()
     return (gid: string) => {
         let handler = cache.get(gid)
         if (!handler) {
-            cache.set(gid, handler = serve(gid, pool))
+            cache.set(gid, handler = serve(gid, pool, cacheStore))
         }
         return handler
     }

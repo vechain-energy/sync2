@@ -168,6 +168,12 @@ export default defineComponent({
             },
             default: () => []
         },
+        smartAccounts: {
+            async get(): Promise<M.SmartAccount[]> {
+                return this.wallet ? this.$svc.bc(this.wallet.gid).smartAccountsOf(this.wallet) : []
+            },
+            default: () => [] as M.SmartAccount[]
+        },
         currentBalance: {
             async get(): Promise<string> {
                 const token = this.currentToken
@@ -216,16 +222,22 @@ export default defineComponent({
         currentToken(): M.TokenSpec | undefined {
             return this.tokenList.find(item => item.symbol === this.sym)
         },
+        addresses(): string[] {
+            return this.wallet ? [
+                ...this.wallet.meta.addresses,
+                ...this.smartAccounts.map(account => account.address)
+            ] : []
+        },
         canSetMax(): boolean {
             return new BigNumber(this.currentBalance || 0).isGreaterThan(0)
         },
         from(): string {
             const index = this.addressIndexNumber
-            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
+            return this.wallet && index !== null ? this.addresses[index] || '' : ''
         },
         address(): string {
             const index = this.addressIndexNumber
-            return this.wallet && index !== null ? this.wallet.meta.addresses[index] || '' : ''
+            return this.wallet && index !== null ? this.addresses[index] || '' : ''
         }
     },
     watch: {

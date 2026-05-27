@@ -28,6 +28,17 @@ const otherWallet: M.Wallet = {
     }
 }
 
+const smartAccount: M.SmartAccount = {
+    address: '0x4444444444444444444444444444444444444444',
+    owner: wallet.meta.addresses[0],
+    walletId: wallet.id,
+    gid: wallet.gid,
+    version: 3,
+    salt: '0',
+    source: 'default',
+    deployed: true
+}
+
 describe('signer groups', () => {
     it('limits selectable signers without enforcing one signer', () => {
         const groups = buildSignerGroups([wallet, otherWallet], undefined, [
@@ -103,5 +114,23 @@ describe('signer groups', () => {
         }], undefined, [wallet.meta.addresses[0]]), [])
         assert.strictEqual(selectSigner([], wallet.meta.addresses[0]), '')
         assert.strictEqual(selectSigner(buildSignerGroups([wallet]), otherWallet.meta.addresses[0]), wallet.meta.addresses[0])
+    })
+
+    it('adds smart accounts under their owner wallet for transaction signer groups', () => {
+        assert.deepStrictEqual(buildSignerGroups([wallet], undefined, undefined, [smartAccount]), [{
+            name: 'Wallet',
+            addresses: [...wallet.meta.addresses, smartAccount.address]
+        }])
+    })
+
+    it('matches signer restrictions against smart accounts', () => {
+        assert.deepStrictEqual(buildSignerGroups([wallet], undefined, [smartAccount.address.toUpperCase()], [smartAccount]), [{
+            name: 'Wallet',
+            addresses: [smartAccount.address]
+        }])
+        assert.deepStrictEqual(buildSignerGroups([wallet], smartAccount.address.toUpperCase(), [], [smartAccount]), [{
+            name: 'Wallet',
+            addresses: [smartAccount.address.toUpperCase()]
+        }])
     })
 })

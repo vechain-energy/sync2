@@ -369,6 +369,7 @@ import {
     buildLocalGasPayerOptions,
     isLocalGasPayerMode
 } from './local-gas-payer'
+import { buildSmartAccountClauses } from 'src/utils/smart-accounts'
 
 type GenericFeeOption = {
     token: GenericGasToken
@@ -484,7 +485,7 @@ export default defineComponent({
             return isLocalGasPayerMode(vm.feeMode)
         },
         localGasPayerOptions(): LocalGasPayerOption[] {
-            return buildLocalGasPayerOptions(this.wallets || [], this.signer)
+            return buildLocalGasPayerOptions(this.wallets || [], this.effectiveSigner)
         },
         selectedLocalGasPayerOption(): LocalGasPayerOption | null {
             const vm = this as unknown as TxDialogState
@@ -520,9 +521,13 @@ export default defineComponent({
             }
             return buildGenericDelegatorPaymentClause(token, tokenSpec, depositAccount, estimate.amountWei)
         },
+        smartAccountMessage(): Connex.Vendor.TxMessage {
+            const smartAccount = this.selectedSmartAccount
+            return smartAccount ? buildSmartAccountClauses(smartAccount, this.req.message) : this.req.message
+        },
         displayMessage(): Connex.Vendor.TxMessage {
             const paymentClause = this.genericDelegatorPaymentClause
-            return paymentClause ? [...this.req.message, paymentClause] : this.req.message
+            return paymentClause ? [...this.smartAccountMessage, paymentClause] : this.smartAccountMessage
         },
         vthoToken(): M.TokenSpec | null {
             return getGenericGasTokenSpec(this.gid, this.tokens, 'VTHO')
@@ -715,7 +720,7 @@ export default defineComponent({
         },
         thor(): Connex.Thor { return this.$svc.bc(this.gid).thor },
         estimation(): EstimateGasResult | null {
-            if (this.delayedEstimation && this.delayedEstimation.caller === this.signer) {
+            if (this.delayedEstimation && this.delayedEstimation.caller === this.effectiveSigner) {
                 return this.delayedEstimation
             }
             return null
@@ -735,7 +740,7 @@ export default defineComponent({
                 this.thor,
                 this.displayMessage,
                 this.isGenericFeeMode ? (this.genericDelegatorEstimate ? this.genericDelegatorEstimate.gas : 0) : (this.req.options.gas || 0),
-                this.signer,
+                this.effectiveSigner,
                 gasPayer,
                 !this.isGenericFeeMode)
         },
@@ -760,7 +765,7 @@ export default defineComponent({
         genericDelegatorEstimates: {
             async get(): Promise<GenericDelegatorEstimateMap> {
                 const url = this.genericDelegatorUrl
-                if (!this.showGenericFeeOptions || !url || !this.signer) {
+                if (!this.showGenericFeeOptions || !url || !this.effectiveSigner) {
                     return {}
                 }
                 const entries = await Promise.all(GENERIC_GAS_TOKENS.map(async token => {
@@ -769,7 +774,7 @@ export default defineComponent({
                             genericDelegatorEstimateUrl(url, token, this.genericFeeSpeed),
                             {
                                 clauses: this.req.message,
-                                signer: this.signer
+                                signer: this.effectiveSigner
                             },
                             { headers: { 'content-type': 'application/json' } }
                         )
@@ -790,7 +795,7 @@ export default defineComponent({
         },
         genericGasTokenBalances: {
             async get(): Promise<GenericGasTokenBalanceMap> {
-                if (!this.showGenericFeeOptions || !this.signer) {
+                if (!this.showGenericFeeOptions || !this.effectiveSigner) {
                     return {}
                 }
                 const entries = await Promise.all(GENERIC_GAS_TOKENS.map(async token => {
@@ -800,7 +805,7 @@ export default defineComponent({
                     }
                     return {
                         token,
-                        balance: await this.$svc.bc(this.gid).balanceOf(this.signer, tokenSpec)
+                        balance: await this.$svc.bc(this.gid).balanceOf(this.effectiveSigner, tokenSpec)
                     }
                 }))
                 return entries.reduce((result: GenericGasTokenBalanceMap, entry) => {
@@ -838,7 +843,7 @@ export default defineComponent({
             if (this.isGenericFeeMode || this.isLocalGasPayerMode || !est || !fee || (requestDelegator && !requestDelegator.signer)) {
                 return null
             }
-            const signer = this.signer
+            const signer = this.effectiveSigner
             const gasPayer = (requestDelegator && requestDelegator.signer) || signer
             const acc = await this.thor.account(gasPayer).get()
 
@@ -930,6 +935,7 @@ export default defineComponent({
             const est = this.estimation
             const wallet = this.wallet
             const signer = this.signer
+            const txOrigin = this.effectiveSigner
             const priorityFeePerGas = this.priorityFeePerGas
             const maxFeePerGas = this.maxFeePerGas
             const genericToken = this.selectedGenericGasToken
@@ -1001,7 +1007,7 @@ export default defineComponent({
                         try {
                             const resp = await this.$axios.post(delegator.url, {
                                 raw: '0x' + tx.encode().toString('hex'),
-                                origin: signer
+                                origin: txOrigin
                             }, { transformResponse: data => JSON.parse(data), headers: { 'content-type': 'application/json' } })
                             delegatorSig = Buffer.from(resp.data.signature.slice(2), 'hex')
                         } catch {
@@ -1024,7 +1030,7 @@ export default defineComponent({
                             genericDelegatorSignUrl(genericUrl, genericToken),
                             {
                                 raw: '0x' + tx.encode().toString('hex'),
-                                origin: signer,
+                                origin: txOrigin,
                                 token: genericToken.toLowerCase()
                             },
                             { headers: { 'content-type': 'application/json' } }
@@ -1037,7 +1043,7 @@ export default defineComponent({
             } else if (localGasPayerOption && localGasPayerWallet) {
                 try {
                     delegatorSig = await this.$loading(async () => {
-                        return this.signSoftwareHash(localGasPayerWallet, localGasPayerOption.address, tx.signingHash(signer))
+                        return this.signSoftwareHash(localGasPayerWallet, localGasPayerOption.address, tx.signingHash(txOrigin))
                     })
                 } catch {
                     throw new Error(this.$t('sign.msg_local_delegation_failed').toString())

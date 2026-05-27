@@ -22,6 +22,8 @@ declare namespace M {
         }
     }
 
+    type SmartAccount = import('src/utils/smart-accounts').SmartAccount
+
     interface TokenSpec {
         gid: string
         name: string
