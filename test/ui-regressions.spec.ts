@@ -103,17 +103,32 @@ describe('UI regression guards', () => {
 
         assert.ok(source.includes('class="fee-token-menu"'))
         assert.ok(source.includes('class="fee-token-option-line"'))
-        assert.ok(source.includes('<q-item-label class="fee-token-option-title">VTHO</q-item-label>'))
+        assert.ok(source.includes('<q-item-label class="fee-token-option-title">{{standardFeeTitle}}</q-item-label>'))
         assert.ok(source.includes('{{option.token}} · {{option.status}}'))
         assert.ok(source.includes("'text-negative': option.balanceLow"))
         assert.ok(source.includes('<q-btn-dropdown'))
-        assert.ok(source.includes('toggle-aria-label="Fee token"'))
+        assert.ok(source.includes('toggle-aria-label="Fee payer"'))
         assert.ok(source.includes('dropdown-icon="expand_more"'))
         assert.ok(source.includes('v-model="feeTokenMenuOpen"'))
         assert.ok(source.includes('menu-anchor="bottom right"'))
         assert.ok(source.includes('menu-self="top right"'))
         assert.ok(source.includes('width: min(304px, calc(100vw - 24px))'))
         assert.ok(source.includes('padding-right: 8px'))
+    })
+
+    it('shows local account gas payer options and lets them override dApp delegation', () => {
+        const source = sourceFile('src/pages/Sign/TxDialog.vue')
+
+        assert.ok(source.includes("import {\n    FeeMode,\n    LOCAL_ACCOUNT_FEE_MODE,\n    LocalGasPayerOption,\n    buildLocalGasPayerOptions,\n    isLocalGasPayerMode\n} from './local-gas-payer'"))
+        assert.ok(source.includes('localGasPayerOptions(): LocalGasPayerOption[]'))
+        assert.ok(source.includes("return buildLocalGasPayerOptions(this.wallets || [], this.signer)"))
+        assert.ok(source.includes('v-for="option in localGasPayerFeeOptions"'))
+        assert.ok(source.includes('@click="selectLocalGasPayer(option.address)"'))
+        assert.ok(source.includes('isDappFeeDelegation(): boolean'))
+        assert.ok(source.includes('return this.isDappDelegation && !this.isLocalGasPayerMode'))
+        assert.ok(source.includes('const delegator = this.isDappFeeDelegation ? this.req.options.delegator : undefined'))
+        assert.ok(source.includes('tx.signingHash(signer)'))
+        assert.ok(source.includes('this.localGasPayerWarning && ret.push(this.localGasPayerWarning)'))
     })
 
     it('keeps domain availability results single-source and network row non-empty', () => {

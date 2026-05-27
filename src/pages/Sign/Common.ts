@@ -65,6 +65,14 @@ export default defineComponent({
                 throw new Error(`unsupported wallet type '${wallet.meta.type}'`)
             }
         },
+        async signSoftwareHash(wallet: M.Wallet, signer: string, hash: Buffer): Promise<Buffer> {
+            if (!isSoftwareWalletType(wallet.meta.type)) {
+                throw new Error('you need to choose a software account to pay gas')
+            }
+
+            const umk = await this.$authenticate()
+            return signHashWithSoftwareWallet(wallet, signer, umk, hash)
+        },
         async signCert(wallet: M.Wallet, cert: Certificate): Promise<Buffer> {
             if (isSoftwareWalletType(wallet.meta.type)) {
                 // acquire user master key

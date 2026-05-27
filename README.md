@@ -25,7 +25,7 @@ old built-in dApp browser. dApps connect from normal browsers through
 - Domains: check `.vet` availability, register names, and set a primary name.
 - Profiles: edit VNS avatar, display name, description, email, website, and X handle.
 - Swaps: quote active mainnet tokens through VeTrade.vet and BetterSwap.io.
-- Fees: show estimated fees, max fee caps, and optional Generic Delegator payment.
+- Fees: show estimated fees, max fee caps, Generic Delegator payment, and local account gas payers.
 - Networks: use VeChain mainnet and testnet public nodes.
 - Explorer: open mainnet transactions in VeChainStats.
 
