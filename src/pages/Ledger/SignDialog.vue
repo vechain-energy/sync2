@@ -23,10 +23,7 @@ import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import * as Ledger from 'src/utils/ledger'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
-import { HDNode } from 'thor-devkit'
-import Deferred from 'src/utils/deferred'
 import { sleep } from 'src/utils/sleep'
-import { normalizeLedgerSignature } from 'src/utils/ledger-signature'
 import Steps from './Steps.vue'
 
 type Status = 'connected' | 'handshaked' | 'signed'
@@ -53,7 +50,7 @@ export default defineComponent({
         return {
             status: null as Status | null,
             error: null as Error | null,
-            signal: null as Deferred<never> | null
+            task: null as Ledger.LedgerTask<Buffer> | null
         }
     },
     computed: {
@@ -84,90 +81,60 @@ export default defineComponent({
         }
     },
     async mounted() {
-        const signal = new Deferred<never>()
-        this.signal = signal
-
         const { index, signer, tx, cert } = { ...this.arg }
 
         for (; ;) {
-            let tr
             try {
-                // create transport
-                try {
-                    tr = await Ledger.connect()
-                    this.status = 'connected'
-                } catch (err) {
-                    // transport error
-                    console.warn(err)
+                this.error = null
+                this.status = null
+                if (tx) {
+                    this.task = Ledger.signTransaction({ signer, index, payload: tx }, status => {
+                        this.status = status as Status
+                    })
+                } else if (cert) {
+                    this.task = Ledger.signJSON({ signer, index, payload: cert }, status => {
+                        this.status = status as Status
+                    })
+                } else {
+                    this.error = new Error(this.$t('ledger.msg_unknown_data').toString())
+                    break
+                }
+
+                const sig = await this.task.promise
+                await sleep(1000)
+                this.ok(sig)
+            } catch (err) {
+                if (err instanceof Ledger.LedgerOperationError && err.code === 'cancelled') {
+                    break
+                }
+
+                console.warn(err)
+                if (err instanceof Ledger.LedgerOperationError && err.code === 'wrong-device') {
+                    this.error = new Error(this.$t('ledger.msg_wrong_device').toString())
+                    break
+                }
+                if (
+                    err instanceof Ledger.LedgerOperationError &&
+                    err.code !== 'timeout' &&
+                    (err.stage === 'connect' || err.stage === 'account')
+                ) {
                     if (process.env.MODE === 'spa' || process.env.MODE === 'pwa') {
-                        // in chrome, user should have rejected
                         this.error = err
                         break
                     }
-                    // retry
-                    await Promise.race([sleep(2000), signal])
+                    await sleep(2000)
                     continue
                 }
 
-                const app = new Ledger.App(tr)
-                // get account and verify device
-                try {
-                    const acc = await Promise.race([
-                        app.getAccount(Ledger.path, false, true),
-                        signal
-                    ])
-                    const root = HDNode.fromPublicKey(Buffer.from(acc.publicKey, 'hex'), Buffer.from(acc.chainCode!, 'hex'))
-                    const node = root.derive(index)
-
-                    if (signer.toLowerCase() !== node.address.toLowerCase()) {
-                        // not the expected ledger
-                        this.error = new Error(this.$t('ledger.msg_wrong_device').toString())
-                        break
-                    }
-                    this.status = 'handshaked'
-                } catch (err) {
-                    // app error
-                    console.warn(err)
-                    // retry
-                    await Promise.race([sleep(2000), signal])
-                    continue
-                }
-
-                // sign
-                try {
-                    const path = `${Ledger.path}/${index}`
-                    if (tx) {
-                        const sig = await Promise.race([
-                            app.signTransaction(path, tx),
-                            signal
-                        ])
-                        this.status = 'signed'
-                        await sleep(1000)
-                        this.$emit('ok', normalizeLedgerSignature(sig))
-                    } else if (cert) {
-                        const sig = await Promise.race([
-                            app.signJSON(path, cert),
-                            signal
-                        ])
-                        this.status = 'signed'
-                        await sleep(1000)
-                        this.$emit('ok', normalizeLedgerSignature(sig))
-                    } else {
-                        this.error = new Error(this.$t('ledger.msg_unknown_data').toString())
-                    }
-                } catch (err) {
-                    // TODO to check error status code to judge config problem
-                    console.warn(err)
-                    this.error = err
-                }
+                this.error = err instanceof Error ? err : new Error(this.$t('common.something_wrong').toString())
             } finally {
-                tr && await tr.close().catch(() => { })
+                this.task = null
             }
             break
         }
     },
     beforeUnmount() {
-        this.signal?.reject(new Error('interrupted'))
+        this.task?.cancel()
     },
     methods: {
         // method is REQUIRED by $q.dialog

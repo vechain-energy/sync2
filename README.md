@@ -42,6 +42,11 @@ old built-in dApp browser. dApps connect from normal browsers through
 
 Unsigned desktop releases are installed from GitHub Releases manually.
 
+## Ledger
+
+If desktop Ledger signing times out, no transaction was sent. Reconnect and
+unlock the Ledger device, open the VeChain app, then sign again.
+
 ## Developers
 
 Requirements:

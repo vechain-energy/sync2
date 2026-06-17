@@ -34,7 +34,6 @@ import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import * as Ledger from 'src/utils/ledger'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
-import Deferred from 'src/utils/deferred'
 import { sleep } from 'src/utils/sleep'
 import Steps from './Steps.vue'
 
@@ -53,7 +52,7 @@ export default defineComponent({
             status: null as Status | null,
             account: null as Ledger.Account | null,
             error: null as Error | null,
-            signal: null as Deferred<never> | null
+            task: null as Ledger.LedgerTask<Ledger.Account> | null
         }
     },
     computed: {
@@ -79,51 +78,44 @@ export default defineComponent({
         }
     },
     async mounted() {
-        const signal = new Deferred<never>()
-        this.signal = signal
-
         for (; ;) {
-            let tr
             try {
-                try {
-                    // create transport
-                    tr = await Ledger.connect()
-                    this.status = 'connected'
-                } catch (err) {
-                    // transport error
-                    console.warn(err)
+                this.error = null
+                this.status = null
+                this.task = Ledger.getAccount(status => {
+                    if (status === 'connected' || status === 'done') {
+                        this.status = status
+                    }
+                })
+                this.account = await this.task.promise
+            } catch (err) {
+                if (err instanceof Ledger.LedgerOperationError && err.code === 'cancelled') {
+                    break
+                }
+
+                console.warn(err)
+                if (
+                    err instanceof Ledger.LedgerOperationError &&
+                    err.code !== 'timeout' &&
+                    (err.stage === 'connect' || err.stage === 'account')
+                ) {
                     if (process.env.MODE === 'spa' || process.env.MODE === 'pwa') {
-                        // in chrome, user should have rejected
                         this.error = err
                         break
                     }
-                    // retry
-                    await Promise.race([sleep(2000), signal])
+                    await sleep(2000)
                     continue
                 }
 
-                const app = new Ledger.App(tr)
-                try {
-                    this.account = await Promise.race([
-                        app.getAccount(Ledger.path, false, true),
-                        signal
-                    ])
-                    this.status = 'done'
-                } catch (err) {
-                    // app error
-                    console.warn(err)
-                    // retry
-                    await Promise.race([sleep(2000), signal])
-                    continue
-                }
+                this.error = err instanceof Error ? err : new Error(this.$t('common.something_wrong').toString())
             } finally {
-                tr && await tr.close().catch(() => { })
+                this.task = null
             }
             break
         }
     },
     beforeUnmount() {
-        this.signal?.reject(new Error('interrupted'))
+        this.task?.cancel()
     },
     methods: {
         // method is REQUIRED by $q.dialog

@@ -1,6 +1,6 @@
 {
   "name": "org.vechain.sync2",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "description": "VeChain Sync2",
   "productName": "Sync2",
   "cordovaId": "org.vechain.sync2",
@@ -130,7 +130,7 @@
   "overrides": {
     "cipher-base": "1.0.7",
     "electron-updater": {
-      "js-yaml": "4.1.1"
+      "js-yaml": "4.2.0"
     },
     "ethers": {
       "ws": "8.20.1"

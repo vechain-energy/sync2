@@ -270,6 +270,14 @@ describe('UI regression guards', () => {
         assert.ok(txDialog.includes("throw new Error(this.$t('sign.msg_generic_delegation_failed').toString())"))
     })
 
+    it('closes Ledger signing dialog through the dialog ok helper', () => {
+        const source = sourceFile('src/pages/Ledger/SignDialog.vue')
+
+        assert.ok(source.includes('this.ok(sig)'))
+        assert.strictEqual(source.includes("this.$emit('ok', normalizeLedgerSignature(sig))"), false)
+        assert.strictEqual(source.includes("this.$emit('ok', sig)"), false)
+    })
+
     it('blocks generic fee signing when the selected fee token balance is too low', () => {
         const txDialog = sourceFile('src/pages/Sign/TxDialog.vue')
 
